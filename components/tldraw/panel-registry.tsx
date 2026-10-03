@@ -103,7 +103,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'soil',
     name: 'Soil Analysis',
-    description: 'Analyze soil type, pH, composition, and amendments needed',
+    description: 'Recorded surface and plant-library soil preferences',
     icon: Layers,
     category: 'site',
     tier: 'premium',
@@ -112,7 +112,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'topography',
     name: 'Topography & Grading',
-    description: 'Map slopes, contours, terracing, swales, and water flow',
+    description: 'Recorded slope, area, and site shape',
     icon: Mountain,
     category: 'site',
     tier: 'premium',
@@ -121,7 +121,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'climate',
     name: 'Climate & Microclimate',
-    description: 'Temperature zones, frost pockets, and microclimates',
+    description: 'Recorded zone, frost dates, and location',
     icon: Thermometer,
     category: 'site',
     tier: 'premium',
@@ -130,7 +130,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'infrastructure',
     name: 'Site Infrastructure',
-    description: 'Buildings, paths, fences, access points, and utilities',
+    description: 'Recorded water, beds, and saved structures',
     icon: Home,
     category: 'site',
     tier: 'free',

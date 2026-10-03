@@ -30,16 +30,20 @@ import { RelationshipMapperPanel } from './panels/relationship-mapper-panel'
 import { LockedPanel } from '@/components/subscription/locked-panel'
 import { PanelSelector } from './panel-selector'
 import {
-  SoilAnalysisPanel,
-  TopographyPanel,
-  ClimatePanel,
-  InfrastructurePanel,
   BiodiversityPanel,
   EnergyPanel,
   CommunityPanel,
   EconomicsPanel,
   ResiliencePanel
 } from './panels/placeholder-panel'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  ClimatePanel,
+  InfrastructurePanel,
+  SoilAnalysisPanel,
+  TopographyPanel,
+} from '@/components/garden/site-condition-panels'
+import { useRecordedSiteFacts } from '@/components/garden/use-recorded-site-facts'
 import { GardenBed } from '@/lib/garden/garden-types'
 import { PlantInfo } from '@/lib/data/plant-library'
 import { ElementSubtype, ElementCategory, ELEMENT_STYLES } from '@/lib/canvas-elements'
@@ -116,6 +120,7 @@ export function PermacultureEditorIntegrated({
   const [rightPanelTab, setRightPanelTab] = useState<string>('holistic') // Start with holistic dashboard
   const [recentPanels, setRecentPanels] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const siteFacts = useRecordedSiteFacts(planId)
 
   // Load recent panels from localStorage
   useEffect(() => {
@@ -596,40 +601,35 @@ export function PermacultureEditorIntegrated({
 
               {/* ========== NEW SITE ANALYSIS PANELS ========== */}
               <TabsContent value="soil" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="soil"
-                  featureName="Soil Analysis"
-                  featureDescription="Analyze soil type, pH, composition, and amendments needed for optimal plant growth."
-                  requiredTier="premium"
-                >
-                  <SoilAnalysisPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <SoilAnalysisPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="topography" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="topography"
-                  featureName="Topography & Grading"
-                  featureDescription="Map slopes, contours, water flow, and plan earthworks like swales and terraces."
-                  requiredTier="premium"
-                >
-                  <TopographyPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <TopographyPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="climate" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="climate"
-                  featureName="Climate & Microclimate"
-                  featureDescription="Analyze temperature zones, frost pockets, and optimize microclimates."
-                  requiredTier="premium"
-                >
-                  <ClimatePanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <ClimatePanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="infrastructure" className="flex-1 m-0">
-                <InfrastructurePanel />
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <InfrastructurePanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               {/* ========== NEW PERMACULTURE DESIGN PANELS ========== */}

@@ -14,7 +14,9 @@ import {
 import Link from 'next/link'
 import { BedLayout } from '@/components/garden/bed-layout'
 import { PlanInsights } from '@/components/garden/plan-insights'
+import { SiteConditionPanels } from '@/components/garden/site-condition-panels'
 import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
+import { formatSiteFacts, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
 
 interface Plan {
   id: string
@@ -25,9 +27,16 @@ interface Plan {
   status: string
   site: {
     name: string
-    lat: number | null
-    lng: number | null
+    lat: number | string | null
+    lng: number | string | null
     usda_zone: string | null
+    last_frost?: string | null
+    first_frost?: string | null
+    surface_type?: string | null
+    slope_pct?: number | string | null
+    shade_notes?: string | null
+    water_source?: string | null
+    constraints_json?: unknown
   }
   beds: Array<{
     id: string
@@ -35,6 +44,12 @@ interface Plan {
     length_ft: number
     width_ft: number
     shape: string
+    height_in?: number | string | null
+    orientation?: string | null
+    surface?: string | null
+    wicking?: boolean | null
+    trellis?: boolean | null
+    path_clearance_in?: number | string | null
     notes?: string | null
     plantings?: Array<{
       id: string
@@ -42,6 +57,12 @@ interface Plan {
       successions_json?: { position?: { x: number; y: number } } | null
     }>
   }>
+  materials_estimates?: {
+    soil_cuft?: number | string | null
+    compost_cuft?: number | string | null
+    mulch_cuft?: number | string | null
+    drip_line_ft?: number | string | null
+  } | null
 }
 
 export default function PlanViewPage() {
@@ -95,12 +116,16 @@ export default function PlanViewPage() {
   const handleExport = () => {
     if (!plan) return
 
-    const text = formatPlanSummary({
-      planName: plan.name,
-      siteName: plan.site.name,
-      usdaZone: plan.site.usda_zone,
-      summary: summarizePlan(plan.beds),
-    })
+    const text = [
+      formatPlanSummary({
+        planName: plan.name,
+        siteName: plan.site.name,
+        usdaZone: plan.site.usda_zone,
+        summary: summarizePlan(plan.beds),
+      }),
+      '',
+      formatSiteFacts(summarizeSiteFacts(siteFactsFromPlan(plan))),
+    ].join('\n')
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
     const filename = `${plan.name.replace(/[^\w.-]+/g, '-')}-summary.txt`
@@ -151,6 +176,7 @@ export default function PlanViewPage() {
   const totalArea = plan.beds.reduce((sum, bed) => sum + (bed.length_ft * bed.width_ft), 0)
   const plantCount = plan.beds.reduce((sum, bed) => sum + (bed.plantings?.length || 0), 0)
   const summary = summarizePlan(plan.beds)
+  const siteFacts = summarizeSiteFacts(siteFactsFromPlan(plan))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
@@ -312,8 +338,9 @@ export default function PlanViewPage() {
           </CardContent>
         </Card>
         </div>
-        <aside className="lg:sticky lg:top-4">
+        <aside className="space-y-4 lg:sticky lg:top-4">
           <PlanInsights summary={summary} />
+          <SiteConditionPanels facts={siteFacts} />
         </aside>
         </div>
       </div>
