@@ -31,8 +31,8 @@ describe('summarizeDesignFacts', () => {
     const text = formatDesignFacts(facts)
 
     expect(facts.companions).toContain('Salad Greens has Lettuce and Tomato saved in the same bed.')
-    expect(facts.companions).toContain('A companion relationship is not recorded for Salad Greens.')
-    expect(facts.companions).toContain('Companion lists are not recorded.')
+    expect(facts.companions).toContain('No companion pair from the plant library is recorded for Salad Greens.')
+    expect(facts.companions).toContain('No companion pairs from the plant library share a bed.')
     expect(facts.relationships).toContain('No link between Salad Greens and Root Vegetables is recorded.')
     expect(facts.relationships).toContain('Guilds, energy flows, and nutrient cycles are not recorded.')
     expect(facts.evolution).toContain('Lettuce in Salad Greens is recorded for fall 2026.')
@@ -63,7 +63,7 @@ describe('summarizeDesignFacts', () => {
 
   test('says when the plan has no saved design facts', () => {
     const text = formatDesignFacts(summarizeDesignFacts({}))
-    expect(text).toContain('Companion lists are not recorded.')
+    expect(text).toContain('No companion pairs from the plant library share a bed.')
     expect(text).toContain('Guilds, energy flows, and nutrient cycles are not recorded.')
     expect(text).toContain('A multi-year timeline is not recorded.')
     expect(text).toContain('Implementation phases are not recorded.')
@@ -92,5 +92,34 @@ describe('summarizeDesignFacts', () => {
     expect(facts.progress).toContain('1 task is recorded.')
     expect(facts.progress).not.toContain('Yields are not recorded.')
     expect(facts.knowledge).toContain('First sowing: Direct sowed lettuce.')
+  })
+
+  test('uses plant-library companion pairs saved in the same bed', () => {
+    const facts = summarizeDesignFacts({
+      beds: [
+        {
+          name: 'Salad Greens',
+          plantings: [
+            { variety: 'lettuce' },
+            { variety: 'tomato' },
+            { variety: 'carrot' },
+          ],
+        },
+        {
+          name: 'Root Vegetables',
+          plantings: [
+            { variety: 'lettuce' },
+            { variety: 'tomato' },
+          ],
+        },
+      ],
+    })
+
+    expect(facts.companions).toContain('From the plant library, Lettuce with Carrot in Salad Greens.')
+    expect(facts.companions).toContain('From the plant library, Tomato with Carrot in Salad Greens.')
+    expect(facts.companions).toContain('No companion pair from the plant library is recorded for Root Vegetables.')
+    expect(facts.companions).not.toContain('A companion relationship is not recorded for Salad Greens.')
+    expect(facts.companions).not.toContain('Companion lists are not recorded.')
+    expect(facts.companions.join(' ')).not.toContain('basil')
   })
 })

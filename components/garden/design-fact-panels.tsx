@@ -55,7 +55,7 @@ export function CompanionFactCard({ design }: { design: DesignFacts | null }) {
     <FactCard
       id="companions"
       title="Companion Planting & Guilds"
-      description="Plants saved in the same bed. Companion lists are not created."
+      description="Companion pairs from the plant library for plants saved in the same bed."
       lines={design?.companions || LOADING}
     />
   )

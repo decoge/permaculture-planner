@@ -1,4 +1,4 @@
-import { PLANT_LIBRARY } from '@/lib/data/plant-library'
+import { PLANT_LIBRARY, PlantInfo } from '@/lib/data/plant-library'
 import {
   HarvestInput,
   SiteBedInput,
@@ -117,11 +117,20 @@ function plantsOn(bed: SiteBedInput): SitePlantInput[] {
   return bed.plants || []
 }
 
+function libraryInfo(plant: SitePlantInput): PlantInfo | null {
+  const raw = String(plant.variety || plant.plantId || plant.name || '').trim().toLowerCase()
+  if (!raw) return null
+  return PLANT_LIBRARY.find((item) => item.id === raw || item.name.toLowerCase() === raw) || null
+}
+
 function plantName(plant: SitePlantInput): string | null {
   const raw = String(plant.variety || plant.plantId || plant.name || '').trim()
   if (!raw) return null
-  const known = PLANT_LIBRARY.find((item) => item.id === raw.toLowerCase() || item.name.toLowerCase() === raw.toLowerCase())
-  return known?.name || titleCase(raw)
+  return libraryInfo(plant)?.name || titleCase(raw)
+}
+
+function libraryCompanions(left: PlantInfo, right: PlantInfo): boolean {
+  return left.companions.includes(right.id) || right.companions.includes(left.id)
 }
 
 function bedName(bed: SiteBedInput): string {
@@ -186,20 +195,36 @@ function companionLines(beds: SiteBedInput[]): string[] {
   const lines: string[] = []
   if (beds.length === 0) lines.push('No beds are saved.')
   let anyPlants = false
+  let anyPair = false
   for (const bed of beds) {
     const name = bedName(bed)
-    const plants = namedPlants(bed)
+    const plants = plantsOn(bed).flatMap((plant) => {
+      const label = plantName(plant)
+      return label ? [{ label, info: libraryInfo(plant) }] : []
+    })
     if (plants.length === 0) {
       lines.push(`${name} has no plants saved.`)
       continue
     }
     anyPlants = true
-    lines.push(`${name} has ${listPhrase(plants)} saved in the same bed.`)
-    lines.push(`A companion relationship is not recorded for ${name}.`)
+    lines.push(`${name} has ${listPhrase(plants.map((plant) => plant.label))} saved in the same bed.`)
+    let bedPairs = 0
+    for (let i = 0; i < plants.length; i += 1) {
+      for (let j = i + 1; j < plants.length; j += 1) {
+        const left = plants[i]
+        const right = plants[j]
+        if (!left.info || !right.info || !libraryCompanions(left.info, right.info)) continue
+        bedPairs += 1
+        anyPair = true
+        lines.push(`From the plant library, ${left.label} with ${right.label} in ${name}.`)
+      }
+    }
+    if (bedPairs === 0) {
+      lines.push(`No companion pair from the plant library is recorded for ${name}.`)
+    }
   }
   if (!anyPlants) lines.push('No plants are saved.')
-  lines.push('Companion lists are not recorded.')
-  lines.push('Yields are not recorded.')
+  if (!anyPair) lines.push('No companion pairs from the plant library share a bed.')
   return lines
 }
 
@@ -268,7 +293,6 @@ function critiqueLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
       && recordedNumber(notes?.zone) === null && recordedText(notes?.zone) === null
   })
   if (beds.length === 0 || missingZone) lines.push('A permaculture zone is not recorded.')
-  lines.push('Companion lists are not recorded.')
   return lines
 }
 

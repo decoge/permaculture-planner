@@ -430,15 +430,15 @@ export function PermacultureEditorIntegrated({
                 <ZoneManagementPanel tools={gardenTools} />
               </TabsContent>
 
-              <TabsContent value="companions" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="companions" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <CompanionPlantingPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="relationships" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="relationships" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <RelationshipMapperPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="timeline" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="timeline" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <SeasonalTimelinePanel tools={gardenTools} />
               </TabsContent>
 
@@ -466,27 +466,27 @@ export function PermacultureEditorIntegrated({
                 <WaterManagementPanel tools={gardenTools} />
               </TabsContent>
 
-              <TabsContent value="evolution" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="evolution" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <GardenEvolutionPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="implementation" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="implementation" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <ImplementationPhasingPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="critique" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="critique" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <DesignCritiquePanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="progress" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="progress" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <ProgressTrackingPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="knowledge" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="knowledge" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <KnowledgeBasePanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="templates" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="templates" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <TemplateLibraryPanel design={designFacts} />
               </TabsContent>
 
@@ -494,11 +494,11 @@ export function PermacultureEditorIntegrated({
                 <EnhancedSimulationPanel tools={gardenTools} />
               </TabsContent>
 
-              <TabsContent value="permaculture" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="permaculture" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <PermacultureAnalysisPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="analytics" className="m-0 flex min-h-0 flex-1 flex-col overflow-hidden">
+              <TabsContent value="analytics" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
                 <AnalyticsPanel design={designFacts} />
               </TabsContent>
 
