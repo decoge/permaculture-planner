@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/client'
+import { api, ApiError } from '@/lib/api/http'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -23,17 +23,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     async function loadUser() {
-      const supabase = createClient()
-      const { data: { user }, error } = await supabase.auth.getUser()
-
-      if (error || !user) {
+      const data = await api<{ user: { email: string; name?: string | null } | null }>('/api/auth/me')
+      if (!data.user) {
         router.push('/auth/login')
         return
       }
 
-      setUser(user)
-      setEmail(user.email || '')
-      setName(user.user_metadata?.name || '')
+      setUser(data.user)
+      setEmail(data.user.email || '')
+      setName(data.user.name || '')
       setLoading(false)
     }
 
@@ -46,16 +44,11 @@ export default function SettingsPage() {
     setMessage(null)
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase.auth.updateUser({
-        data: { name }
+      await api('/api/auth/profile', {
+        method: 'PATCH',
+        body: JSON.stringify({ name }),
       })
-
-      if (error) {
-        setMessage({ type: 'error', text: error.message })
-      } else {
-        setMessage({ type: 'success', text: 'Profile updated successfully!' })
-      }
+      setMessage({ type: 'success', text: 'Profile updated successfully!' })
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to update profile' })
     } finally {
@@ -73,14 +66,8 @@ export default function SettingsPage() {
     }
 
     try {
-      const supabase = createClient()
-      
-      // Note: Actual account deletion would require a server-side function
-      // This is a placeholder that signs out the user
-      await supabase.auth.signOut()
+      await api('/api/auth/account', { method: 'DELETE' })
       router.push('/')
-      
-      alert('Account deletion requested. Please contact support to complete the process.')
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to delete account' })
     }

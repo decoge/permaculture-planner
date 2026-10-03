@@ -15,7 +15,7 @@ import {
   Settings, LogOut, User, Grid3x3, BarChart, Map,
   Star, Heart, MessageCircle, Users, Award
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api/http'
 import { Database } from '@/types/database.types'
 
 type Plan = Database['public']['Tables']['plans']['Row']
@@ -46,99 +46,11 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadUserData() {
       try {
-        const supabase = createClient()
-
-        // Get current user
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !authUser) {
-          router.push('/auth/login')
-          return
-        }
-
-        // Get or create user profile
-        const { data: userProfile, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single()
-
-        if (userError && userError.code === 'PGRST116') {
-          // User doesn't exist, create profile
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert({
-              id: authUser.id,
-              email: authUser.email!,
-              name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User'
-            } as any)
-            .select()
-            .single()
-
-          if (createError) {
-            setError('Failed to create user profile')
-            setLoading(false)
-            return
-          }
-          setUser(newUser)
-        } else if (userError) {
-          setError('Failed to load user data')
-          setLoading(false)
-          return
-        } else {
-          setUser(userProfile)
-        }
-
-        // First fetch user's sites
-        const { data: sitesData, error: sitesError } = await supabase
-          .from('sites')
-          .select('id')
-          .eq('user_id', authUser.id)
-
-        if (sitesError) {
-          console.error('Error fetching sites:', sitesError)
-          setError('Failed to load sites')
-          setLoading(false)
-          return
-        }
-
-        const siteIds = (sitesData as any[])?.map(s => s.id) || []
-
-        // Fetch user's plans with related data
-        const { data: plansData, error: plansError } = await supabase
-          .from('plans')
-          .select(`
-            *,
-            site:sites(*),
-            beds(*),
-            materials_estimates(*)
-          `)
-          .in('site_id', siteIds)
-          .order('created_at', { ascending: false })
-
-        if (plansError) {
-          console.error('Error fetching plans:', plansError)
-          setError('Failed to load plans')
-        } else {
-          // Calculate stats for each plan
-          const plansWithStats: PlanWithStats[] = (plansData || []).map((plan: any) => {
-            const beds = plan.beds || []
-            const totalArea = beds.reduce((sum: number, bed: Bed) =>
-              sum + (bed.length_ft * bed.width_ft), 0
-            )
-
-            return {
-              ...plan,
-              stats: {
-                plants: Math.floor(totalArea * 2), // Rough estimate: 2 plants per sq ft
-                varieties: Math.min(beds.length * 3, 20), // 3 varieties per bed, max 20
-                area: totalArea,
-                beds: beds.length
-              }
-            }
-          })
-          setPlans(plansWithStats)
-        }
+        const data = await api<{ user: Database['public']['Tables']['users']['Row']; plans: PlanWithStats[] }>(
+          '/api/dashboard'
+        )
+        setUser(data.user)
+        setPlans(data.plans || [])
 
         setLoading(false)
       } catch (error) {
@@ -153,8 +65,7 @@ export default function DashboardPage() {
 
   const handleLogout = async () => {
     try {
-      const supabase = createClient()
-      await supabase.auth.signOut()
+      await api('/api/auth/logout', { method: 'POST' })
       router.push('/auth/login')
     } catch (error) {
       console.error('Error signing out:', error)
@@ -167,17 +78,7 @@ export default function DashboardPage() {
     }
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('plans')
-        .delete()
-        .eq('id', id)
-
-      if (error) {
-        console.error('Error deleting plan:', error)
-        setError('Failed to delete plan')
-        return
-      }
+      await api(`/api/plans/${id}`, { method: 'DELETE' })
 
       // Remove from local state
       setPlans(plans.filter(p => p.id !== id))

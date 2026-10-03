@@ -27,8 +27,7 @@ import {
   SeasonalTimeline,
   PlantingWindow,
 } from '@/lib/planning/seasonal-timeline'
-import { syncTasksToSupabase } from '@/lib/supabase/task-sync'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api/http'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -126,9 +125,14 @@ export function SeasonalTimelinePanel({
         return
       }
 
-      // Save to Supabase
-      const supabase = createClient()
-      const result = await syncTasksToSupabase(supabase, planId, tasks as any)
+      // Save to Postgres
+      const result = await api<{ success: boolean; error?: string; tasksCreated?: number }>(
+        `/api/plans/${planId}/tasks`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ tasks }),
+        }
+      )
 
       toast.dismiss(toastId)
 

@@ -5,8 +5,7 @@ import { useSearchParams } from 'next/navigation'
 import { PermacultureEditorIntegrated } from '@/components/tldraw/permaculture-editor-integrated'
 import { useGardenStore } from '@/lib/store/garden-store'
 import { LocalStoragePersistence } from '@/lib/persistence/local-storage-adapter'
-import { SupabasePersistence } from '@/lib/persistence/supabase-adapter'
-import { createClient } from '@/lib/supabase/client'
+import { PostgresPersistence } from '@/lib/persistence/postgres-adapter'
 import { toast } from 'sonner'
 import { GardenBed } from '@/lib/garden/garden-types'
 
@@ -78,8 +77,7 @@ function DemoPageContent() {
     const initializePersistence = async () => {
       // Priority 1: Load from planId (wizard flow)
       if (planId) {
-        const supabase = createClient()
-        const adapter = new SupabasePersistence(supabase, planId)
+        const adapter = new PostgresPersistence(planId)
         setPersistence(adapter)
         setPlanId(planId)
 

@@ -3,8 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { PermacultureEditorIntegrated } from '@/components/tldraw/permaculture-editor-integrated'
 import { GardenBed } from '@/lib/garden/garden-types'
-import { createClient } from '@/lib/supabase/client'
-import { syncBedsToSupabase } from '@/lib/supabase/bed-sync'
+import { api, ApiError } from '@/lib/api/http'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
@@ -23,8 +22,7 @@ interface EditorClientProps {
 export function EditorClient({ plan }: EditorClientProps) {
   const [gardenBeds, setGardenBeds] = useState<GardenBed[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load initial data from Supabase beds
   useEffect(() => {
@@ -36,16 +34,24 @@ export function EditorClient({ plan }: EditorClientProps) {
     try {
       // Convert Supabase beds to GardenBed format WITH plants
       const beds: GardenBed[] = plan.beds.map((bed: any) => {
-        // Convert plantings to plants array
+        let notes: { points?: { x: number; y: number }[]; fill?: string; stroke?: string } = {}
+        if (typeof bed.notes === 'string' && bed.notes.startsWith('{')) {
+          try {
+            notes = JSON.parse(bed.notes)
+          } catch {
+            notes = {}
+          }
+        }
+        const position = bed.position_json || { x: 0, y: 0, rotation: 0 }
+        const width = (bed.length_ft || 4) * 12
+        const height = (bed.width_ft || 4) * 12
         const plants = bed.plantings?.map((planting: any) => {
-          // Extract position from successions_json (or use default)
-          const position = planting.successions_json?.position || { x: 24, y: 24 }
-
+          const plantPosition = planting.successions_json?.position || { x: 24, y: 24 }
           return {
             id: planting.id,
-            plantId: planting.variety, // variety field stores our plant ID
-            x: position.x,
-            y: position.y,
+            plantId: planting.variety,
+            x: plantPosition.x,
+            y: plantPosition.y,
             plantedDate: planting.sow_date ? new Date(planting.sow_date) : undefined,
           }
         }) || []
@@ -53,18 +59,18 @@ export function EditorClient({ plan }: EditorClientProps) {
         return {
           id: bed.id,
           name: bed.name || 'Garden Bed',
-          points: [
-            { x: 0, y: 0 },
-            { x: (bed.length_ft || 4) * 12, y: 0 },
-            { x: (bed.length_ft || 4) * 12, y: (bed.width_ft || 4) * 12 },
-            { x: 0, y: (bed.width_ft || 4) * 12 },
+          points: notes.points && notes.points.length > 0 ? notes.points : [
+            { x: position.x || 0, y: position.y || 0 },
+            { x: (position.x || 0) + width, y: position.y || 0 },
+            { x: (position.x || 0) + width, y: (position.y || 0) + height },
+            { x: position.x || 0, y: (position.y || 0) + height },
           ],
-          fill: '#e0f2e0',
-          stroke: '#22c55e',
+          fill: notes.fill || '#e0f2e0',
+          stroke: notes.stroke || '#22c55e',
           plants,
-          width: (bed.length_ft || 4) * 12,
-          height: (bed.width_ft || 4) * 12,
-          rotation: bed.orientation === 'north-south' ? 0 : 90,
+          width,
+          height,
+          rotation: position.rotation || (bed.orientation === 'EW' ? 90 : 0),
           elementCategory: 'bed',
           zone: undefined,
         }
@@ -112,27 +118,28 @@ export function EditorClient({ plan }: EditorClientProps) {
 
       // Debounce the save operation (2 seconds)
       saveTimeoutRef.current = setTimeout(async () => {
-        const result = await syncBedsToSupabase(supabase, plan.id, updatedBeds)
-
-        if (!result.success) {
+        try {
+          await api(`/api/plans/${plan.id}/beds`, {
+            method: 'PUT',
+            body: JSON.stringify({ beds: updatedBeds }),
+          })
+          console.log('Auto-saved successfully')
+        } catch (error) {
+          const result = { success: false, error: error instanceof ApiError ? error.message : 'Save failed' }
           console.error('Auto-save failed:', result.error)
-          // Show error toast for failed auto-save
           toast.error('Auto-save failed', {
             description: 'Your changes may not be saved. Try manual save.',
             duration: 3000,
           })
-        } else {
-          // Subtle success indicator
-          console.log('Auto-saved successfully')
         }
-      }, 2000) // 2 second debounce
+      }, 2000)
     } catch (error) {
-      console.error('Error auto-saving to Supabase:', error)
+      console.error('Error auto-saving plan:', error)
       toast.error('Auto-save error', {
         description: 'Please use manual save (Cmd+S)',
       })
     }
-  }, [plan.id, supabase])
+  }, [plan.id])
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -149,19 +156,10 @@ export function EditorClient({ plan }: EditorClientProps) {
       const toastId = toast.loading('Saving to database...')
 
       // Sync all beds to Supabase
-      const result = await syncBedsToSupabase(supabase, plan.id, gardenBeds)
-
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to save beds')
-      }
-
-      // Update plan's updated_at timestamp
-      const { error: updateError } = await (supabase
-        .from('plans') as any)
-        .update({ updated_at: new Date().toISOString() })
-        .eq('id', plan.id)
-
-      if (updateError) throw updateError
+      await api(`/api/plans/${plan.id}/beds`, {
+        method: 'PUT',
+        body: JSON.stringify({ beds: gardenBeds }),
+      })
 
       toast.dismiss(toastId)
       toast.success('✅ Saved to database!', {
@@ -174,7 +172,7 @@ export function EditorClient({ plan }: EditorClientProps) {
         description: error instanceof Error ? error.message : 'Unknown error',
       })
     }
-  }, [plan.id, supabase, gardenBeds])
+  }, [plan.id, gardenBeds])
 
   if (loading) {
     return (

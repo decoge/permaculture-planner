@@ -1,4 +1,8 @@
-# Supabase Database Setup Instructions
+# Database setup
+
+This app now uses a normal Postgres database via `DATABASE_URL`. Run `npm run db:migrate`. The notes below are the old hosted-database instructions and the embedded API keys have been removed.
+
+# Supabase Database Setup Instructions (historical)
 
 Since we don't have the database password for automated setup, please follow these manual steps to set up your database:
 
@@ -53,7 +57,4 @@ The seeds will populate the crops table with 35+ common vegetables and their gro
 
 ## Connection Details
 
-Your project details:
-- URL: https://mrbiutqridfiqbttsgfg.supabase.co
-- Anon Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yYml1dHFyaWRmaXFidHRzZ2ZnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg1MjI0NTgsImV4cCI6MjA3NDA5ODQ1OH0.5VWAP0OKaVdA4SEgzrkXCJF1XtNAh3OLccTP1kWxb7c
-- Service Role Key: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1yYml1dHFyaWRmaXFidHRzZ2ZnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODUyMjQ1OCwiZXhwIjoyMDc0MDk4NDU4fQ.ujRWu0xKRoJcTsFPhJAFlaKe9tXfXWPOsDfA7RxDOR0
+Hosted project credentials were removed from this file. Use `DATABASE_URL` in `.env.local`.

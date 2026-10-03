@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
 import { authService } from '@/lib/auth/auth-service'
 import { gardenService } from '@/lib/garden/garden-service'
 import { showError, showSuccess, showLoading } from '@/components/ui/action-feedback'
@@ -59,8 +58,6 @@ export interface WizardResult {
 }
 
 export class WizardService {
-  private client = createClient()
-
   /**
    * Save wizard data and create initial garden plan
    */

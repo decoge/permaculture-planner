@@ -1,3 +1,7 @@
+# Database setup
+
+The app uses Postgres through `DATABASE_URL`. Apply `db/migrations` with `npm run db:migrate`. The Supabase project steps below are historical and are not required.
+
 # Supabase Database Setup Guide
 
 This guide provides multiple methods to set up your Supabase database for the Permaculture Planner application.

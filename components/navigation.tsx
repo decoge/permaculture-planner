@@ -6,13 +6,29 @@ import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS, AUTH_ITEMS } from '@/lib/config/app-config'
-import { Leaf, Menu, X, LogIn, UserPlus } from 'lucide-react'
+import { Leaf, Menu, X, LogIn, UserPlus, LayoutDashboard } from 'lucide-react'
 import { SubscriptionBadge } from '@/components/subscription/subscription-badge'
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [signedIn, setSignedIn] = useState(false)
   const pathname = usePathname()
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/auth/me')
+      .then((response) => response.json())
+      .then((data) => {
+        if (active) setSignedIn(Boolean(data.user))
+      })
+      .catch(() => {
+        if (active) setSignedIn(false)
+      })
+    return () => {
+      active = false
+    }
+  }, [pathname])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -81,19 +97,30 @@ export function Navigation() {
             {/* Desktop Auth Buttons */}
             <div className="hidden md:flex items-center gap-2">
               <SubscriptionBadge />
-              <Button variant="ghost" size="sm" className="gap-2 hover:bg-green-50" asChild>
-                <Link href="/auth/login">
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </Link>
-              </Button>
-              <Button size="sm" className="gap-2 bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden group" asChild>
-                <Link href="/auth/signup">
-                  <UserPlus className="h-4 w-4 relative z-10" />
-                  <span className="relative z-10">Get Started</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                </Link>
-              </Button>
+              {signedIn ? (
+                <Button size="sm" className="gap-2 bg-green-600 hover:bg-green-700 text-white" asChild>
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" className="gap-2 hover:bg-green-50" asChild>
+                    <Link href="/auth/login">
+                      <LogIn className="h-4 w-4" />
+                      Sign In
+                    </Link>
+                  </Button>
+                  <Button size="sm" className="gap-2 bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 relative overflow-hidden group" asChild>
+                    <Link href="/auth/signup">
+                      <UserPlus className="h-4 w-4 relative z-10" />
+                      <span className="relative z-10">Get Started</span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -138,18 +165,29 @@ export function Navigation() {
               )
             })}
             <div className="pt-4 border-t border-green-200/50 space-y-3">
-              <Button variant="outline" className="w-full justify-center gap-2 rounded-lg hover-nature hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 h-12 text-base" asChild>
-                <Link href="/auth/login">
-                  <LogIn className="h-4 w-4" />
-                  Sign In
-                </Link>
-              </Button>
-              <Button className="w-full justify-center gap-2 gradient-understory rounded-lg hover-lift h-12 text-base" asChild>
-                <Link href="/auth/signup">
-                  <UserPlus className="h-4 w-4" />
-                  Get Started
-                </Link>
-              </Button>
+              {signedIn ? (
+                <Button className="w-full justify-center gap-2 gradient-understory rounded-lg h-12 text-base" asChild>
+                  <Link href="/dashboard">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Dashboard
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button variant="outline" className="w-full justify-center gap-2 rounded-lg hover-nature hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 h-12 text-base" asChild>
+                    <Link href="/auth/login">
+                      <LogIn className="h-4 w-4" />
+                      Sign In
+                    </Link>
+                  </Button>
+                  <Button className="w-full justify-center gap-2 gradient-understory rounded-lg hover-lift h-12 text-base" asChild>
+                    <Link href="/auth/signup">
+                      <UserPlus className="h-4 w-4" />
+                      Get Started
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

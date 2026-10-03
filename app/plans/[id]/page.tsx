@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api/http'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -45,7 +45,6 @@ export default function PlanViewPage() {
   useEffect(() => {
     async function loadPlan() {
       try {
-        const supabase = createClient()
         const planId = params?.id as string
 
         if (!planId) {
@@ -54,33 +53,8 @@ export default function PlanViewPage() {
           return
         }
 
-        // Get current user
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-          router.push('/auth/login?redirect_to=/plans/' + planId)
-          return
-        }
-
-        // Fetch plan with site and beds
-        const { data: planData, error: planError } = await supabase
-          .from('plans')
-          .select(`
-            *,
-            site:sites(*),
-            beds(*)
-          `)
-          .eq('id', planId)
-          .single()
-
-        if (planError) {
-          console.error('Error loading plan:', planError)
-          setError('Failed to load plan')
-          setLoading(false)
-          return
-        }
-
-        setPlan(planData as any)
+        const planData = await api<Plan>(`/api/plans/${planId}`)
+        setPlan(planData)
         setLoading(false)
       } catch (err) {
         console.error('Unexpected error:', err)
@@ -100,17 +74,7 @@ export default function PlanViewPage() {
     }
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('plans')
-        .delete()
-        .eq('id', plan.id)
-
-      if (error) {
-        console.error('Error deleting plan:', error)
-        alert('Failed to delete plan')
-        return
-      }
+      await api(`/api/plans/${plan.id}`, { method: 'DELETE' })
 
       router.push('/dashboard')
     } catch (error) {

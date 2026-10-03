@@ -26,7 +26,7 @@ export function Footer() {
             </p>
             <div className="flex gap-3">
               <a
-                href="https://github.com"
+                href="https://github.com/decoge/permaculture-planner"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="p-2 rounded-lg bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:scale-110"
@@ -73,7 +73,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/editor" className="text-gray-600 hover:text-green-600 transition-colors">
+                <Link href="/demo" className="text-gray-600 hover:text-green-600 transition-colors">
                   Visual Designer
                 </Link>
               </li>
@@ -101,7 +101,7 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href="https://github.com/permaculture-planner"
+                  href="https://github.com/decoge/permaculture-planner"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-gray-600 hover:text-green-600 transition-colors"
@@ -117,8 +117,8 @@ export function Footer() {
             <h3 className="font-semibold text-gray-900 mb-4">Company</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/about" className="text-gray-600 hover:text-green-600 transition-colors">
-                  About Us
+                <Link href="/features" className="text-gray-600 hover:text-green-600 transition-colors">
+                  About
                 </Link>
               </li>
               <li>
@@ -132,7 +132,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-gray-600 hover:text-green-600 transition-colors">
+                <Link href="/support" className="text-gray-600 hover:text-green-600 transition-colors">
                   Contact
                 </Link>
               </li>
