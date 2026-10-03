@@ -344,7 +344,7 @@ export default function PlanViewPage() {
           </CardContent>
         </Card>
         </div>
-        <aside className="space-y-4 lg:sticky lg:top-4">
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-4">
           <PlanInsights summary={summary} />
           <SiteConditionPanels facts={siteFacts} />
           <GardenToolPanels tools={gardenTools} />
