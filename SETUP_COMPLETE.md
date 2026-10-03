@@ -4,16 +4,11 @@ Your permaculture planning application is now **FULLY OPERATIONAL** and ready to
 
 ## ✅ What's Working
 
-### Database (Supabase)
-- **URL**: https://mrbiutqridfiqbttsgfg.supabase.co
-- **Region**: AP Southeast 1 (Singapore)
-- **Tables**: All 11 tables created successfully
-  - profiles, sites, plans, beds, crops
-  - plantings, tasks, materials_estimates
-  - journal_entries, harvests, weather_cache
-- **Seed Data**: 46 crop varieties loaded across 10 plant families
-- **Row Level Security**: Enabled and configured
-- **Connection**: Using pooler connection for optimal performance
+### Database (Postgres)
+- Connection string: `DATABASE_URL` in `.env.local`
+- Schema: `db/migrations`, applied with `npm run db:migrate`
+- Accounts are email and password in the `users` table
+- Do not create a Supabase project for this app
 
 ### Application
 - **Running on**: http://localhost:3005
@@ -48,22 +43,19 @@ Your permaculture planning application is now **FULLY OPERATIONAL** and ready to
 Visit: http://localhost:3005/auth/signup
 
 ### 2. Create Your First Garden
-- Use the wizard: http://localhost:3005/wizard
-- Or visual editor: http://localhost:3005/editor
+- Use the wizard: http://localhost:3000/wizard
+- Saved plans open at http://localhost:3000/plans/[id]
 
 ### 3. Explore Features
-- **Dashboard**: http://localhost:3005/dashboard
+- **Dashboard**: http://localhost:3000/dashboard
 - **Crops Database**: 46 varieties with growing information
 - **Task Management**: Automated scheduling based on season
 - **Materials Lists**: Optimized shopping lists for your build
 
 ## 📋 Next Steps (Optional)
 
-### Configure Email Authentication
-1. Go to: https://supabase.com/dashboard/project/mrbiutqridfiqbttsgfg/auth/settings
-2. Enable email confirmations
-3. Set redirect URLs
-4. Configure SMTP if needed
+### Password reset
+Local development returns the reset link from the forgot-password API. Production writes that link to the server log. No email provider is configured.
 
 ### Deploy to Production
 ```bash
@@ -92,8 +84,7 @@ npm run type-check   # Run TypeScript checks
 
 ### Database Management
 ```bash
-node verify_database_setup.js   # Verify all tables exist
-node load_seeds_correct.js      # Reload crop data if needed
+npm run db:migrate
 ```
 
 ### Testing Connection
@@ -112,16 +103,14 @@ curl http://localhost:3005/api/health  # Test API
   - `/crops` - Crop rotation engine
   - `/scene` - Visual editor state
   - `/renderer` - SVG rendering
-- `/lib` - Utilities and Supabase client
-- `/supabase/migrations` - Database schema
+- `/lib/db` - Postgres queries
+- `/db/migrations` - SQL schema
 
 ## 🔐 Security Notes
 
-- Service role key is for development only
 - Never commit `.env.local` to git
-- Use environment variables in production
-- RLS policies protect user data
-- Authentication is required for all data access
+- Set `DATABASE_URL` and `SESSION_SECRET` in production
+- API routes only return rows owned by the signed-in user
 
 ## 📊 Database Statistics
 
@@ -147,6 +136,6 @@ Visit http://localhost:3005 to start planning your garden!
 
 ---
 
-**Built with**: Next.js 14, TypeScript, Tailwind CSS, Supabase, Zustand
+**Built with**: Next.js, TypeScript, Tailwind CSS, Postgres, Zustand
 **Database Password**: Stored securely (ChainBlockPP1!)
 **Region**: AP Southeast 1 (optimal for your location)

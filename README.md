@@ -15,7 +15,6 @@ A Next.js application that generates permaculture plans for raised-bed gardens o
 - **Horticulture Rules Engine**: Based on extension service research
 
 ### 🚧 In Progress
-- Visual layout editor with drag-and-drop beds
 - AI copilot for personalized advice
 - PDF export and sharing
 

@@ -44,9 +44,9 @@ Have an idea to make the tool better? [Create a feature request](https://github.
 ## Development Setup
 
 ### Prerequisites
-- Node.js 18+ and npm
+- Node.js 20.9+ and npm
 - Git
-- Supabase account (for backend features)
+- PostgreSQL 14+
 
 ### Getting Started
 
@@ -69,7 +69,7 @@ Have an idea to make the tool better? [Create a feature request](https://github.
 4. **Set up environment variables**
    ```bash
    cp .env.example .env.local
-   # Edit .env.local with your Supabase credentials
+   # Set DATABASE_URL and SESSION_SECRET, then run npm run db:migrate
    ```
 
 5. **Run development server**
@@ -147,7 +147,7 @@ permaculture-planner/
 │   ├── garden/         # Garden-specific components
 │   └── wizard/         # Setup wizard components
 ├── lib/                # Utilities and helpers
-│   ├── supabase/       # Database client
+│   ├── db/             # Postgres pool, migrations client, and queries
 │   ├── storage/        # Local storage utilities
 │   └── validation/     # Data validation schemas
 ├── hooks/              # Custom React hooks
