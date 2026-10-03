@@ -448,6 +448,15 @@ export async function getPlanDetail(userId: string, planId: string) {
     `SELECT * FROM materials_estimates WHERE plan_id = $1 ORDER BY created_at DESC LIMIT 1`,
     [planId]
   )
+  const harvests = await query(
+    `SELECT h.quantity, h.unit, h.notes, pl.variety
+     FROM harvests h
+     JOIN plantings pl ON pl.id = h.planting_id
+     JOIN beds b ON b.id = pl.bed_id
+     WHERE b.plan_id = $1
+     ORDER BY h.harvested_on`,
+    [planId]
+  )
 
   const bedsWithPlants = beds.map((bed) => ({
     ...bed,
@@ -487,6 +496,7 @@ export async function getPlanDetail(userId: string, planId: string) {
     sites: site,
     beds: bedsWithPlants,
     materials_estimates: materials,
+    harvests,
   }
 }
 

@@ -4,6 +4,16 @@ export interface SitePlantInput {
   variety?: unknown
   plantId?: unknown
   name?: unknown
+  family?: unknown
+  season?: unknown
+  year?: unknown
+}
+
+export interface HarvestInput {
+  quantity?: unknown
+  unit?: unknown
+  variety?: unknown
+  notes?: unknown
 }
 
 export interface SiteBedInput {
@@ -32,6 +42,8 @@ export interface SiteMaterialsInput {
   mulch_cuft?: unknown
   dripLineFt?: unknown
   drip_line_ft?: unknown
+  costEstimateCents?: unknown
+  cost_estimate_cents?: unknown
 }
 
 export interface SiteFactsInput {
@@ -47,6 +59,7 @@ export interface SiteFactsInput {
   constraints?: unknown
   beds?: SiteBedInput[]
   materials?: SiteMaterialsInput | null
+  harvests?: HarvestInput[] | null
 }
 
 export interface SiteFacts {
@@ -54,6 +67,11 @@ export interface SiteFacts {
   topography: string[]
   climate: string[]
   infrastructure: string[]
+  biodiversity: string[]
+  energy: string[]
+  community: string[]
+  economics: string[]
+  resilience: string[]
 }
 
 type Surface = 'soil' | 'hard' | 'rooftop' | 'concrete'
@@ -254,6 +272,73 @@ function quantityLine(label: string, value: unknown, unit: string): string {
     : `${label} is recorded as ${formatQuantity(recorded)} ${unit}.`
 }
 
+function recordedCategory(bed: SiteBedInput): string | null {
+  const notes = asRecord(bed.notes)
+  return recordedText(bed.elementCategory) || recordedText(notes?.elementCategory)
+}
+
+type Season = 'spring' | 'summer' | 'fall' | 'winter'
+
+function isSeason(value: string): value is Season {
+  return value === 'spring' || value === 'summer' || value === 'fall' || value === 'winter'
+}
+
+function seasonLabel(value: Season): string {
+  switch (value) {
+    case 'spring':
+      return 'spring'
+    case 'summer':
+      return 'summer'
+    case 'fall':
+      return 'fall'
+    case 'winter':
+      return 'winter'
+    default: {
+      const unexpected: never = value
+      return unexpected
+    }
+  }
+}
+
+function categoryPlural(value: PlantInfo['category']): string {
+  switch (value) {
+    case 'vegetable':
+      return 'vegetables'
+    case 'fruit':
+      return 'fruit'
+    case 'herb':
+      return 'herbs'
+    case 'flower':
+      return 'flowers'
+    case 'tree':
+      return 'trees'
+    case 'shrub':
+      return 'shrubs'
+    case 'groundcover':
+      return 'groundcovers'
+    case 'vine':
+      return 'vines'
+    default: {
+      const unexpected: never = value
+      return unexpected
+    }
+  }
+}
+
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names.join('')
+  if (names.length === 2) return `${names[0]} and ${names[1]}`
+  return `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`
+}
+
+function formatCents(cents: number): string {
+  const sign = cents < 0 ? '-' : ''
+  const absolute = Math.abs(cents)
+  const dollars = Math.floor(absolute / 100)
+  const remainder = Math.round(absolute % 100)
+  return `${sign}$${dollars}.${String(remainder).padStart(2, '0')}`
+}
+
 export function summarizeSiteFacts(input: SiteFactsInput): SiteFacts {
   const beds = input.beds || []
   const constraints = asRecord(input.constraints)
@@ -424,7 +509,165 @@ export function summarizeSiteFacts(input: SiteFactsInput): SiteFacts {
     infrastructure.push('No buildings, fences, or utility lines are saved on this plan.')
   }
 
-  return { soil, topography, climate, infrastructure }
+  const plantingCount = beds.reduce((sum, bed) => sum + plantsOn(bed).length, 0)
+  const species = [...seenPlants.keys()]
+  const families = new Set<string>()
+  const seasons = new Set<string>()
+  let missingFamily = false
+  for (const bed of beds) {
+    for (const plant of plantsOn(bed)) {
+      const family = recordedText(plant.family)
+      if (family) families.add(family)
+      else if (plantLabel(plant)) missingFamily = true
+      const season = recordedText(plant.season)
+      const year = recordedNumber(plant.year)
+      if (season) {
+        const label = isSeason(season) ? seasonLabel(season) : season
+        seasons.add(year === null ? label : `${label} ${formatQuantity(year)}`)
+      }
+    }
+  }
+
+  const biodiversity: string[] = []
+  if (species.length === 0) {
+    biodiversity.push('No plants are saved.')
+  } else {
+    biodiversity.push(`${plantingCount} plantings are saved.`)
+    biodiversity.push(`${species.length} species are saved: ${joinNames(species)}.`)
+  }
+  if (families.size > 0) {
+    biodiversity.push(`Saved plant family is recorded as ${[...families].join(', ')}.`)
+  }
+  if (missingFamily && families.size > 0) {
+    biodiversity.push('Plant family is not recorded for every planting.')
+  }
+  if (species.length > 0 && families.size === 0) {
+    biodiversity.push('Plant family is not recorded.')
+  }
+  const categories = new Map<string, string[]>()
+  for (const [name, plant] of seenPlants) {
+    if (!plant) {
+      biodiversity.push(`${name} is not in the plant library.`)
+      continue
+    }
+    const label = categoryPlural(plant.category)
+    const names = categories.get(label) || []
+    names.push(name)
+    categories.set(label, names)
+  }
+  for (const [label, names] of categories) {
+    biodiversity.push(`From the plant library, ${joinNames(names)} are ${label}.`)
+  }
+  const companionLines: string[] = []
+  for (const bed of beds) {
+    const named = plantsOn(bed).flatMap((plant) => {
+      const known = libraryPlant(plantLabel(plant))
+      return known ? [known] : []
+    })
+    const bedName = recordedText(bed.name) || 'this bed'
+    for (let i = 0; i < named.length; i += 1) {
+      for (let j = i + 1; j < named.length; j += 1) {
+        const left = named[i]
+        const right = named[j]
+        if (left.companions.includes(right.id) || right.companions.includes(left.id)) {
+          companionLines.push(`From the plant library, ${left.name} and ${right.name} are companions in ${bedName}.`)
+        }
+      }
+    }
+  }
+  biodiversity.push(...companionLines)
+  if (species.length > 0 && companionLines.length === 0) {
+    biodiversity.push('No companion pairs from the plant library share a bed.')
+  }
+  const habitat = beds
+    .filter((bed) => {
+      const category = recordedCategory(bed)
+      return category === 'animal' || category === 'waste'
+    })
+    .map(savedElements)
+    .filter((line): line is string => Boolean(line))
+  biodiversity.push(...habitat)
+  biodiversity.push('Wildlife, pollinators, native plants, and habitat corridors are not recorded.')
+
+  const energyElements = beds
+    .filter((bed) => recordedCategory(bed) === 'energy')
+    .map(savedElements)
+    .filter((line): line is string => Boolean(line))
+  const energy: string[] = [
+    'Energy use is not recorded.',
+    'Solar, wind, and thermal mass are not recorded.',
+  ]
+  for (const bed of beds) {
+    const name = recordedText(bed.name) || 'Bed'
+    const orientation = recordedText(bed.orientation)
+    if (orientation) energy.push(`${name} orientation is recorded as ${orientation}.`)
+  }
+  if (energyElements.length === 0) energy.push('No energy systems are saved on this plan.')
+  else energy.push(...energyElements)
+
+  const communityRecord = asRecord(constraints?.community)
+  const communityName = recordedText(constraints?.community)
+    || recordedText(communityRecord?.name)
+    || recordedText(communityRecord?.program)
+  const focus = Array.isArray(crops?.focus)
+    ? crops.focus.filter((item): item is string => typeof item === 'string' && item.trim() !== '')
+    : []
+  const community: string[] = [
+    communityName
+      ? `A community record is saved: ${communityName}.`
+      : 'Community programs, shared plots, volunteers, and teaching areas are not recorded.',
+    focus.length > 0
+      ? `Crop focus is recorded as ${focus.join(', ')}.`
+      : 'Crop focus is not recorded.',
+  ]
+  community.push(weekly === null
+    ? 'Weekly garden time is not recorded.'
+    : `Weekly garden time is recorded as ${formatQuantity(weekly)} minutes. That record does not name a community program.`)
+
+  const harvests = input.harvests || []
+  const economics: string[] = []
+  if (harvests.length === 0) {
+    economics.push('No harvests are recorded.')
+    economics.push('Yields are not recorded.')
+  } else {
+    for (const harvest of harvests) {
+      const crop = recordedText(harvest.variety) || 'A crop'
+      const quantity = recordedNumber(harvest.quantity)
+      const unit = recordedText(harvest.unit)
+      economics.push(quantity === null
+        ? `${titleCase(crop)} has a harvest record without a quantity.`
+        : `${titleCase(crop)} harvest is recorded as ${formatQuantity(quantity)}${unit ? ` ${unit}` : ''}.`)
+    }
+  }
+  economics.push('Prices are not recorded.')
+  const costCents = recordedNumber(materials?.costEstimateCents ?? materials?.cost_estimate_cents)
+  economics.push(costCents === null
+    ? 'Cost is not recorded.'
+    : `Cost is recorded as ${formatCents(costCents)}.`)
+  economics.push(weekly === null
+    ? 'Weekly garden time is not recorded.'
+    : `Weekly garden time is recorded as ${formatQuantity(weekly)} minutes.`)
+  economics.push('Labor cost is not recorded.')
+
+  const resilience: string[] = []
+  if (species.length === 0) resilience.push('No plants are saved.')
+  else resilience.push(`${species.length} species are saved: ${joinNames(species)}.`)
+  resilience.push(seasons.size > 0
+    ? `Plantings are recorded for ${[...seasons].join(', ')}.`
+    : 'Planting season is not recorded.')
+  resilience.push(columnWater
+    ? `Water source is recorded as ${columnWater}.`
+    : constraintWater
+      ? `Water source is recorded as ${constraintWater}.`
+      : 'Water source is not recorded.')
+  resilience.push(harvests.length === 0
+    ? 'No harvests are recorded.'
+    : harvests.length === 1
+      ? '1 harvest record is saved.'
+      : `${harvests.length} harvest records are saved.`)
+  resilience.push('Calories, stored food, and seed saving are not recorded.')
+
+  return { soil, topography, climate, infrastructure, biodiversity, energy, community, economics, resilience }
 }
 
 export function formatSiteFacts(facts: SiteFacts): string {
@@ -433,6 +676,11 @@ export function formatSiteFacts(facts: SiteFacts): string {
     ['Topography', facts.topography],
     ['Climate', facts.climate],
     ['Infrastructure', facts.infrastructure],
+    ['Biodiversity', facts.biodiversity],
+    ['Energy', facts.energy],
+    ['Community', facts.community],
+    ['Economics', facts.economics],
+    ['Resilience', facts.resilience],
   ]
   return sections.flatMap(([title, lines]) => [title, ...lines.map((line) => `- ${line}`), '']).join('\n').trim()
 }
@@ -452,6 +700,7 @@ export function siteFactsFromPlan(plan: {
   } | null
   beds?: SiteBedInput[]
   materials_estimates?: SiteMaterialsInput | null
+  harvests?: HarvestInput[] | null
 }): SiteFactsInput {
   const site = plan.site || {}
   return {
@@ -467,5 +716,6 @@ export function siteFactsFromPlan(plan: {
     constraints: site.constraints_json,
     beds: plan.beds,
     materials: plan.materials_estimates,
+    harvests: plan.harvests,
   }
 }

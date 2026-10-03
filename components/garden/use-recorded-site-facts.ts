@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api/http'
-import { SiteBedInput, SiteFacts, SiteMaterialsInput, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
+import { HarvestInput, SiteBedInput, SiteFacts, SiteMaterialsInput, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
 
 interface PlanFactResponse {
   site?: {
@@ -19,6 +19,7 @@ interface PlanFactResponse {
   } | null
   beds?: SiteBedInput[]
   materials_estimates?: SiteMaterialsInput | null
+  harvests?: HarvestInput[] | null
 }
 
 export function useRecordedSiteFacts(planId?: string): SiteFacts | null {
@@ -37,11 +38,17 @@ export function useRecordedSiteFacts(planId?: string): SiteFacts | null {
       })
       .catch(() => {
         if (!cancelled) {
+          const unavailable = ['The saved site could not be loaded.']
           setFacts({
-            soil: ['The saved site could not be loaded.'],
-            topography: ['The saved site could not be loaded.'],
-            climate: ['The saved site could not be loaded.'],
-            infrastructure: ['The saved site could not be loaded.'],
+            soil: unavailable,
+            topography: unavailable,
+            climate: unavailable,
+            infrastructure: unavailable,
+            biodiversity: unavailable,
+            energy: unavailable,
+            community: unavailable,
+            economics: unavailable,
+            resilience: unavailable,
           })
         }
       })

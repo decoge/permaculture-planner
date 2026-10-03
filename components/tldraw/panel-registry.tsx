@@ -195,7 +195,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'biodiversity',
     name: 'Biodiversity & Wildlife',
-    description: 'Habitat corridors, beneficial species, and ecological niches',
+    description: 'Saved species and plant-library categories',
     icon: Bird,
     category: 'permaculture',
     tier: 'premium',
@@ -222,7 +222,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'energy',
     name: 'Energy Systems',
-    description: 'Renewable energy, passive solar, heating, and cooling',
+    description: 'Saved energy elements and bed orientation',
     icon: Zap,
     category: 'permaculture',
     tier: 'pro',
@@ -309,7 +309,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'community',
     name: 'Community Spaces',
-    description: 'Shared gardens, education areas, and collaboration zones',
+    description: 'Community records saved on the plan',
     icon: Users,
     category: 'community',
     tier: 'premium',
@@ -318,7 +318,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'economics',
     name: 'Economics & Yields',
-    description: 'Production tracking, ROI calculations, and market analysis',
+    description: 'Recorded harvests, cost, and garden time',
     icon: DollarSign,
     category: 'community',
     tier: 'pro',
@@ -327,7 +327,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'resilience',
     name: 'Resilience & Food Security',
-    description: 'Caloric production, food security, and self-sufficiency metrics',
+    description: 'Saved species, season, and water source',
     icon: TrendingUp,
     category: 'community',
     tier: 'pro',

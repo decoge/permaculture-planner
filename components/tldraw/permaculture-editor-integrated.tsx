@@ -29,17 +29,15 @@ import { HolisticDashboardPanel } from './panels/holistic-dashboard-panel'
 import { RelationshipMapperPanel } from './panels/relationship-mapper-panel'
 import { LockedPanel } from '@/components/subscription/locked-panel'
 import { PanelSelector } from './panel-selector'
-import {
-  BiodiversityPanel,
-  EnergyPanel,
-  CommunityPanel,
-  EconomicsPanel,
-  ResiliencePanel
-} from './panels/placeholder-panel'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
+  BiodiversityPanel,
   ClimatePanel,
+  CommunityPanel,
+  EconomicsPanel,
+  EnergyPanel,
   InfrastructurePanel,
+  ResiliencePanel,
   SoilAnalysisPanel,
   TopographyPanel,
 } from '@/components/garden/site-condition-panels'
@@ -634,59 +632,43 @@ export function PermacultureEditorIntegrated({
 
               {/* ========== NEW PERMACULTURE DESIGN PANELS ========== */}
               <TabsContent value="biodiversity" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="biodiversity"
-                  featureName="Biodiversity & Wildlife"
-                  featureDescription="Plan habitat corridors, beneficial species, and ecological niches."
-                  requiredTier="premium"
-                >
-                  <BiodiversityPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <BiodiversityPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="energy" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="energy"
-                  featureName="Energy Systems"
-                  featureDescription="Integrate renewable energy, passive solar design, and thermal management."
-                  requiredTier="pro"
-                >
-                  <EnergyPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <EnergyPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
-              {/* ========== NEW COMMUNITY & ECONOMICS PANELS ========== */}
               <TabsContent value="community" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="community"
-                  featureName="Community Spaces"
-                  featureDescription="Design shared gardens, education areas, and collaborative zones."
-                  requiredTier="premium"
-                >
-                  <CommunityPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <CommunityPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="economics" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="economics"
-                  featureName="Economics & Yields"
-                  featureDescription="Track production, calculate ROI, and analyze market opportunities."
-                  requiredTier="pro"
-                >
-                  <EconomicsPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <EconomicsPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="resilience" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="resilience"
-                  featureName="Resilience & Food Security"
-                  featureDescription="Calculate caloric production, food security, and self-sufficiency metrics."
-                  requiredTier="pro"
-                >
-                  <ResiliencePanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <ResiliencePanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
             </Tabs>
           )}

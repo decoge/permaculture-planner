@@ -23,9 +23,9 @@ const gardenPlan = {
       path_clearance_in: '24.0',
       notes: JSON.stringify({ elementCategory: 'bed' }),
       plantings: [
-        { variety: 'lettuce' },
-        { variety: 'tomato' },
-        { variety: 'carrot' },
+        { variety: 'lettuce', family: 'Other', season: 'fall', year: 2026 },
+        { variety: 'tomato', family: 'Other', season: 'fall', year: 2026 },
+        { variety: 'carrot', family: 'Other', season: 'fall', year: 2026 },
       ],
     },
     {
@@ -36,7 +36,10 @@ const gardenPlan = {
       wicking: false,
       trellis: false,
       path_clearance_in: 24,
-      plantings: [{ variety: 'lettuce' }, { variety: 'tomato' }],
+      plantings: [
+        { variety: 'lettuce', family: 'Other', season: 'fall', year: 2026 },
+        { variety: 'tomato', family: 'Other', season: 'fall', year: 2026 },
+      ],
     },
   ],
   materials: null,
@@ -80,9 +83,44 @@ describe('summarizeSiteFacts', () => {
       'Salad Greens: height 12 in, path clearance 24 in, trellis no, wicking no.',
       'No buildings, fences, or utility lines are saved on this plan.',
     ]))
+    expect(facts.biodiversity).toEqual(expect.arrayContaining([
+      '5 plantings are saved.',
+      '3 species are saved: Lettuce, Tomato, and Carrot.',
+      'Saved plant family is recorded as Other.',
+      'From the plant library, Lettuce, Tomato, and Carrot are vegetables.',
+      'From the plant library, Lettuce and Carrot are companions in Salad Greens.',
+      'From the plant library, Tomato and Carrot are companions in Salad Greens.',
+      'Wildlife, pollinators, native plants, and habitat corridors are not recorded.',
+    ]))
+    expect(facts.energy).toEqual(expect.arrayContaining([
+      'Energy use is not recorded.',
+      'Solar, wind, and thermal mass are not recorded.',
+      'Salad Greens orientation is recorded as NS.',
+      'No energy systems are saved on this plan.',
+    ]))
+    expect(facts.community).toEqual(expect.arrayContaining([
+      'Community programs, shared plots, volunteers, and teaching areas are not recorded.',
+      'Crop focus is not recorded.',
+      'Weekly garden time is recorded as 60 minutes. That record does not name a community program.',
+    ]))
+    expect(facts.economics).toEqual(expect.arrayContaining([
+      'No harvests are recorded.',
+      'Yields are not recorded.',
+      'Prices are not recorded.',
+      'Cost is not recorded.',
+      'Labor cost is not recorded.',
+    ]))
+    expect(facts.resilience).toEqual(expect.arrayContaining([
+      '3 species are saved: Lettuce, Tomato, and Carrot.',
+      'Plantings are recorded for fall 2026.',
+      'Water source is recorded as a spigot.',
+      'Calories, stored food, and seed saving are not recorded.',
+    ]))
     expect(text).not.toContain('organic matter')
     expect(text).not.toContain('swale')
     expect(text).not.toContain('Coming Soon')
+    expect(text).not.toContain('$')
+    expect(text).not.toContain('kcal')
   })
 
   test('says when the site has no recorded facts', () => {
@@ -92,9 +130,13 @@ describe('summarizeSiteFacts', () => {
     expect(text).toContain('USDA zone is not recorded.')
     expect(text).toContain('Water source is not recorded.')
     expect(text).toContain('Rainfall is not recorded.')
+    expect(text).toContain('Yields are not recorded.')
+    expect(text).toContain('Energy use is not recorded.')
+    expect(text).toContain('Calories, stored food, and seed saving are not recorded.')
     expect(text).not.toContain('0%')
     expect(text).not.toContain('spigot')
     expect(text).not.toContain('8b')
+    expect(text).not.toContain('$')
   })
 
   test('counts days between saved frost dates and keeps a saved structure', () => {
@@ -116,5 +158,23 @@ describe('summarizeSiteFacts', () => {
       'Compost is not recorded.',
       'Mulch is recorded as 2 cu ft.',
     ]))
+  })
+
+  test('keeps a saved harvest, cost, energy element, and community name', () => {
+    const facts = summarizeSiteFacts({
+      constraints: { community: { name: 'Tool library' } },
+      beds: [{ name: 'Panel', elementCategory: 'energy' }],
+      materials: { cost_estimate_cents: 1250 },
+      harvests: [{ variety: 'tomato', quantity: '2', unit: 'lb' }],
+    })
+    expect(facts.energy).toContain('Panel is recorded as energy.')
+    expect(facts.energy).not.toContain('No energy systems are saved on this plan.')
+    expect(facts.community).toContain('A community record is saved: Tool library.')
+    expect(facts.economics).toEqual(expect.arrayContaining([
+      'Tomato harvest is recorded as 2 lb.',
+      'Cost is recorded as $12.50.',
+    ]))
+    expect(facts.economics).not.toContain('Yields are not recorded.')
+    expect(facts.resilience).toContain('1 harvest record is saved.')
   })
 })
