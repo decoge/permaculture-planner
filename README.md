@@ -1,6 +1,6 @@
 # Permaculture Planner - Raised Bed Garden Design App
 
-A Next.js 14 application that generates AI-powered permaculture plans for raised-bed gardens on any surface (soil, gravel, concrete, or rooftops). Based on research-backed horticulture principles from agricultural extension services.
+A Next.js application that generates permaculture plans for raised-bed gardens on any surface (soil, gravel, concrete, or rooftops). Based on research-backed horticulture principles from agricultural extension services.
 
 ## Features
 
@@ -15,15 +15,14 @@ A Next.js 14 application that generates AI-powered permaculture plans for raised
 - **Horticulture Rules Engine**: Based on extension service research
 
 ### 🚧 In Progress
-- Visual layout editor with drag-and-drop beds
 - AI copilot for personalized advice
 - PDF export and sharing
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
-- **Database**: Supabase (PostgreSQL)
+- **Database**: PostgreSQL (`DATABASE_URL`)
 - **Styling**: Tailwind CSS + shadcn/ui components
 - **State Management**: Zustand
 - **Data Fetching**: TanStack Query (React Query)
@@ -32,15 +31,15 @@ A Next.js 14 application that generates AI-powered permaculture plans for raised
 
 ### Prerequisites
 
-- Node.js 18+ 
+- Node.js 20.9+
 - npm or yarn
-- Supabase account (for database)
+- PostgreSQL 14+
 
 ### Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/permaculture-planner.git
+git clone https://github.com/decoge/permaculture-planner.git
 cd permaculture-planner
 ```
 
@@ -54,16 +53,19 @@ npm install
 cp .env.local.example .env.local
 ```
 
-Edit `.env.local` with your Supabase credentials:
+Edit `.env.local` with a Postgres connection string and a session secret:
 ```
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+DATABASE_URL=postgres://planner:planner@localhost:5432/permaculture
+SESSION_SECRET=replace-with-a-long-random-string
 ```
 
 4. Set up the database:
 
-Run the SQL migration in `supabase/migrations/` in your Supabase SQL editor.
+```bash
+npm run db:migrate
+```
+
+Accounts are email and password, stored in Postgres. Set `ADMIN_EMAIL` before signup, or run `npm run db:make-admin -- you@example.com` and sign in again.
 
 5. Start the development server:
 ```bash
@@ -87,7 +89,7 @@ permaculture-planner/
 ├── lib/                   # Core logic
 │   ├── algorithms/        # Layout, materials, rotation engines
 │   ├── data/              # Crop database and horticulture rules
-│   ├── supabase/          # Database client
+│   ├── db/                # Postgres pool and queries
 │   └── utils/             # Utility functions
 └── types/                 # TypeScript type definitions
 ```

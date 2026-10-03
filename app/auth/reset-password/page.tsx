@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { useState, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Leaf, Lock, ArrowLeft, CheckCircle } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { api, ApiError } from '@/lib/api/http'
 
 function ResetPasswordContent() {
   const [password, setPassword] = useState('')
@@ -17,20 +17,12 @@ function ResetPasswordContent() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-  const [isTokenValid, setIsTokenValid] = useState(false)
+  const [email, setEmail] = useState('')
+  const [resetUrl, setResetUrl] = useState<string | null>(null)
+  const [requestSent, setRequestSent] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
-
-  useEffect(() => {
-    // Check if we have an access token from the password reset email
-    const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const accessToken = hashParams.get('access_token')
-    const type = hashParams.get('type')
-
-    if (accessToken && type === 'recovery') {
-      setIsTokenValid(true)
-    }
-  }, [searchParams])
+  const token = searchParams.get('token')
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,17 +44,10 @@ function ResetPasswordContent() {
     }
 
     try {
-      const supabase = createClient()
-
-      const { error } = await supabase.auth.updateUser({
-        password: password
+      await api('/api/auth/reset-password', {
+        method: 'POST',
+        body: JSON.stringify({ token, password }),
       })
-
-      if (error) {
-        setError(error.message)
-        setLoading(false)
-        return
-      }
 
       setSuccess(true)
 
@@ -76,24 +61,77 @@ function ResetPasswordContent() {
     }
   }
 
-  if (!isTokenValid) {
+  const handleRequestReset = async (event: React.FormEvent) => {
+    event.preventDefault()
+    setLoading(true)
+    setError(null)
+    try {
+      const result = await api<{ message: string; resetUrl?: string }>('/api/auth/forgot-password', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      })
+      setRequestSent(true)
+      setResetUrl(result.resetUrl || null)
+    } catch (requestError) {
+      setError(requestError instanceof ApiError ? requestError.message : 'Could not start password reset')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!token) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Invalid Reset Link</CardTitle>
-            <CardDescription>This password reset link is invalid or has expired</CardDescription>
+            <CardTitle>Reset your password</CardTitle>
+            <CardDescription>
+              Enter your account email. In local development the reset link appears here. In production it is written to the server log until email delivery is configured.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-600 mb-4">
-              Please request a new password reset link from the login page.
-            </p>
-            <Button className="w-full bg-green-600 hover:bg-green-700" asChild>
-              <Link href="/auth/login">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Login
-              </Link>
-            </Button>
+            <form onSubmit={handleRequestReset} className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              {requestSent && (
+                <Alert>
+                  <AlertDescription>
+                    If an account exists for that email, you can set a new password from the reset link.
+                    {resetUrl && (
+                      <>
+                        {' '}
+                        <Link href={resetUrl} className="text-green-700 underline">
+                          Open the reset link
+                        </Link>
+                      </>
+                    )}
+                  </AlertDescription>
+                </Alert>
+              )}
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  required
+                  disabled={loading}
+                />
+              </div>
+              <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
+                {loading ? 'Preparing link...' : 'Send reset link'}
+              </Button>
+              <Button variant="ghost" className="w-full" asChild>
+                <Link href="/auth/login">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Login
+                </Link>
+              </Button>
+            </form>
           </CardContent>
         </Card>
       </div>

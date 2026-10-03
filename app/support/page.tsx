@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
-  CheckCircle, Star, Heart, Users, Github,
+  CheckCircle, Star, Heart, Users,
   Leaf, Code, Globe, Lock, BookOpen,
   GitFork, MessageCircle, Coffee, Award,
   Sparkles, Share2, Download, Zap, Shield,

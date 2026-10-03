@@ -15,24 +15,12 @@ function VerifyEmailContent() {
 
   useEffect(() => {
     // Check for confirmation tokens in URL
-    const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const accessToken = hashParams.get('access_token')
-    const type = hashParams.get('type')
-
-    if (accessToken && type === 'signup') {
-      // Email verified successfully
-      setStatus('success')
-      setMessage('Your email has been verified successfully!')
-
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 2000)
-    } else {
-      // Invalid or expired verification link
-      setStatus('error')
-      setMessage('This verification link is invalid or has expired.')
-    }
+    setStatus('success')
+    setMessage('Your account is ready as soon as you sign up. Open the dashboard to continue.')
+    const timer = setTimeout(() => {
+      router.push('/dashboard')
+    }, 2000)
+    return () => clearTimeout(timer)
   }, [router, searchParams])
 
   return (

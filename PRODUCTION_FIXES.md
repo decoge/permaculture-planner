@@ -1,5 +1,7 @@
 # Production Readiness Fixes - Complete
 
+> Historical checklist. Production setup is Postgres via `DATABASE_URL` and `SESSION_SECRET`. See `SETUP.md` and `PRODUCTION_REQUIREMENTS.md`. Do not create a Supabase project.
+
 ## ✅ All Critical Issues Fixed
 
 This document summarizes all production readiness fixes applied to the Permaculture Planner application.

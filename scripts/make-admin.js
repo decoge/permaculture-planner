@@ -1,72 +1,38 @@
-#!/usr/bin/env node
+const { Client } = require('pg')
 
-/**
- * Script to make a user an admin
- * Usage: node scripts/make-admin.js <user-email>
- */
-
-const { createClient } = require('@supabase/supabase-js')
-require('dotenv').config({ path: '.env.local' })
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-if (!supabaseUrl || !supabaseServiceKey) {
-  console.error('Error: Missing Supabase credentials')
-  console.error('Make sure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set in .env.local')
+const email = process.argv[2]
+if (!email) {
+  console.error('Usage: node scripts/make-admin.js user@example.com')
   process.exit(1)
 }
 
-const userEmail = process.argv[2]
-
-if (!userEmail) {
-  console.error('Usage: node scripts/make-admin.js <user-email>')
+if (!process.env.DATABASE_URL) {
+  console.error('DATABASE_URL is not set')
   process.exit(1)
 }
 
-async function makeAdmin() {
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
-
+async function main() {
+  const client = new Client({ connectionString: process.env.DATABASE_URL })
+  await client.connect()
   try {
-    // Find user by email
-    const { data: profile, error: findError } = await supabase
-      .from('profiles')
-      .select('id, email, is_admin')
-      .eq('email', userEmail)
-      .single()
-
-    if (findError) {
-      console.error('Error finding user:', findError.message)
+    const result = await client.query(
+      `UPDATE users
+       SET is_admin = TRUE
+       WHERE email = $1
+       RETURNING id, email`,
+      [email.trim().toLowerCase()]
+    )
+    if (!result.rowCount) {
+      console.error(`No user found for ${email}`)
       process.exit(1)
     }
-
-    if (!profile) {
-      console.error(`User not found: ${userEmail}`)
-      process.exit(1)
-    }
-
-    if (profile.is_admin) {
-      console.log(`User ${userEmail} is already an admin`)
-      process.exit(0)
-    }
-
-    // Update user to admin
-    const { error: updateError } = await supabase
-      .from('profiles')
-      .update({ is_admin: true })
-      .eq('id', profile.id)
-
-    if (updateError) {
-      console.error('Error updating user:', updateError.message)
-      process.exit(1)
-    }
-
-    console.log(`✓ Successfully made ${userEmail} an admin`)
-    console.log(`They can now access the admin dashboard at /admin`)
-  } catch (error) {
-    console.error('Unexpected error:', error)
-    process.exit(1)
+    console.log(`Admin granted to ${result.rows[0].email}. Sign in again so the session picks it up.`)
+  } finally {
+    await client.end()
   }
 }
 
-makeAdmin()
+main().catch((error) => {
+  console.error(error)
+  process.exit(1)
+})

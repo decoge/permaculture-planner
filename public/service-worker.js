@@ -46,7 +46,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   // Network first strategy for API calls
-  if (request.url.includes('/api/') || request.url.includes('supabase')) {
+  if (request.url.includes('/api/')) {
     event.respondWith(
       fetch(request)
         .then((response) => {

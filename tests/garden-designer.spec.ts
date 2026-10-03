@@ -343,7 +343,7 @@ test.describe('Garden Designer Performance', () => {
 
     // Test that interactions remain smooth
     await page.click('button:has-text("Select")')
-    await page.click('path[fill="#f0fdf4"]').first()
+    await page.locator('path[fill="#f0fdf4"]').first().click()
 
     // Should select without lag
     await expect(page.locator('circle[stroke="#3b82f6"]').first()).toBeVisible({ timeout: 1000 })

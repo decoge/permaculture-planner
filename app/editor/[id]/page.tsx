@@ -1,33 +1,24 @@
-import { createServerClientReadOnly } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { requireUser } from '@/lib/auth/guard'
+import { getPlanDetail } from '@/lib/db/gardens'
 import { EditorClient } from './editor-client'
 
-export default async function EditorPage({ params }: { params: { id: string } }) {
-  const supabase = await createServerClientReadOnly()
-  const { data: { user } } = await supabase.auth.getUser()
+export const dynamic = 'force-dynamic'
+
+export default async function EditorPage({
+  params,
+}: {
+  params: { id: string } | Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const user = await requireUser()
 
   if (!user) {
     redirect('/auth/login')
   }
 
-  // Fetch plan with all related data
-  const { data: plan, error } = await (supabase as any)
-    .from('plans')
-    .select(`
-      *,
-      sites(*),
-      beds(*),
-      materials_estimates(*)
-    `)
-    .eq('id', params.id)
-    .single()
-
-  if (error || !plan) {
-    redirect('/dashboard')
-  }
-
-  // Check ownership
-  if (plan.sites.user_id !== user.id) {
+  const plan = await getPlanDetail(user.id, id)
+  if (!plan) {
     redirect('/dashboard')
   }
 

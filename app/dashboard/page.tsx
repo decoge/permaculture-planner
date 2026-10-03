@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -15,7 +14,8 @@ import {
   Settings, LogOut, User, Grid3x3, BarChart, Map,
   Star, Heart, MessageCircle, Users, Award
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api/http'
+import { BedLayout } from '@/components/garden/bed-layout'
 import { Database } from '@/types/database.types'
 
 type Plan = Database['public']['Tables']['plans']['Row']
@@ -36,7 +36,6 @@ interface PlanWithStats extends Plan {
 }
 
 export default function DashboardPage() {
-  const router = useRouter()
   const [user, setUser] = useState<Database['public']['Tables']['users']['Row'] | null>(null)
   const [plans, setPlans] = useState<PlanWithStats[]>([])
   const [activeTab, setActiveTab] = useState('designs')
@@ -46,99 +45,11 @@ export default function DashboardPage() {
   useEffect(() => {
     async function loadUserData() {
       try {
-        const supabase = createClient()
-
-        // Get current user
-        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !authUser) {
-          router.push('/auth/login')
-          return
-        }
-
-        // Get or create user profile
-        const { data: userProfile, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', authUser.id)
-          .single()
-
-        if (userError && userError.code === 'PGRST116') {
-          // User doesn't exist, create profile
-          const { data: newUser, error: createError } = await supabase
-            .from('users')
-            .insert({
-              id: authUser.id,
-              email: authUser.email!,
-              name: authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'User'
-            } as any)
-            .select()
-            .single()
-
-          if (createError) {
-            setError('Failed to create user profile')
-            setLoading(false)
-            return
-          }
-          setUser(newUser)
-        } else if (userError) {
-          setError('Failed to load user data')
-          setLoading(false)
-          return
-        } else {
-          setUser(userProfile)
-        }
-
-        // First fetch user's sites
-        const { data: sitesData, error: sitesError } = await supabase
-          .from('sites')
-          .select('id')
-          .eq('user_id', authUser.id)
-
-        if (sitesError) {
-          console.error('Error fetching sites:', sitesError)
-          setError('Failed to load sites')
-          setLoading(false)
-          return
-        }
-
-        const siteIds = (sitesData as any[])?.map(s => s.id) || []
-
-        // Fetch user's plans with related data
-        const { data: plansData, error: plansError } = await supabase
-          .from('plans')
-          .select(`
-            *,
-            site:sites(*),
-            beds(*),
-            materials_estimates(*)
-          `)
-          .in('site_id', siteIds)
-          .order('created_at', { ascending: false })
-
-        if (plansError) {
-          console.error('Error fetching plans:', plansError)
-          setError('Failed to load plans')
-        } else {
-          // Calculate stats for each plan
-          const plansWithStats: PlanWithStats[] = (plansData || []).map((plan: any) => {
-            const beds = plan.beds || []
-            const totalArea = beds.reduce((sum: number, bed: Bed) =>
-              sum + (bed.length_ft * bed.width_ft), 0
-            )
-
-            return {
-              ...plan,
-              stats: {
-                plants: Math.floor(totalArea * 2), // Rough estimate: 2 plants per sq ft
-                varieties: Math.min(beds.length * 3, 20), // 3 varieties per bed, max 20
-                area: totalArea,
-                beds: beds.length
-              }
-            }
-          })
-          setPlans(plansWithStats)
-        }
+        const data = await api<{ user: Database['public']['Tables']['users']['Row']; plans: PlanWithStats[] }>(
+          '/api/dashboard'
+        )
+        setUser(data.user)
+        setPlans(data.plans || [])
 
         setLoading(false)
       } catch (error) {
@@ -149,13 +60,12 @@ export default function DashboardPage() {
     }
 
     loadUserData()
-  }, [router])
+  }, [])
 
   const handleLogout = async () => {
     try {
-      const supabase = createClient()
-      await supabase.auth.signOut()
-      router.push('/auth/login')
+      await api('/api/auth/logout', { method: 'POST' })
+      window.location.assign('/auth/login')
     } catch (error) {
       console.error('Error signing out:', error)
     }
@@ -167,17 +77,7 @@ export default function DashboardPage() {
     }
 
     try {
-      const supabase = createClient()
-      const { error } = await supabase
-        .from('plans')
-        .delete()
-        .eq('id', id)
-
-      if (error) {
-        console.error('Error deleting plan:', error)
-        setError('Failed to delete plan')
-        return
-      }
+      await api(`/api/plans/${id}`, { method: 'DELETE' })
 
       // Remove from local state
       setPlans(plans.filter(p => p.id !== id))
@@ -292,7 +192,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <Button className="bg-green-600 hover:bg-green-700" asChild>
-              <Link href="/demo">
+              <Link href="/wizard">
                 <Plus className="h-4 w-4 mr-2" />
                 New Design
               </Link>
@@ -367,7 +267,7 @@ export default function DashboardPage() {
                   <h3 className="text-xl font-semibold mb-2">No designs yet</h3>
                   <p className="text-gray-600 mb-6">Start creating your first permaculture system</p>
                   <Button className="bg-green-600 hover:bg-green-700" asChild>
-                    <Link href="/demo">
+                    <Link href="/wizard">
                       <Plus className="h-4 w-4 mr-2" />
                       Create Your First Design
                     </Link>
@@ -378,10 +278,8 @@ export default function DashboardPage() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map((plan, index) => (
                   <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow opacity-0 animate-scale-in" style={{ animationDelay: `${0.7 + index * 0.1}s`, animationFillMode: 'forwards' }}>
-                    <div className="h-48 bg-gradient-to-br from-green-100 to-emerald-100 relative">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Trees className="h-16 w-16 text-green-600/30" />
-                      </div>
+                    <div className="h-48 bg-emerald-50 relative">
+                      <BedLayout beds={plan.beds} compact className="absolute inset-0" />
                       <Badge className="absolute top-3 right-3">
                         {plan.stats.beds} beds
                       </Badge>
@@ -444,35 +342,30 @@ export default function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Plans saved to your account</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <Plus className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">Created new permaculture design</p>
-                    <p className="text-sm text-gray-600">2 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Award className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">Earned "First Garden" achievement</p>
-                    <p className="text-sm text-gray-600">Yesterday</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Star className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">Reached Level 2</p>
-                    <p className="text-sm text-gray-600">3 days ago</p>
-                  </div>
-                </div>
+                {plans.length === 0 ? (
+                  <p className="text-sm text-gray-600">No saved plans yet. Start with the garden wizard.</p>
+                ) : (
+                  plans.map((plan) => (
+                    <Link
+                      key={plan.id}
+                      href={`/plans/${plan.id}`}
+                      className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-green-50"
+                    >
+                      <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <Plus className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{plan.name}</p>
+                        <p className="text-sm text-gray-600">
+                          Saved {new Date(plan.created_at).toLocaleDateString()} · {plan.stats.beds} beds · {plan.stats.plants} plants
+                        </p>
+                      </div>
+                    </Link>
+                  ))
+                )}
               </CardContent>
             </Card>
           </TabsContent>

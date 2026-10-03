@@ -213,22 +213,24 @@ export class ElementShapeUtil extends BaseBoxShapeUtil<ElementShape> {
     )
   }
 
-  indicator(shape: ElementShape) {
+  override getIndicatorPath(shape: ElementShape) {
     const { w, h, pointsJson, subtype } = shape.props
     const points = this.parsePoints(pointsJson)
     const style = ELEMENT_STYLES[subtype]
 
     if (points.length > 2) {
-      const pathData = this.pointsToPath(points)
-      return <path d={pathData} />
+      return new Path2D(this.pointsToPath(points))
     }
 
+    const path = new Path2D()
     if (style?.defaultShape === 'circle') {
       const radius = Math.min(w, h) / 2
-      return <circle cx={0} cy={0} r={radius} />
+      path.arc(w / 2, h / 2, radius, 0, Math.PI * 2)
+      return path
     }
 
-    return <rect width={w} height={h} rx={4} ry={4} />
+    path.rect(0, 0, w, h)
+    return path
   }
 
   // Helper methods

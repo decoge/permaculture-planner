@@ -6,7 +6,9 @@ import {
   Circle2d,
   Geometry2d,
   SVGContainer,
+  HTMLContainer,
 } from 'tldraw'
+import { FittedSvgText } from '@/components/tldraw/fitted-svg-text'
 
 /**
  * PlantShape represents individual plants within garden beds
@@ -90,70 +92,59 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
    * Render the plant shape
    */
   component(shape: PlantShape) {
-    const { radius, plantName, emoji, color, spacing } = shape.props
+    const { radius, plantName, emoji, color } = shape.props
+    const storedSize = shape.meta.fontSize
+    const storedWidth = shape.meta.labelMaxWidth
+    const maxSize = typeof storedSize === 'number' && storedSize > 0 ? storedSize : 10
+    const maxWidth = typeof storedWidth === 'number' && storedWidth > 0
+      ? storedWidth
+      : Math.max(radius * 2, 8)
 
     return (
-      <SVGContainer>
-        {/* Spacing guide circle (dashed, subtle) */}
-        <circle
-          cx={0}
-          cy={0}
-          r={spacing * 2.5} // Convert spacing to visual radius
-          fill="none"
-          stroke={color}
-          strokeWidth={1}
-          strokeDasharray="4 4"
-          opacity={0.2}
-        />
+      <>
+        <SVGContainer>
+          <circle
+            cx={0}
+            cy={0}
+            r={radius}
+            fill={color}
+            fillOpacity={0.9}
+            stroke="#fff"
+            strokeWidth={1}
+          />
 
-        {/* Main plant circle */}
-        <circle
-          cx={0}
-          cy={0}
-          r={radius}
-          fill={color}
-          fillOpacity={0.9}
-          stroke="#fff"
-          strokeWidth={2}
-        />
-
-        {/* Emoji or plant icon */}
-        {emoji && (
-          <text
+          {emoji && (
+            <text
+              x={0}
+              y={0}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={Math.max(radius * 0.9, 3)}
+              style={{ pointerEvents: 'none', userSelect: 'none' }}
+            >
+              {emoji}
+            </text>
+          )}
+        </SVGContainer>
+        <HTMLContainer>
+          <FittedSvgText
+            text={plantName}
             x={0}
-            y={0}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={radius * 1.2}
-            style={{ pointerEvents: 'none', userSelect: 'none' }}
-          >
-            {emoji}
-          </text>
-        )}
-
-        {/* Plant name label (below the circle) */}
-        <text
-          x={0}
-          y={radius + 15}
-          textAnchor="middle"
-          fill="currentColor"
-          fontSize={10}
-          fontWeight="500"
-          opacity={0.8}
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
-        >
-          {plantName}
-        </text>
-      </SVGContainer>
+            y={radius + 2}
+            maxWidth={maxWidth}
+            maxSize={maxSize}
+            fontWeight={500}
+            label="plant"
+          />
+        </HTMLContainer>
+      </>
     )
   }
 
-  /**
-   * Selection indicator
-   */
-  indicator(shape: PlantShape) {
-    const { radius } = shape.props
-    return <circle cx={0} cy={0} r={radius} />
+  override getIndicatorPath(shape: PlantShape) {
+    const path = new Path2D()
+    path.arc(0, 0, shape.props.radius, 0, Math.PI * 2)
+    return path
   }
 
   /**

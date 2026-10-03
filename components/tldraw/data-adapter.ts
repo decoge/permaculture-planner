@@ -1,7 +1,16 @@
 import { createShapeId, TLShape } from 'tldraw'
 import { GardenBed, PlantedItem } from '@/lib/garden/garden-types'
+import { placeBedPoints } from '@/lib/garden/bed-geometry'
+import { bedLabelWidth, placePlantsInBed } from '@/lib/garden/plant-label-layout'
 import { BedShape } from './shapes/bed-shape'
 import { PlantShape } from './shapes/plant-shape'
+
+/** Stable garden id stored on a tldraw shape, without the `shape:` prefix. */
+export function gardenIdFromShape(shape: { id: string; meta?: unknown }): string {
+  const meta = shape.meta as { gardenId?: unknown } | undefined
+  if (typeof meta?.gardenId === 'string' && meta.gardenId.length > 0) return meta.gardenId
+  return shape.id.startsWith('shape:') ? shape.id.slice('shape:'.length) : shape.id
+}
 
 /**
  * DataAdapter converts between legacy GardenBed format and tldraw shapes
@@ -44,6 +53,7 @@ export class DataAdapter {
         },
         meta: {
           originalFill: bed.fill,
+          gardenId: bed.id,
           // Serialize metadata to ensure JSON-serializable .meta property
           ...(bed.metadata ? { metadataJson: JSON.stringify(bed.metadata) } : {}),
         },
@@ -54,11 +64,24 @@ export class DataAdapter {
 
       shapes.push(bedShape)
 
-      // Create plant shapes for plants in this bed
       if (bed.plants && bed.plants.length > 0) {
+        const width = bed.width || this.calculateWidth(bed.points)
+        const height = bed.height || this.calculateHeight(bed.points)
+        const spots = placePlantsInBed(
+          bed.plants.map((plant) => ({
+            id: plant.id,
+            name: this.getPlantName(plant.plantId),
+            x: plant.x,
+            y: plant.y,
+          })),
+          width,
+          height,
+        )
+        const spotById = new Map(spots.map((spot) => [spot.id, spot]))
         for (const plant of bed.plants) {
-          const plantShape = this.plantToShape(plant, bed)
-          shapes.push(plantShape)
+          const spot = spotById.get(plant.id)
+          if (!spot) continue
+          shapes.push(this.plantToShape(plant, bed, spot, bedLabelWidth(width)))
         }
       }
     }
@@ -82,12 +105,15 @@ export class DataAdapter {
     for (const bedShape of bedShapes) {
       // Find plants that belong to this bed (by spatial containment)
       const bedBounds = this.getShapeBounds(bedShape)
+      const bedId = gardenIdFromShape(bedShape)
       const bedPlants: PlantedItem[] = []
 
       for (const plantShape of plantShapes) {
-        if (this.isPlantInBed(plantShape, bedBounds)) {
+        const taggedBed = typeof plantShape.meta?.bedId === 'string' ? plantShape.meta.bedId : ''
+        const belongs = taggedBed === bedId || (!taggedBed && this.isPlantInBed(plantShape, bedBounds))
+        if (belongs) {
           bedPlants.push({
-            id: plantShape.id,
+            id: gardenIdFromShape(plantShape),
             plantId: plantShape.props.plantId,
             x: plantShape.x - bedBounds.x,
             y: plantShape.y - bedBounds.y,
@@ -98,33 +124,20 @@ export class DataAdapter {
         }
       }
 
-      // Parse points from JSON
-      const pointsJson = bedShape.props.pointsJson
-      let points = this.parsePoints(pointsJson)
-
-      // BUGFIX: Update points with current shape position
-      // When a shape is moved in the canvas, we need to translate the stored points to match
-      if (points.length > 0) {
-        const originalMinX = Math.min(...points.map(p => p.x))
-        const originalMinY = Math.min(...points.map(p => p.y))
-        const offsetX = bedShape.x - originalMinX
-        const offsetY = bedShape.y - originalMinY
-
-        // Only update if there's significant movement (avoid floating point precision issues)
-        if (Math.abs(offsetX) > 0.1 || Math.abs(offsetY) > 0.1) {
-          points = points.map(p => ({
-            x: p.x + offsetX,
-            y: p.y + offsetY
-          }))
-        }
-      }
+      const points = placeBedPoints(
+        this.parsePoints(bedShape.props.pointsJson),
+        bedShape.x,
+        bedShape.y,
+        bedShape.props.w,
+        bedShape.props.h,
+      )
 
       // Convert back to GardenBed
       const bed: GardenBed = {
-        id: bedShape.id,
+        id: bedId,
         name: bedShape.props.name,
-        points: points.length > 0 ? points : this.rectToPoints(bedShape.props.w, bedShape.props.h),
-        fill: (bedShape.meta as any)?.originalFill || '#e0f2e0',
+        points,
+        fill: (bedShape.meta as { originalFill?: string })?.originalFill || '#e0f2e0',
         stroke: bedShape.props.color,
         plants: bedPlants,
         width: bedShape.props.w,
@@ -161,17 +174,22 @@ export class DataAdapter {
   /**
    * Convert plant item to tldraw PlantShape
    */
-  private plantToShape(plant: PlantedItem, bed: GardenBed): PlantShape {
+  private plantToShape(
+    plant: PlantedItem,
+    bed: GardenBed,
+    spot: { x: number; y: number; radius: number; fontSize: number },
+    labelMaxWidth: number,
+  ): PlantShape {
     return {
       id: createShapeId(plant.id),
       type: 'plant',
-      x: this.getBedX(bed.points) + plant.x,
-      y: this.getBedY(bed.points) + plant.y,
+      x: this.getBedX(bed.points) + spot.x,
+      y: this.getBedY(bed.points) + spot.y,
       rotation: 0,
       isLocked: false,
       opacity: 1,
       props: {
-        radius: 20,
+        radius: spot.radius,
         plantId: plant.plantId,
         plantName: this.getPlantName(plant.plantId),
         emoji: this.getPlantEmoji(plant.plantId),
@@ -181,7 +199,11 @@ export class DataAdapter {
         spacing: 12,
         plantedDate: plant.plantedDate?.toISOString() || '',
       },
-      meta: {},
+      meta: {
+        bedId: bed.id,
+        fontSize: spot.fontSize,
+        labelMaxWidth,
+      },
       parentId: 'page:page' as any,
       index: 'a1' as any,
       typeName: 'shape',
@@ -234,18 +256,6 @@ export class DataAdapter {
       x: p.x - minX,
       y: p.y - minY,
     }))
-  }
-
-  /**
-   * Convert rectangle dimensions to points array
-   */
-  private rectToPoints(w: number, h: number): { x: number; y: number }[] {
-    return [
-      { x: 0, y: 0 },
-      { x: w, y: 0 },
-      { x: w, y: h },
-      { x: 0, y: h },
-    ]
   }
 
   /**

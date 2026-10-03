@@ -1,14 +1,15 @@
 'use client'
 
-import { Tldraw, Editor, TLShape } from 'tldraw'
+import { Tldraw, Editor } from 'tldraw'
 import 'tldraw/tldraw.css'
-import { useEffect, useState, useCallback, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useState, useCallback, useImperativeHandle, useRef, forwardRef } from 'react'
 import { permacultureShapes } from './shapes'
 import { permacultureTools } from './tools'
 import { PlantTool } from './tools/plant-tool'
 import { ElementTool } from './tools/element-tool'
 import { GardenBed } from '@/lib/garden/garden-types'
-import { dataAdapter } from './data-adapter'
+import { dataAdapter, gardenIdFromShape } from './data-adapter'
+import { bedLabelWidth, placePlantsInBed } from '@/lib/garden/plant-label-layout'
 import { CanvasErrorBoundary } from './canvas-error-boundary'
 import { PlantInfo } from '@/lib/data/plant-library'
 import { ElementSubtype, ElementCategory } from '@/lib/canvas-elements'
@@ -57,7 +58,11 @@ const PermacultureCanvasIntegratedInner = forwardRef<PermacultureCanvasHandle, P
   }, ref) => {
     const [editor, setEditor] = useState<Editor | null>(null)
     const [isInitialized, setIsInitialized] = useState(false)
-    const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null)
+    const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const hydratingRef = useRef(false)
+    const canPersistRef = useRef(false)
+    const onSaveRef = useRef(onSave)
+    onSaveRef.current = onSave
 
     /**
      * Expose editor and tool activation methods
@@ -112,68 +117,135 @@ const PermacultureCanvasIntegratedInner = forwardRef<PermacultureCanvasHandle, P
     }, [editor, selectedPlant, selectedElement])
 
     /**
-     * Load initial data
+     * Load initial data once. The parent mounts this canvas only after the plan
+     * has finished loading, so an empty list is a real empty plan.
      */
     useEffect(() => {
-      if (!editor || isInitialized || !initialData.length) return
+      if (!editor || isInitialized) return
 
+      hydratingRef.current = true
       try {
-        const shapes = dataAdapter.gardenBedsToShapes(initialData)
-        if (shapes.length > 0) {
-          editor.createShapes(shapes)
-          setTimeout(() => {
-            editor.zoomToFit({ animation: { duration: 300 } })
-          }, 100)
+        if (initialData.length > 0) {
+          const shapes = dataAdapter.gardenBedsToShapes(initialData)
+          if (shapes.length > 0) {
+            editor.createShapes(shapes)
+            setTimeout(() => {
+              editor.zoomToFit({ animation: { duration: 300 } })
+            }, 100)
+          }
         }
         setIsInitialized(true)
       } catch (error) {
         console.error('Failed to load initial data:', error)
+      } finally {
+        setTimeout(() => {
+          hydratingRef.current = false
+          canPersistRef.current = true
+        }, 0)
       }
     }, [editor, initialData, isInitialized])
 
     /**
-     * Auto-save changes
+     * Keep plants inside a bed when that bed is moved or resized.
      */
-    const handleSave = useCallback(
-      (shapes: TLShape[]) => {
-        if (!onSave || disableAutoSave) return
+    useEffect(() => {
+      if (!editor) return
 
-        if (saveTimeout) {
-          clearTimeout(saveTimeout)
-        }
+      let syncingPlants = false
+      const dispose = editor.sideEffects.registerAfterChangeHandler('shape', (prev, next) => {
+        if (syncingPlants || prev.type !== 'bed' || next.type !== 'bed') return
 
-        const timeout = setTimeout(() => {
-          try {
-            const gardenBeds = dataAdapter.shapesToGardenBeds(shapes)
-            onSave(gardenBeds)
-          } catch (error) {
-            console.error('Failed to save canvas data:', error)
+        const prevProps = prev.props as { w?: number; h?: number }
+        const nextProps = next.props as { w?: number; h?: number }
+        const prevW = prevProps.w || 1
+        const prevH = prevProps.h || 1
+        const scaleX = (nextProps.w || prevW) / prevW
+        const scaleY = (nextProps.h || prevH) / prevH
+        const moved = Math.abs(next.x - prev.x) > 0.01 || Math.abs(next.y - prev.y) > 0.01
+        const resized = Math.abs(scaleX - 1) > 0.01 || Math.abs(scaleY - 1) > 0.01
+        if (!moved && !resized) return
+
+        const bedId = gardenIdFromShape(next)
+        const plants = editor.getCurrentPageShapes().filter((shape) => {
+          return shape.type === 'plant' && shape.meta.bedId === bedId
+        })
+        if (plants.length === 0) return
+
+        syncingPlants = true
+        try {
+          if (resized) {
+            const ordered = plants.slice().sort((a, b) => a.y - b.y || a.x - b.x)
+            const spots = placePlantsInBed(
+              ordered.map((plant) => ({
+                id: plant.id,
+                name: String((plant.props as { plantName?: string }).plantName || 'Plant'),
+                x: plant.x - next.x,
+                y: plant.y - next.y,
+              })),
+              nextProps.w || prevW,
+              nextProps.h || prevH,
+            )
+            const spotById = new Map(spots.map((spot) => [spot.id, spot]))
+            editor.updateShapes(ordered.flatMap((plant) => {
+              const spot = spotById.get(plant.id)
+              if (!spot) return []
+              return [{
+                id: plant.id,
+                type: 'plant' as const,
+                x: next.x + spot.x,
+                y: next.y + spot.y,
+                props: { radius: spot.radius },
+                meta: {
+                  ...plant.meta,
+                  fontSize: spot.fontSize,
+                  labelMaxWidth: bedLabelWidth(nextProps.w || prevW),
+                },
+              }]
+            }))
+          } else {
+            editor.updateShapes(plants.map((plant) => ({
+              id: plant.id,
+              type: 'plant' as const,
+              x: next.x + (plant.x - prev.x),
+              y: next.y + (plant.y - prev.y),
+            })))
           }
-        }, saveDebounce)
+        } finally {
+          syncingPlants = false
+        }
+      })
 
-        setSaveTimeout(timeout)
-      },
-      [onSave, disableAutoSave, saveDebounce, saveTimeout]
-    )
+      return () => {
+        dispose()
+      }
+    }, [editor])
 
     /**
-     * Listen for canvas changes
+     * Listen for canvas changes. Hydrating a saved plan must not write those
+     * beds back before the user moves or resizes anything.
      */
     useEffect(() => {
       if (!editor) return
 
       const unsubscribe = editor.store.listen(() => {
-        const currentShapes = editor.getCurrentPageShapes()
-        handleSave(currentShapes)
-      }, { scope: 'document' })
+        if (!canPersistRef.current || hydratingRef.current || disableAutoSave || !onSaveRef.current) return
+
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
+        saveTimeoutRef.current = setTimeout(() => {
+          try {
+            const gardenBeds = dataAdapter.shapesToGardenBeds(editor.getCurrentPageShapes())
+            onSaveRef.current?.(gardenBeds)
+          } catch (error) {
+            console.error('Failed to save canvas data:', error)
+          }
+        }, saveDebounce)
+      }, { scope: 'document', source: 'user' })
 
       return () => {
         unsubscribe()
-        if (saveTimeout) {
-          clearTimeout(saveTimeout)
-        }
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
       }
-    }, [editor, handleSave, saveTimeout])
+    }, [editor, disableAutoSave, saveDebounce])
 
     /**
      * Handle editor mount
@@ -209,6 +281,12 @@ const PermacultureCanvasIntegratedInner = forwardRef<PermacultureCanvasHandle, P
 
     return (
       <div className={`w-full h-full ${className}`}>
+        <style>{`
+          .permaculture-canvas .tlui-layout__top__right {
+            justify-content: flex-end;
+            padding-bottom: 8px;
+          }
+        `}</style>
         <Tldraw
           shapeUtils={permacultureShapes}
           tools={permacultureTools}

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api/http'
 import { Database } from '@/types/database.types'
 
 type Task = Database['public']['Tables']['tasks']['Row']
@@ -24,18 +24,13 @@ export function PlanClient({ tasks: initialTasks, planId, onTasksUpdate }: PlanC
     setError(null)
 
     try {
-      const supabase = createClient()
       const task = tasks.find(t => t.id === taskId)
       if (!task) return
 
-      // TODO: Implement tasks table in database
-      // For now, skip database update
-      /*
-      const { error } = await (supabase
-        .from('tasks')
-        .update({ completed: !task.completed })
-        .eq('id', taskId) as any)
-      */
+      await api(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ completed: !task.completed }),
+      })
       const error = null
 
       if (error) {

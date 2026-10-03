@@ -1,14 +1,20 @@
 import {
   BaseBoxShapeUtil,
   TLBaseShape,
+  TLResizeInfo,
   RecordProps,
   T,
   Rectangle2d,
   Geometry2d,
   Polygon2d,
   SVGContainer,
+  HTMLContainer,
   Vec,
+  resizeBox,
 } from 'tldraw'
+import { scalePointsToSize } from '@/lib/garden/bed-geometry'
+import { bedLabelWidth } from '@/lib/garden/plant-label-layout'
+import { FittedSvgText } from '@/components/tldraw/fitted-svg-text'
 
 /**
  * Point structure for bed polygons
@@ -71,6 +77,20 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
     }
   }
 
+  override onResize(shape: BedShape, info: TLResizeInfo<BedShape>) {
+    const resized = resizeBox(shape, info)
+    const points = this.parsePoints(shape.props.pointsJson)
+    if (points.length < 3) return resized
+
+    return {
+      ...resized,
+      props: {
+        ...resized.props,
+        pointsJson: JSON.stringify(scalePointsToSize(points, resized.props.w, resized.props.h)),
+      },
+    }
+  }
+
   /**
    * Parse points from JSON string
    */
@@ -111,105 +131,75 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
    * Render the bed shape as SVG
    */
   component(shape: BedShape) {
-    const { w, h, name, color, pointsJson, zone, elementCategory } = shape.props
+    const { w, h, name, color, pointsJson, elementCategory } = shape.props
     const points = this.parsePoints(pointsJson)
 
     // Determine fill based on element category
     const fillColor = this.getCategoryColor(elementCategory, color)
     const strokeColor = color
-    const showZone = zone >= 0
+    const title = (
+      <HTMLContainer>
+        <FittedSvgText
+          text={name}
+          x={w / 2}
+          y={3}
+          maxWidth={bedLabelWidth(w)}
+          maxSize={12}
+          fontWeight={600}
+          label="title"
+        />
+      </HTMLContainer>
+    )
 
     if (points.length > 2) {
-      // Render as polygon
       const pathData = this.pointsToPath(points)
 
       return (
+        <>
+          <SVGContainer>
+            <path
+              d={pathData}
+              fill={fillColor}
+              fillOpacity={0.3}
+              stroke={strokeColor}
+              strokeWidth={2}
+            />
+          </SVGContainer>
+          {title}
+        </>
+      )
+    }
+
+    return (
+      <>
         <SVGContainer>
-          <path
-            d={pathData}
+          <rect
+            width={w}
+            height={h}
             fill={fillColor}
             fillOpacity={0.3}
             stroke={strokeColor}
             strokeWidth={2}
+            rx={4}
+            ry={4}
           />
-          {/* Zone label */}
-          {showZone && (
-            <text
-              x={10}
-              y={20}
-              fill={strokeColor}
-              fontSize={14}
-              fontWeight="bold"
-            >
-              Zone {zone}
-            </text>
-          )}
-          {/* Bed name */}
-          <text
-            x={10}
-            y={showZone ? 40 : 25}
-            fill="currentColor"
-            fontSize={12}
-            opacity={0.8}
-          >
-            {name}
-          </text>
         </SVGContainer>
-      )
-    }
-
-    // Render as rectangle
-    return (
-      <SVGContainer>
-        <rect
-          width={w}
-          height={h}
-          fill={fillColor}
-          fillOpacity={0.3}
-          stroke={strokeColor}
-          strokeWidth={2}
-          rx={4}
-          ry={4}
-        />
-        {/* Zone label */}
-        {showZone && (
-          <text
-            x={10}
-            y={20}
-            fill={strokeColor}
-            fontSize={14}
-            fontWeight="bold"
-          >
-            Zone {zone}
-          </text>
-        )}
-        {/* Bed name */}
-        <text
-          x={10}
-          y={showZone ? 40 : 25}
-          fill="currentColor"
-          fontSize={12}
-          opacity={0.8}
-        >
-          {name}
-        </text>
-      </SVGContainer>
+        {title}
+      </>
     )
   }
 
-  /**
-   * Indicator shown when shape is selected
-   */
-  indicator(shape: BedShape) {
+  override getIndicatorPath(shape: BedShape) {
     const { w, h, pointsJson } = shape.props
     const points = this.parsePoints(pointsJson)
 
     if (points.length > 2) {
-      const pathData = this.pointsToPath(points)
-      return <path d={pathData} />
+      return new Path2D(this.pointsToPath(points))
     }
 
-    return <rect width={w} height={h} rx={4} ry={4} />
+    const path = new Path2D()
+    path.rect(0, 0, w, h)
+    return path
   }
 
   /**

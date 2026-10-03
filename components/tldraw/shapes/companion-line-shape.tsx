@@ -154,9 +154,12 @@ export class CompanionLineShapeUtil extends ShapeUtil<CompanionLineShape> {
     )
   }
 
-  indicator(shape: CompanionLineShape) {
+  override getIndicatorPath(shape: CompanionLineShape) {
     const { startX, startY, endX, endY } = shape.props
-    return <line x1={startX} y1={startY} x2={endX} y2={endY} />
+    const path = new Path2D()
+    path.moveTo(startX, startY)
+    path.lineTo(endX, endY)
+    return path
   }
 
   private getRelationshipColor(relationship: 'good' | 'bad' | 'neutral'): string {

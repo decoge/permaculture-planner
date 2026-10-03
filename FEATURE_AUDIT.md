@@ -1,5 +1,7 @@
 # Permaculture Planner - Feature Audit
 
+> Historical audit. The app uses Postgres via `DATABASE_URL` and email/password accounts. See `SETUP.md`. Do not create a Supabase project.
+
 ## ✅ What We Have (COMPLETE)
 
 ### Core User Journey

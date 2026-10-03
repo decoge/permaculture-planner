@@ -59,18 +59,6 @@
     }
   ],
   "categories": ["lifestyle", "productivity", "utilities"],
-  "screenshots": [
-    {
-      "src": "/screenshot1.png",
-      "sizes": "1280x720",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshot2.png",
-      "sizes": "1280x720",
-      "type": "image/png"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Design Wizard",

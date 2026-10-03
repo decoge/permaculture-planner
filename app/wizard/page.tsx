@@ -172,8 +172,7 @@ export default function WizardPage() {
         // Clear wizard progress
         wizardService.clearWizardProgress()
 
-        // Navigate to the demo page with the new plan
-        router.push(`/demo?planId=${result.planId}`)
+        router.push(`/plans/${result.planId}`)
       } else {
         feedback.error(result.error || 'Failed to create garden plan')
       }
@@ -281,7 +280,7 @@ export default function WizardPage() {
                   <Button
                     size="sm"
                     className="bg-amber-600 hover:bg-amber-700 text-white"
-                    onClick={() => router.push('/auth/login?redirect_to=/wizard')}
+                    onClick={() => router.push('/auth/login?redirectTo=/wizard')}
                   >
                     <LogIn className="h-4 w-4 mr-2" />
                     Sign In Now
@@ -290,7 +289,7 @@ export default function WizardPage() {
                     size="sm"
                     variant="outline"
                     className="border-amber-300 hover:bg-amber-100"
-                    onClick={() => router.push('/auth/signup?redirect_to=/wizard')}
+                    onClick={() => router.push('/auth/signup?redirectTo=/wizard')}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />
                     Create Account
@@ -478,7 +477,7 @@ export default function WizardPage() {
                     className="w-full gradient-understory"
                     onClick={() => {
                       setShowLoginPrompt(false)
-                      router.push('/auth/login?redirect_to=/wizard')
+                      router.push('/auth/login?redirectTo=/wizard')
                     }}
                   >
                     <LogIn className="h-4 w-4 mr-2" />
@@ -490,7 +489,7 @@ export default function WizardPage() {
                     className="w-full"
                     onClick={() => {
                       setShowLoginPrompt(false)
-                      router.push('/auth/signup?redirect_to=/wizard')
+                      router.push('/auth/signup?redirectTo=/wizard')
                     }}
                   >
                     <UserPlus className="h-4 w-4 mr-2" />

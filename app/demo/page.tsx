@@ -1,12 +1,11 @@
 'use client'
 
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { PermacultureEditorIntegrated } from '@/components/tldraw/permaculture-editor-integrated'
 import { useGardenStore } from '@/lib/store/garden-store'
 import { LocalStoragePersistence } from '@/lib/persistence/local-storage-adapter'
-import { SupabasePersistence } from '@/lib/persistence/supabase-adapter'
-import { createClient } from '@/lib/supabase/client'
+import { PostgresPersistence } from '@/lib/persistence/postgres-adapter'
 import { toast } from 'sonner'
 import { GardenBed } from '@/lib/garden/garden-types'
 
@@ -65,6 +64,7 @@ function DemoPageContent() {
   const updateBeds = useGardenStore((state) => state.updateBeds)
   const clearError = useGardenStore((state) => state.clearError)
   const reset = useGardenStore((state) => state.reset)
+  const [ready, setReady] = useState(false)
 
   // Setup persistence adapter on mount
   useEffect(() => {
@@ -75,23 +75,26 @@ function DemoPageContent() {
   }, [reset])
 
   useEffect(() => {
+    let cancelled = false
+
     const initializePersistence = async () => {
+      setReady(false)
+
       // Priority 1: Load from planId (wizard flow)
       if (planId) {
-        const supabase = createClient()
-        const adapter = new SupabasePersistence(supabase, planId)
+        const adapter = new PostgresPersistence(planId)
         setPersistence(adapter)
         setPlanId(planId)
 
         await load(planId)
+        if (cancelled) return
 
-        if (beds.length > 0) {
-          toast.success('Loaded your garden plan from wizard')
+        const loadedBeds = useGardenStore.getState().beds
+        const loadError = useGardenStore.getState().error
+        if (loadedBeds.length > 0) {
+          toast.success('Loaded your garden plan')
         } else {
-          toast.error('Could not load your garden plan', {
-            description: 'Showing starter garden instead'
-          })
-          updateBeds(STARTER_GARDEN)
+          toast.error(loadError || 'Could not load your garden plan')
         }
       } else {
         // Priority 2: Demo mode with localStorage
@@ -99,6 +102,7 @@ function DemoPageContent() {
         setPersistence(adapter)
 
         await load()
+        if (cancelled) return
 
         const loadedBeds = useGardenStore.getState().beds
 
@@ -112,13 +116,19 @@ function DemoPageContent() {
           })
         }
       }
+
+      if (!cancelled) setReady(true)
     }
 
     initializePersistence()
+    return () => {
+      cancelled = true
+    }
   }, [planId, setPersistence, setPlanId, load, updateBeds])
 
-  // Loading state
-  if (isLoading) {
+  // Loading state. The editor mounts only after beds are in the store so a
+  // saved plan is not replaced by an empty canvas.
+  if (!ready || isLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
         <div className="text-center">
@@ -156,8 +166,10 @@ function DemoPageContent() {
       {/* Main editor - now directly reads from store */}
       <div className="flex-1 overflow-hidden">
         <PermacultureEditorIntegrated
+          key={planId ?? 'demo'}
           initialData={beds}
           onSave={updateBeds}
+          planId={planId ?? undefined}
           showHeader={true}
         />
       </div>

@@ -1,5 +1,7 @@
 # E2E Test Results with Playwright
 
+> Historical test note. Current setup is Postgres via `DATABASE_URL`. See `SETUP.md`.
+
 ## Test Summary
 
 **Total Tests**: 32

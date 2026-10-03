@@ -144,9 +144,10 @@ export class ZoneShapeUtil extends ShapeUtil<ZoneShape> {
     )
   }
 
-  indicator(shape: ZoneShape) {
-    const { radius } = shape.props
-    return <circle cx={0} cy={0} r={radius} />
+  override getIndicatorPath(shape: ZoneShape) {
+    const path = new Path2D()
+    path.arc(0, 0, shape.props.radius, 0, Math.PI * 2)
+    return path
   }
 
   // Zones should not be resizable - they're based on functional distance from home

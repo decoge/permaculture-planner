@@ -56,21 +56,14 @@ The user management page provides:
 
 ### 1. Run Database Migration
 
-First, apply the admin roles migration:
+Apply the Postgres schema, then promote an account:
 
 \`\`\`bash
-# If using Supabase CLI
-supabase db push
-
-# Or manually run the migration file
-# Run: permaculture-planner/supabase/migrations/002_admin_roles.sql
+npm run db:migrate
+npm run db:make-admin -- you@example.com
 \`\`\`
 
-This migration:
-- Adds `is_admin` column to profiles table
-- Creates admin helper functions
-- Sets up admin policies for full data access
-- Creates analytics views for the dashboard
+`is_admin` lives on the `users` table. Sign out and sign in again after the promotion so the session cookie picks up the admin flag. The database connection is `DATABASE_URL`.
 
 ### 2. Make Your First Admin User
 
@@ -82,8 +75,8 @@ node scripts/make-admin.js your-email@example.com
 \`\`\`
 
 **Requirements:**
-- User must already be registered in the system
-- You need the `SUPABASE_SERVICE_ROLE_KEY` in your `.env.local` file
+- The person must already have an account
+- `DATABASE_URL` must be set in `.env.local`
 
 ### 3. Access the Admin Dashboard
 
@@ -192,26 +185,26 @@ Potential improvements for the admin dashboard:
 1. Verify you're logged in
 2. Check your user has `is_admin = true`:
    \`\`\`sql
-   SELECT email, is_admin FROM public.profiles WHERE email = 'your-email@example.com';
+   SELECT email, is_admin FROM public.users WHERE email = 'your-email@example.com';
    \`\`\`
 
 ### Migration Errors
 
 If the migration fails:
-1. Check Supabase connection
-2. Verify you have proper permissions
-3. Look for conflicts with existing policies
+1. Check `DATABASE_URL`
+2. Run `npm run db:migrate`
+3. Confirm the Postgres role can create tables
 
 ### Analytics Not Loading
 
 1. Check browser console for errors
 2. Verify API endpoints return data
-3. Check Supabase RLS policies are correctly applied
-4. Ensure views were created successfully
+3. Confirm the signed-in user has `is_admin = true` and has signed in again
+4. Check the API response from `/api/admin/analytics`
 
 ## Support
 
 For issues or questions about the admin dashboard:
 1. Check this guide first
 2. Review the code in `/app/admin/` and `/app/api/admin/`
-3. Check database migration in `/supabase/migrations/002_admin_roles.sql`
+3. Check `db/migrations` and `npm run db:make-admin`

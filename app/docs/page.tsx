@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Code, BookOpen, GitBranch, TestTube, MessageSquare, Users,
-  ArrowRight, Github, Copy, Check, FileCode, Terminal,
+  ArrowRight, Copy, Check, FileCode, Terminal,
   Palette, Database, Globe, Zap, Package, Bug
 } from 'lucide-react'
+import { Github } from '@/components/brand-icons'
 
 export default function DocsPage() {
   const [copiedCode, setCopiedCode] = useState<string | null>(null)

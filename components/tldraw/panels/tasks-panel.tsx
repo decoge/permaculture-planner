@@ -19,7 +19,7 @@ import {
   Calendar,
   Filter,
 } from 'lucide-react'
-import { createClient } from '@/lib/supabase/client'
+import { api } from '@/lib/api/http'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -51,9 +51,7 @@ export function TasksPanel({ planId }: TasksPanelProps) {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [filterCategory, setFilterCategory] = useState<string>('all')
-  const supabase = createClient()
-
-  // Load tasks from database
+  // Load tasks from the database
   useEffect(() => {
     if (!planId) {
       setLoading(false)
@@ -67,15 +65,8 @@ export function TasksPanel({ planId }: TasksPanelProps) {
     if (!planId) return
 
     try {
-      const { data, error } = await (supabase as any)
-        .from('tasks')
-        .select('*')
-        .eq('plan_id', planId)
-        .order('due_on', { ascending: true })
-
-      if (error) throw error
-
-      setTasks(data || [])
+      const data = await api<{ tasks: Task[] }>(`/api/plans/${planId}/tasks`)
+      setTasks(data.tasks || [])
     } catch (error) {
       console.error('Error loading tasks:', error)
       toast.error('Failed to load tasks')
@@ -87,12 +78,10 @@ export function TasksPanel({ planId }: TasksPanelProps) {
   // Toggle task completion
   const handleToggleComplete = async (taskId: string, currentCompleted: boolean) => {
     try {
-      const { error } = await (supabase as any)
-        .from('tasks')
-        .update({ completed: !currentCompleted })
-        .eq('id', taskId)
-
-      if (error) throw error
+      await api(`/api/tasks/${taskId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ completed: !currentCompleted }),
+      })
 
       // Update local state
       setTasks(prevTasks =>

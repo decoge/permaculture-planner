@@ -8,9 +8,10 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
   Users, MessageSquare, MapPin, Calendar, Heart, Share2,
-  Star, TrendingUp, Award, Sprout, Github, Globe,
+  Star, TrendingUp, Award, Sprout, Globe,
   BookOpen, Video, HelpCircle, ArrowRight, Search
 } from 'lucide-react'
+import { Github } from '@/components/brand-icons'
 
 export default function CommunityPage() {
   const [searchTerm, setSearchTerm] = useState('')

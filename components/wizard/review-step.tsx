@@ -2,7 +2,9 @@
 
 import { WizardData } from '@/app/wizard/page'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle2, MapPin, Square, Sun, Droplets, Leaf, Clock } from 'lucide-react'
+import { BedLayout } from '@/components/garden/bed-layout'
+import { wizardService } from '@/lib/wizard/wizard-service'
+import { CheckCircle2, MapPin, Square, Sun, Droplets, Leaf } from 'lucide-react'
 
 interface ReviewStepProps {
   data: WizardData
@@ -10,13 +12,32 @@ interface ReviewStepProps {
 }
 
 export function ReviewStep({ data }: ReviewStepProps) {
+  const preview = wizardService.generateGardenFromWizard(data)
+  const layoutBeds = preview.map((bed) => ({
+    id: bed.id,
+    name: bed.name,
+    points: bed.points,
+    fill: bed.fill,
+    stroke: bed.stroke,
+    plants: bed.plants?.map((plant) => ({
+      id: plant.id,
+      name: plant.plantId,
+      x: plant.x,
+      y: plant.y,
+    })),
+  }))
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold mb-4">Review Your Plan</h2>
         <p className="text-gray-600 mb-6">
-          Here's a summary of your garden plan. Click "Generate Plan" to create your customized design.
+          This is the bed layout that will be saved. Generate the plan to keep it on your dashboard.
         </p>
+      </div>
+
+      <div className="h-80 overflow-hidden rounded-lg border bg-white">
+        <BedLayout beds={layoutBeds} className="h-full" />
       </div>
 
       <div className="grid gap-4">
@@ -101,18 +122,10 @@ export function ReviewStep({ data }: ReviewStepProps) {
         <div className="flex items-start">
           <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 mr-2 flex-shrink-0" />
           <div className="text-sm">
-            <p className="font-semibold text-green-900">Ready to generate your plan!</p>
+            <p className="font-semibold text-green-900">Ready to save this layout</p>
             <p className="text-green-700 mt-1">
-              Your customized garden plan will include:
+              {preview.length} beds will be saved with suggested plants for your crop focus. You can adjust the layout after it is saved.
             </p>
-            <ul className="list-disc list-inside text-green-700 mt-2 space-y-1">
-              <li>Optimized bed layout for your space</li>
-              <li>Complete materials list and cost estimate</li>
-              <li>Crop rotation schedule for 3 seasons</li>
-              <li>Irrigation plan and water requirements</li>
-              <li>Monthly task calendar</li>
-              <li>IPM recommendations and row cover guide</li>
-            </ul>
           </div>
         </div>
       </div>
