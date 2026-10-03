@@ -148,12 +148,10 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
     )
   }
 
-  /**
-   * Selection indicator
-   */
-  indicator(shape: PlantShape) {
-    const { radius } = shape.props
-    return <circle cx={0} cy={0} r={radius} />
+  override getIndicatorPath(shape: PlantShape) {
+    const path = new Path2D()
+    path.arc(0, 0, shape.props.radius, 0, Math.PI * 2)
+    return path
   }
 
   /**

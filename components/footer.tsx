@@ -1,5 +1,6 @@
 import Link from 'next/link'
-import { Leaf, Github, Twitter, Mail, Heart } from 'lucide-react'
+import { Leaf, Mail, Heart } from 'lucide-react'
+import { Github } from '@/components/brand-icons'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -33,15 +34,6 @@ export function Footer() {
                 aria-label="GitHub"
               >
                 <Github className="h-5 w-5 text-gray-700" />
-              </a>
-              <a
-                href="https://twitter.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:scale-110"
-                aria-label="Twitter"
-              >
-                <Twitter className="h-5 w-5 text-gray-700" />
               </a>
               <a
                 href="mailto:contact@permaculture-planner.com"

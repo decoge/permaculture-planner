@@ -242,7 +242,7 @@ export function Form({
   className,
   ...props
 }: React.FormHTMLAttributes<HTMLFormElement>) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     onSubmit?.(e)
   }

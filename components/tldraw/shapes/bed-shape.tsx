@@ -197,19 +197,17 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
     )
   }
 
-  /**
-   * Indicator shown when shape is selected
-   */
-  indicator(shape: BedShape) {
+  override getIndicatorPath(shape: BedShape) {
     const { w, h, pointsJson } = shape.props
     const points = this.parsePoints(pointsJson)
 
     if (points.length > 2) {
-      const pathData = this.pointsToPath(points)
-      return <path d={pathData} />
+      return new Path2D(this.pointsToPath(points))
     }
 
-    return <rect width={w} height={h} rx={4} ry={4} />
+    const path = new Path2D()
+    path.rect(0, 0, w, h)
+    return path
   }
 
   /**
