@@ -1,6 +1,6 @@
 # Permaculture Planner - Raised Bed Garden Design App
 
-A Next.js 14 application that generates AI-powered permaculture plans for raised-bed gardens on any surface (soil, gravel, concrete, or rooftops). Based on research-backed horticulture principles from agricultural extension services.
+A Next.js application that generates permaculture plans for raised-bed gardens on any surface (soil, gravel, concrete, or rooftops). Based on research-backed horticulture principles from agricultural extension services.
 
 ## Features
 
@@ -21,7 +21,7 @@ A Next.js 14 application that generates AI-powered permaculture plans for raised
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
+- **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
 - **Database**: PostgreSQL (`DATABASE_URL`)
 - **Styling**: Tailwind CSS + shadcn/ui components
@@ -32,7 +32,7 @@ A Next.js 14 application that generates AI-powered permaculture plans for raised
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 20.9+
 - npm or yarn
 - PostgreSQL 14+
 
@@ -40,7 +40,7 @@ A Next.js 14 application that generates AI-powered permaculture plans for raised
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/permaculture-planner.git
+git clone https://github.com/decoge/permaculture-planner.git
 cd permaculture-planner
 ```
 
