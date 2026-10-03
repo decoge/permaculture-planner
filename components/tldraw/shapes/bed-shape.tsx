@@ -8,6 +8,7 @@ import {
   Geometry2d,
   Polygon2d,
   SVGContainer,
+  HTMLContainer,
   Vec,
   resizeBox,
 } from 'tldraw'
@@ -137,50 +138,54 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
     const fillColor = this.getCategoryColor(elementCategory, color)
     const strokeColor = color
     const title = (
-      <FittedSvgText
-        text={name}
-        x={w / 2}
-        y={3}
-        maxWidth={bedLabelWidth(w)}
-        maxSize={12}
-        fontWeight={600}
-        label="title"
-      />
+      <HTMLContainer>
+        <FittedSvgText
+          text={name}
+          x={w / 2}
+          y={3}
+          maxWidth={bedLabelWidth(w)}
+          maxSize={12}
+          fontWeight={600}
+          label="title"
+        />
+      </HTMLContainer>
     )
 
     if (points.length > 2) {
-      // Render as polygon
       const pathData = this.pointsToPath(points)
 
       return (
+        <>
+          <SVGContainer>
+            <path
+              d={pathData}
+              fill={fillColor}
+              fillOpacity={0.3}
+              stroke={strokeColor}
+              strokeWidth={2}
+            />
+          </SVGContainer>
+          {title}
+        </>
+      )
+    }
+
+    return (
+      <>
         <SVGContainer>
-          <path
-            d={pathData}
+          <rect
+            width={w}
+            height={h}
             fill={fillColor}
             fillOpacity={0.3}
             stroke={strokeColor}
             strokeWidth={2}
+            rx={4}
+            ry={4}
           />
-          {title}
         </SVGContainer>
-      )
-    }
-
-    // Render as rectangle
-    return (
-      <SVGContainer>
-        <rect
-          width={w}
-          height={h}
-          fill={fillColor}
-          fillOpacity={0.3}
-          stroke={strokeColor}
-          strokeWidth={2}
-          rx={4}
-          ry={4}
-        />
         {title}
-      </SVGContainer>
+      </>
     )
   }
 

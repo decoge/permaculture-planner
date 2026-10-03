@@ -6,6 +6,7 @@ import {
   Circle2d,
   Geometry2d,
   SVGContainer,
+  HTMLContainer,
 } from 'tldraw'
 import { FittedSvgText } from '@/components/tldraw/fitted-svg-text'
 
@@ -100,40 +101,43 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
       : Math.max(radius * 2, 8)
 
     return (
-      <SVGContainer>
-        <circle
-          cx={0}
-          cy={0}
-          r={radius}
-          fill={color}
-          fillOpacity={0.9}
-          stroke="#fff"
-          strokeWidth={1}
-        />
+      <>
+        <SVGContainer>
+          <circle
+            cx={0}
+            cy={0}
+            r={radius}
+            fill={color}
+            fillOpacity={0.9}
+            stroke="#fff"
+            strokeWidth={1}
+          />
 
-        {emoji && (
-          <text
+          {emoji && (
+            <text
+              x={0}
+              y={0}
+              textAnchor="middle"
+              dominantBaseline="central"
+              fontSize={Math.max(radius * 0.9, 3)}
+              style={{ pointerEvents: 'none', userSelect: 'none' }}
+            >
+              {emoji}
+            </text>
+          )}
+        </SVGContainer>
+        <HTMLContainer>
+          <FittedSvgText
+            text={plantName}
             x={0}
-            y={0}
-            textAnchor="middle"
-            dominantBaseline="central"
-            fontSize={Math.max(radius * 0.9, 3)}
-            style={{ pointerEvents: 'none', userSelect: 'none' }}
-          >
-            {emoji}
-          </text>
-        )}
-
-        <FittedSvgText
-          text={plantName}
-          x={0}
-          y={radius + 2}
-          maxWidth={maxWidth}
-          maxSize={maxSize}
-          fontWeight={500}
-          label="plant"
-        />
-      </SVGContainer>
+            y={radius + 2}
+            maxWidth={maxWidth}
+            maxSize={maxSize}
+            fontWeight={500}
+            label="plant"
+          />
+        </HTMLContainer>
+      </>
     )
   }
 

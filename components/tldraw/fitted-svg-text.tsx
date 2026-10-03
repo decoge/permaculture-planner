@@ -1,6 +1,7 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useSyncExternalStore } from 'react'
+import { useEditor } from 'tldraw'
 import { fittedFontSize } from '@/lib/garden/plant-label-layout'
 
 interface FittedSvgTextProps {
@@ -13,9 +14,39 @@ interface FittedSvgTextProps {
   label: 'title' | 'plant'
 }
 
+let measureContext: CanvasRenderingContext2D | null = null
+
+function measureContext2d(): CanvasRenderingContext2D | null {
+  if (measureContext) return measureContext
+  if (typeof document === 'undefined') return null
+  const canvas = document.createElement('canvas')
+  measureContext = canvas.getContext('2d')
+  return measureContext
+}
+
 /**
- * One line of SVG text, shrunk to its measured width.
- * Never sets textLength, which letter-spaces short labels.
+ * Screen font that fits maxScreenWidth. The size changes; the tracking does not.
+ */
+function fontSizeThatFits(
+  text: string,
+  maxScreenWidth: number,
+  maxScreenSize: number,
+  fontWeight: number,
+): number {
+  const size = Math.max(maxScreenSize, 1)
+  const ctx = measureContext2d()
+  if (!ctx || maxScreenWidth <= 0) return size
+  const family = getComputedStyle(document.body).fontFamily || 'sans-serif'
+  ctx.font = `${fontWeight} ${size}px ${family}`
+  const width = ctx.measureText(text).width
+  if (width > maxScreenWidth && width > 0) return size * (maxScreenWidth / width)
+  return size
+}
+
+/**
+ * One line of text, fitted to the bed.
+ * Laid out at screen size and counter-scaled so a camera zoom cannot
+ * stretch the letters apart. Never sets textLength.
  */
 export function FittedSvgText({
   text,
@@ -26,60 +57,39 @@ export function FittedSvgText({
   fontWeight = 500,
   label,
 }: FittedSvgTextProps) {
-  const ref = useRef<SVGTextElement>(null)
-  const estimate = fittedFontSize(text, maxWidth, maxSize)
-  const [fontSize, setFontSize] = useState(estimate)
-
-  useLayoutEffect(() => {
-    const node = ref.current
-    if (!node) return
-    let cancelled = false
-
-    const fit = () => {
-      const element = ref.current
-      if (cancelled || !element) return
-      element.setAttribute('font-size', String(estimate))
-      let length = 0
-      try {
-        length = element.getComputedTextLength()
-      } catch {
-        length = 0
-      }
-      const next = length > maxWidth && length > 0
-        ? (estimate * maxWidth) / length
-        : estimate
-      setFontSize((current) => (Math.abs(current - next) < 0.05 ? current : next))
-    }
-
-    fit()
-    const fonts = document.fonts
-    fonts?.ready.then(fit).catch(() => undefined)
-
-    return () => {
-      cancelled = true
-    }
-  }, [estimate, maxWidth, text])
+  const editor = useEditor()
+  const zoom = useSyncExternalStore(
+    (notify) => editor.store.listen(() => notify()),
+    () => editor.getZoomLevel(),
+    () => 1,
+  )
+  const safeZoom = zoom > 0 ? zoom : 1
+  const worldSize = fittedFontSize(text, maxWidth, maxSize)
+  const screenSize = fontSizeThatFits(text, maxWidth * safeZoom, worldSize * safeZoom, fontWeight)
 
   return (
-    <text
-      ref={ref}
-      x={x}
-      y={y}
-      textAnchor="middle"
-      dominantBaseline="hanging"
-      fill="currentColor"
-      fontSize={fontSize}
-      fontWeight={fontWeight}
+    <div
       data-garden-label={label}
       style={{
-        pointerEvents: 'none',
-        userSelect: 'none',
-        letterSpacing: 'normal',
+        position: 'absolute',
+        left: x,
+        top: y,
+        width: 'max-content',
+        transform: `translateX(-50%) scale(${1 / safeZoom})`,
+        transformOrigin: 'top center',
+        fontSize: screenSize,
+        fontWeight,
+        lineHeight: 1,
+        letterSpacing: '0px',
         wordSpacing: 'normal',
         whiteSpace: 'nowrap',
+        textAlign: 'center',
+        pointerEvents: 'none',
+        userSelect: 'none',
+        color: 'inherit',
       }}
     >
       {text}
-    </text>
+    </div>
   )
 }
