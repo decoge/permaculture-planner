@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -36,7 +35,6 @@ interface PlanWithStats extends Plan {
 }
 
 export default function DashboardPage() {
-  const router = useRouter()
   const [user, setUser] = useState<Database['public']['Tables']['users']['Row'] | null>(null)
   const [plans, setPlans] = useState<PlanWithStats[]>([])
   const [activeTab, setActiveTab] = useState('designs')
@@ -61,12 +59,12 @@ export default function DashboardPage() {
     }
 
     loadUserData()
-  }, [router])
+  }, [])
 
   const handleLogout = async () => {
     try {
       await api('/api/auth/logout', { method: 'POST' })
-      router.push('/auth/login')
+      window.location.assign('/auth/login')
     } catch (error) {
       console.error('Error signing out:', error)
     }
@@ -193,7 +191,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <Button className="bg-green-600 hover:bg-green-700" asChild>
-              <Link href="/demo">
+              <Link href="/wizard">
                 <Plus className="h-4 w-4 mr-2" />
                 New Design
               </Link>
@@ -268,7 +266,7 @@ export default function DashboardPage() {
                   <h3 className="text-xl font-semibold mb-2">No designs yet</h3>
                   <p className="text-gray-600 mb-6">Start creating your first permaculture system</p>
                   <Button className="bg-green-600 hover:bg-green-700" asChild>
-                    <Link href="/demo">
+                    <Link href="/wizard">
                       <Plus className="h-4 w-4 mr-2" />
                       Create Your First Design
                     </Link>

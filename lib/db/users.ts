@@ -17,6 +17,12 @@ interface UserAuthRow extends UserRecord {
   password_hash: string
 }
 
+function createdAtIso(value: Date | string | null | undefined): string | null {
+  if (!value) return null
+  const date = value instanceof Date ? value : new Date(value)
+  return Number.isNaN(date.getTime()) ? null : date.toISOString()
+}
+
 function toSessionUser(user: UserRecord): SessionUser {
   return {
     id: user.id,
@@ -24,6 +30,7 @@ function toSessionUser(user: UserRecord): SessionUser {
     name: user.name,
     isAdmin: user.is_admin,
     tokenVersion: user.token_version,
+    createdAt: createdAtIso(user.created_at),
   }
 }
 

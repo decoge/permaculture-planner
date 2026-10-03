@@ -13,6 +13,7 @@ export interface SessionUser {
   name: string | null
   isAdmin: boolean
   tokenVersion: number
+  createdAt: string | null
 }
 
 function cookieOptions(maxAge: number) {
@@ -46,5 +47,5 @@ export async function writeSession(user: Omit<SessionUser, never>): Promise<void
 
 export async function clearSession(): Promise<void> {
   const jar = await cookies()
-  jar.set(SESSION_COOKIE, '', cookieOptions(0))
+  jar.delete(SESSION_COOKIE)
 }

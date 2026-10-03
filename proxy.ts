@@ -25,7 +25,11 @@ export async function proxy(request: NextRequest) {
   const ipLimitResponse = await ipRateLimiter.check(request)
   if (ipLimitResponse) return ipLimitResponse
 
-  if (pathname.startsWith('/api/auth') && pathname !== '/api/auth/me') {
+  if (
+    pathname.startsWith('/api/auth') &&
+    pathname !== '/api/auth/me' &&
+    pathname !== '/api/auth/logout'
+  ) {
     const authLimitResponse = await authRateLimiter.check(request)
     if (authLimitResponse) return authLimitResponse
   }

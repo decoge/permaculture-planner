@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         email: user.email,
         name: user.name,
         is_admin: user.isAdmin,
-        created_at: new Date().toISOString(),
+        created_at: user.createdAt,
       },
     })
   } catch (error) {

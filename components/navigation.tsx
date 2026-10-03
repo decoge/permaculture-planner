@@ -6,7 +6,8 @@ import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { NAV_ITEMS, AUTH_ITEMS } from '@/lib/config/app-config'
-import { Leaf, Menu, X, LogIn, UserPlus, LayoutDashboard } from 'lucide-react'
+import { Leaf, Menu, X, LogIn, UserPlus, LayoutDashboard, LogOut } from 'lucide-react'
+import { api } from '@/lib/api/http'
 import { SubscriptionBadge } from '@/components/subscription/subscription-badge'
 
 export function Navigation() {
@@ -42,6 +43,15 @@ export function Navigation() {
   useEffect(() => {
     setIsMobileMenuOpen(false)
   }, [pathname])
+
+  const signOut = async () => {
+    try {
+      await api('/api/auth/logout', { method: 'POST' })
+      window.location.assign('/auth/login')
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
+  }
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/'
@@ -98,12 +108,18 @@ export function Navigation() {
             <div className="hidden md:flex items-center gap-2">
               <SubscriptionBadge />
               {signedIn ? (
-                <Button size="sm" className="gap-2 bg-green-600 hover:bg-green-700 text-white" asChild>
-                  <Link href="/dashboard">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </Button>
+                <>
+                  <Button size="sm" className="gap-2 bg-green-600 hover:bg-green-700 text-white" asChild>
+                    <Link href="/dashboard">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                  <Button variant="ghost" size="sm" className="gap-2 hover:bg-green-50" onClick={signOut}>
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button variant="ghost" size="sm" className="gap-2 hover:bg-green-50" asChild>
@@ -166,12 +182,18 @@ export function Navigation() {
             })}
             <div className="pt-4 border-t border-green-200/50 space-y-3">
               {signedIn ? (
-                <Button className="w-full justify-center gap-2 gradient-understory rounded-lg h-12 text-base" asChild>
-                  <Link href="/dashboard">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Dashboard
-                  </Link>
-                </Button>
+                <>
+                  <Button className="w-full justify-center gap-2 gradient-understory rounded-lg h-12 text-base" asChild>
+                    <Link href="/dashboard">
+                      <LayoutDashboard className="h-4 w-4" />
+                      Dashboard
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="w-full justify-center gap-2 rounded-lg h-12 text-base" onClick={signOut}>
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button variant="outline" className="w-full justify-center gap-2 rounded-lg hover-nature hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 h-12 text-base" asChild>
