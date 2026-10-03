@@ -29,17 +29,19 @@ import { HolisticDashboardPanel } from './panels/holistic-dashboard-panel'
 import { RelationshipMapperPanel } from './panels/relationship-mapper-panel'
 import { LockedPanel } from '@/components/subscription/locked-panel'
 import { PanelSelector } from './panel-selector'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
-  SoilAnalysisPanel,
-  TopographyPanel,
-  ClimatePanel,
-  InfrastructurePanel,
   BiodiversityPanel,
-  EnergyPanel,
+  ClimatePanel,
   CommunityPanel,
   EconomicsPanel,
-  ResiliencePanel
-} from './panels/placeholder-panel'
+  EnergyPanel,
+  InfrastructurePanel,
+  ResiliencePanel,
+  SoilAnalysisPanel,
+  TopographyPanel,
+} from '@/components/garden/site-condition-panels'
+import { useRecordedSiteFacts } from '@/components/garden/use-recorded-site-facts'
 import { GardenBed } from '@/lib/garden/garden-types'
 import { PlantInfo } from '@/lib/data/plant-library'
 import { ElementSubtype, ElementCategory, ELEMENT_STYLES } from '@/lib/canvas-elements'
@@ -116,6 +118,7 @@ export function PermacultureEditorIntegrated({
   const [rightPanelTab, setRightPanelTab] = useState<string>('holistic') // Start with holistic dashboard
   const [recentPanels, setRecentPanels] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const siteFacts = useRecordedSiteFacts(planId)
 
   // Load recent panels from localStorage
   useEffect(() => {
@@ -596,97 +599,76 @@ export function PermacultureEditorIntegrated({
 
               {/* ========== NEW SITE ANALYSIS PANELS ========== */}
               <TabsContent value="soil" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="soil"
-                  featureName="Soil Analysis"
-                  featureDescription="Analyze soil type, pH, composition, and amendments needed for optimal plant growth."
-                  requiredTier="premium"
-                >
-                  <SoilAnalysisPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <SoilAnalysisPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="topography" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="topography"
-                  featureName="Topography & Grading"
-                  featureDescription="Map slopes, contours, water flow, and plan earthworks like swales and terraces."
-                  requiredTier="premium"
-                >
-                  <TopographyPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <TopographyPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="climate" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="climate"
-                  featureName="Climate & Microclimate"
-                  featureDescription="Analyze temperature zones, frost pockets, and optimize microclimates."
-                  requiredTier="premium"
-                >
-                  <ClimatePanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <ClimatePanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="infrastructure" className="flex-1 m-0">
-                <InfrastructurePanel />
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <InfrastructurePanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               {/* ========== NEW PERMACULTURE DESIGN PANELS ========== */}
               <TabsContent value="biodiversity" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="biodiversity"
-                  featureName="Biodiversity & Wildlife"
-                  featureDescription="Plan habitat corridors, beneficial species, and ecological niches."
-                  requiredTier="premium"
-                >
-                  <BiodiversityPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <BiodiversityPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="energy" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="energy"
-                  featureName="Energy Systems"
-                  featureDescription="Integrate renewable energy, passive solar design, and thermal management."
-                  requiredTier="pro"
-                >
-                  <EnergyPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <EnergyPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
-              {/* ========== NEW COMMUNITY & ECONOMICS PANELS ========== */}
               <TabsContent value="community" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="community"
-                  featureName="Community Spaces"
-                  featureDescription="Design shared gardens, education areas, and collaborative zones."
-                  requiredTier="premium"
-                >
-                  <CommunityPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <CommunityPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="economics" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="economics"
-                  featureName="Economics & Yields"
-                  featureDescription="Track production, calculate ROI, and analyze market opportunities."
-                  requiredTier="pro"
-                >
-                  <EconomicsPanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <EconomicsPanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="resilience" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="resilience"
-                  featureName="Resilience & Food Security"
-                  featureDescription="Calculate caloric production, food security, and self-sufficiency metrics."
-                  requiredTier="pro"
-                >
-                  <ResiliencePanel />
-                </LockedPanel>
+                <ScrollArea className="h-full">
+                  <div className="p-3">
+                    <ResiliencePanel facts={siteFacts} />
+                  </div>
+                </ScrollArea>
               </TabsContent>
             </Tabs>
           )}

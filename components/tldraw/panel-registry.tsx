@@ -103,7 +103,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'soil',
     name: 'Soil Analysis',
-    description: 'Analyze soil type, pH, composition, and amendments needed',
+    description: 'Recorded surface and plant-library soil preferences',
     icon: Layers,
     category: 'site',
     tier: 'premium',
@@ -112,7 +112,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'topography',
     name: 'Topography & Grading',
-    description: 'Map slopes, contours, terracing, swales, and water flow',
+    description: 'Recorded slope, area, and site shape',
     icon: Mountain,
     category: 'site',
     tier: 'premium',
@@ -121,7 +121,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'climate',
     name: 'Climate & Microclimate',
-    description: 'Temperature zones, frost pockets, and microclimates',
+    description: 'Recorded zone, frost dates, and location',
     icon: Thermometer,
     category: 'site',
     tier: 'premium',
@@ -130,7 +130,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'infrastructure',
     name: 'Site Infrastructure',
-    description: 'Buildings, paths, fences, access points, and utilities',
+    description: 'Recorded water, beds, and saved structures',
     icon: Home,
     category: 'site',
     tier: 'free',
@@ -195,7 +195,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'biodiversity',
     name: 'Biodiversity & Wildlife',
-    description: 'Habitat corridors, beneficial species, and ecological niches',
+    description: 'Saved species and plant-library categories',
     icon: Bird,
     category: 'permaculture',
     tier: 'premium',
@@ -222,7 +222,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'energy',
     name: 'Energy Systems',
-    description: 'Renewable energy, passive solar, heating, and cooling',
+    description: 'Saved energy elements and bed orientation',
     icon: Zap,
     category: 'permaculture',
     tier: 'pro',
@@ -309,7 +309,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'community',
     name: 'Community Spaces',
-    description: 'Shared gardens, education areas, and collaboration zones',
+    description: 'Community records saved on the plan',
     icon: Users,
     category: 'community',
     tier: 'premium',
@@ -318,7 +318,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'economics',
     name: 'Economics & Yields',
-    description: 'Production tracking, ROI calculations, and market analysis',
+    description: 'Recorded harvests, cost, and garden time',
     icon: DollarSign,
     category: 'community',
     tier: 'pro',
@@ -327,7 +327,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'resilience',
     name: 'Resilience & Food Security',
-    description: 'Caloric production, food security, and self-sufficiency metrics',
+    description: 'Saved species, season, and water source',
     icon: TrendingUp,
     category: 'community',
     tier: 'pro',
