@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api/http'
+import { DesignFacts, summarizeDesignFacts } from '@/lib/garden/design-facts'
 import { GardenTools, summarizeGardenTools } from '@/lib/garden/garden-tools'
-import { HarvestInput, RecordedTaskInput, SiteBedInput, SiteMaterialsInput, siteFactsFromPlan } from '@/lib/garden/site-facts'
+import { HarvestInput, JournalInput, RecordedTaskInput, SiteBedInput, SiteMaterialsInput, siteFactsFromPlan } from '@/lib/garden/site-facts'
 
 interface PlanFactResponse {
   site?: {
@@ -22,9 +23,11 @@ interface PlanFactResponse {
   materials_estimates?: SiteMaterialsInput | null
   harvests?: HarvestInput[] | null
   tasks?: RecordedTaskInput[] | null
+  journal?: JournalInput[] | null
+  meta?: { template?: unknown } | null
 }
 
-const unavailable: GardenTools = {
+const unavailableTools: GardenTools = {
   sun: ['The saved plan could not be loaded.'],
   water: ['The saved plan could not be loaded.'],
   growth: ['The saved plan could not be loaded.'],
@@ -36,22 +39,45 @@ const unavailable: GardenTools = {
   timeline: ['The saved plan could not be loaded.'],
 }
 
-export function useRecordedGardenTools(planId?: string): GardenTools | null {
+const unavailableDesign: DesignFacts = {
+  companions: ['The saved plan could not be loaded.'],
+  relationships: ['The saved plan could not be loaded.'],
+  evolution: ['The saved plan could not be loaded.'],
+  implementation: ['The saved plan could not be loaded.'],
+  critique: ['The saved plan could not be loaded.'],
+  progress: ['The saved plan could not be loaded.'],
+  knowledge: ['The saved plan could not be loaded.'],
+  templates: ['The saved plan could not be loaded.'],
+  analytics: ['The saved plan could not be loaded.'],
+  permaculture: ['The saved plan could not be loaded.'],
+}
+
+export function useRecordedPlanTools(planId?: string): {
+  tools: GardenTools | null
+  design: DesignFacts | null
+} {
   const [tools, setTools] = useState<GardenTools | null>(null)
+  const [design, setDesign] = useState<DesignFacts | null>(null)
 
   useEffect(() => {
     if (!planId) {
       setTools(summarizeGardenTools({}))
+      setDesign(summarizeDesignFacts({}))
       return
     }
 
     let cancelled = false
     api<PlanFactResponse>(`/api/plans/${planId}`)
       .then((plan) => {
-        if (!cancelled) setTools(summarizeGardenTools(siteFactsFromPlan(plan)))
+        if (cancelled) return
+        const facts = siteFactsFromPlan(plan)
+        setTools(summarizeGardenTools(facts))
+        setDesign(summarizeDesignFacts(facts))
       })
       .catch(() => {
-        if (!cancelled) setTools(unavailable)
+        if (cancelled) return
+        setTools(unavailableTools)
+        setDesign(unavailableDesign)
       })
 
     return () => {
@@ -59,5 +85,5 @@ export function useRecordedGardenTools(planId?: string): GardenTools | null {
     }
   }, [planId])
 
-  return tools
+  return { tools, design }
 }

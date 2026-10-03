@@ -17,8 +17,10 @@ import { PlanInsights } from '@/components/garden/plan-insights'
 import { SiteConditionPanels } from '@/components/garden/site-condition-panels'
 import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
 import { GardenToolPanels } from '@/components/garden/garden-tool-panels'
+import { DesignFactPanels } from '@/components/garden/design-fact-panels'
+import { formatDesignFacts, summarizeDesignFacts } from '@/lib/garden/design-facts'
 import { formatGardenTools, summarizeGardenTools } from '@/lib/garden/garden-tools'
-import { formatSiteFacts, RecordedTaskInput, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
+import { formatSiteFacts, JournalInput, RecordedTaskInput, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
 
 interface Plan {
   id: string
@@ -66,6 +68,8 @@ interface Plan {
     drip_line_ft?: number | string | null
   } | null
   tasks?: RecordedTaskInput[] | null
+  journal?: JournalInput[] | null
+  meta?: { template?: unknown } | null
 }
 
 export default function PlanViewPage() {
@@ -130,6 +134,8 @@ export default function PlanViewPage() {
       formatSiteFacts(summarizeSiteFacts(siteFactsFromPlan(plan))),
       '',
       formatGardenTools(summarizeGardenTools(siteFactsFromPlan(plan))),
+      '',
+      formatDesignFacts(summarizeDesignFacts(siteFactsFromPlan(plan))),
     ].join('\n')
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -348,6 +354,7 @@ export default function PlanViewPage() {
           <PlanInsights summary={summary} />
           <SiteConditionPanels facts={siteFacts} />
           <GardenToolPanels tools={gardenTools} />
+          <DesignFactPanels design={summarizeDesignFacts(siteFactsFromPlan(plan))} />
         </aside>
         </div>
       </div>

@@ -23,6 +23,7 @@ export interface SitePlantInput {
   harvest_end?: unknown
   successionsJson?: unknown
   successions_json?: unknown
+  notes?: unknown
 }
 
 export interface HarvestInput {
@@ -30,6 +31,16 @@ export interface HarvestInput {
   unit?: unknown
   variety?: unknown
   notes?: unknown
+  harvestedOn?: unknown
+  harvested_on?: unknown
+}
+
+export interface JournalInput {
+  title?: unknown
+  content?: unknown
+  createdAt?: unknown
+  created_at?: unknown
+  images?: unknown
 }
 
 export interface SiteBedInput {
@@ -101,6 +112,8 @@ export interface SiteFactsInput {
   materials?: SiteMaterialsInput | null
   harvests?: HarvestInput[] | null
   tasks?: RecordedTaskInput[] | null
+  journal?: JournalInput[] | null
+  template?: unknown
 }
 
 export interface SiteFacts {
@@ -743,6 +756,8 @@ export function siteFactsFromPlan(plan: {
   materials_estimates?: SiteMaterialsInput | null
   harvests?: HarvestInput[] | null
   tasks?: RecordedTaskInput[] | null
+  journal?: JournalInput[] | null
+  meta?: { template?: unknown } | null
 }): SiteFactsInput {
   const site = plan.site || {}
   return {
@@ -760,5 +775,7 @@ export function siteFactsFromPlan(plan: {
     materials: plan.materials_estimates,
     harvests: plan.harvests,
     tasks: plan.tasks,
+    journal: plan.journal,
+    template: plan.meta?.template,
   }
 }

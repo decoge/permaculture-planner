@@ -92,7 +92,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'analytics',
     name: 'Analytics Dashboard',
-    description: 'Overview with key metrics, stats, and insights',
+    description: 'Saved counts, area, and weekly time',
     icon: BarChart3,
     category: 'essentials',
     tier: 'free',
@@ -159,7 +159,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'relationships',
     name: 'Relationship Mapper',
-    description: 'Interactive visualization of plant guilds, energy flows, and cycles',
+    description: 'Plants saved together on this plan',
     icon: Network,
     category: 'permaculture',
     tier: 'free',
@@ -186,7 +186,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'companions',
     name: 'Companion Planting & Guilds',
-    description: 'Plant relationships, guilds, and beneficial polycultures',
+    description: 'Plants saved in the same bed',
     icon: Heart,
     category: 'permaculture',
     tier: 'free',
@@ -213,7 +213,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'permaculture',
     name: 'Permaculture Principles',
-    description: 'Ethics, principles, patterns, and design methodology',
+    description: 'Recorded zone and water source',
     icon: Sparkles,
     category: 'permaculture',
     tier: 'premium',
@@ -260,7 +260,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'implementation',
     name: 'Implementation Phases',
-    description: 'Break project into phases with budgets and timelines',
+    description: 'Saved beds and weekly time',
     icon: Hammer,
     category: 'planning',
     tier: 'pro',
@@ -280,7 +280,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'evolution',
     name: 'Garden Evolution Timeline',
-    description: 'Maturation visualization with yield and milestone tracking',
+    description: 'Recorded planting season',
     icon: Clock,
     category: 'advanced',
     tier: 'pro',
@@ -289,7 +289,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'critique',
     name: 'AI Design Critique',
-    description: 'Professional design analysis with automated scoring',
+    description: 'Saved site facts without a design score',
     icon: Award,
     category: 'advanced',
     tier: 'pro',
@@ -298,7 +298,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'progress',
     name: 'Progress Tracking',
-    description: 'Photo journal with observations and performance metrics',
+    description: 'Saved journal entries, harvests, and tasks',
     icon: BookOpen,
     category: 'advanced',
     tier: 'pro',
@@ -338,7 +338,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'knowledge',
     name: 'Knowledge Base',
-    description: 'Permaculture guides, plant profiles, and best practices',
+    description: 'Notes saved on this plan',
     icon: Lightbulb,
     category: 'resources',
     tier: 'free',
@@ -347,7 +347,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'templates',
     name: 'Template Library',
-    description: 'Proven permaculture designs and pattern library',
+    description: 'A template saved on this plan',
     icon: Layout,
     category: 'resources',
     tier: 'pro',
