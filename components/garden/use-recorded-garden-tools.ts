@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { api } from '@/lib/api/http'
 import { GardenTools, summarizeGardenTools } from '@/lib/garden/garden-tools'
-import { HarvestInput, SiteBedInput, SiteMaterialsInput, siteFactsFromPlan } from '@/lib/garden/site-facts'
+import { HarvestInput, RecordedTaskInput, SiteBedInput, SiteMaterialsInput, siteFactsFromPlan } from '@/lib/garden/site-facts'
 
 interface PlanFactResponse {
   site?: {
@@ -21,6 +21,7 @@ interface PlanFactResponse {
   beds?: SiteBedInput[]
   materials_estimates?: SiteMaterialsInput | null
   harvests?: HarvestInput[] | null
+  tasks?: RecordedTaskInput[] | null
 }
 
 const unavailable: GardenTools = {
@@ -30,6 +31,9 @@ const unavailable: GardenTools = {
   sectors: ['The saved plan could not be loaded.'],
   succession: ['The saved plan could not be loaded.'],
   materials: ['The saved plan could not be loaded.'],
+  zones: ['The saved plan could not be loaded.'],
+  tasks: ['The saved plan could not be loaded.'],
+  timeline: ['The saved plan could not be loaded.'],
 }
 
 export function useRecordedGardenTools(planId?: string): GardenTools | null {

@@ -428,7 +428,7 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="zones" className="flex-1 m-0">
-                <ZoneManagementPanel gardenBeds={gardenData} />
+                <ZoneManagementPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="companions" className="flex-1 m-0">
@@ -440,12 +440,7 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="timeline" className="flex-1 m-0">
-                <SeasonalTimelinePanel
-                  gardenBeds={gardenData}
-                  frostDates={siteData?.frostDates || undefined}
-                  usdaZone={siteData?.usdaZone}
-                  planId={planId}
-                />
+                <SeasonalTimelinePanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="materials" className="flex-1 m-0">
@@ -453,14 +448,7 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="tasks" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="tasks"
-                  featureName="Task Management"
-                  featureDescription="Track and organize all your gardening tasks with deadlines and priorities."
-                  requiredTier="premium"
-                >
-                  <TasksPanel planId={planId} />
-                </LockedPanel>
+                <TasksPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="sun" className="flex-1 m-0">

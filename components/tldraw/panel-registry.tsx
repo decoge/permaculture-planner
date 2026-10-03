@@ -168,7 +168,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'zones',
     name: 'Permaculture Zones',
-    description: 'Organize by zones 0-5 based on use frequency',
+    description: 'Recorded USDA zone and any saved permaculture zone',
     icon: Target,
     category: 'permaculture',
     tier: 'free',
@@ -233,7 +233,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'timeline',
     name: 'Seasonal Timeline',
-    description: 'Planting and harvest calendar by season and zone',
+    description: 'Recorded season and planting dates',
     icon: Calendar,
     category: 'planning',
     tier: 'free',
@@ -242,7 +242,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'tasks',
     name: 'Task Management',
-    description: 'Track tasks with deadlines, priorities, and maintenance cycles',
+    description: 'Tasks saved on this plan',
     icon: ListTodo,
     category: 'planning',
     tier: 'premium',

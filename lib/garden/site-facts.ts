@@ -49,6 +49,7 @@ export interface SiteBedInput {
   elementCategory?: unknown
   elementType?: unknown
   notes?: unknown
+  zone?: unknown
   plants?: SitePlantInput[]
   plantings?: SitePlantInput[]
 }
@@ -74,6 +75,17 @@ export interface SiteMaterialsInput {
   cost_estimate_cents?: unknown
 }
 
+export interface RecordedTaskInput {
+  title?: unknown
+  dueOn?: unknown
+  due_on?: unknown
+  category?: unknown
+  completed?: unknown
+  description?: unknown
+  recurringPattern?: unknown
+  recurring_pattern?: unknown
+}
+
 export interface SiteFactsInput {
   usdaZone?: unknown
   lastFrost?: unknown
@@ -88,6 +100,7 @@ export interface SiteFactsInput {
   beds?: SiteBedInput[]
   materials?: SiteMaterialsInput | null
   harvests?: HarvestInput[] | null
+  tasks?: RecordedTaskInput[] | null
 }
 
 export interface SiteFacts {
@@ -729,6 +742,7 @@ export function siteFactsFromPlan(plan: {
   beds?: SiteBedInput[]
   materials_estimates?: SiteMaterialsInput | null
   harvests?: HarvestInput[] | null
+  tasks?: RecordedTaskInput[] | null
 }): SiteFactsInput {
   const site = plan.site || {}
   return {
@@ -745,5 +759,6 @@ export function siteFactsFromPlan(plan: {
     beds: plan.beds,
     materials: plan.materials_estimates,
     harvests: plan.harvests,
+    tasks: plan.tasks,
   }
 }

@@ -18,7 +18,7 @@ import { SiteConditionPanels } from '@/components/garden/site-condition-panels'
 import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
 import { GardenToolPanels } from '@/components/garden/garden-tool-panels'
 import { formatGardenTools, summarizeGardenTools } from '@/lib/garden/garden-tools'
-import { formatSiteFacts, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
+import { formatSiteFacts, RecordedTaskInput, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
 
 interface Plan {
   id: string
@@ -65,6 +65,7 @@ interface Plan {
     mulch_cuft?: number | string | null
     drip_line_ft?: number | string | null
   } | null
+  tasks?: RecordedTaskInput[] | null
 }
 
 export default function PlanViewPage() {

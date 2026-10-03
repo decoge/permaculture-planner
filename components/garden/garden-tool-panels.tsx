@@ -42,6 +42,9 @@ export function GardenToolPanels({ tools }: { tools: GardenTools | null }) {
       <SectorToolCard tools={tools} />
       <SuccessionToolCard tools={tools} />
       <MaterialsToolCard tools={tools} />
+      <ZonesToolCard tools={tools} />
+      <TasksToolCard tools={tools} />
+      <TimelineToolCard tools={tools} />
     </div>
   )
 }
@@ -108,6 +111,39 @@ export function MaterialsToolCard({ tools }: { tools: GardenTools | null }) {
       title="Materials & Costs"
       description="Recorded bed size and saved material quantities. Missing quantities are not estimated."
       lines={tools?.materials || LOADING}
+    />
+  )
+}
+
+export function ZonesToolCard({ tools }: { tools: GardenTools | null }) {
+  return (
+    <FactCard
+      id="zones"
+      title="Permaculture Zones"
+      description="Recorded USDA zone and any saved permaculture zone. Zones are not assigned."
+      lines={tools?.zones || LOADING}
+    />
+  )
+}
+
+export function TasksToolCard({ tools }: { tools: GardenTools | null }) {
+  return (
+    <FactCard
+      id="tasks"
+      title="Task Management"
+      description="Tasks saved on this plan. A schedule is not created."
+      lines={tools?.tasks || LOADING}
+    />
+  )
+}
+
+export function TimelineToolCard({ tools }: { tools: GardenTools | null }) {
+  return (
+    <FactCard
+      id="timeline"
+      title="Seasonal Timeline"
+      description="Recorded season and planting dates. A calendar is not calculated."
+      lines={tools?.timeline || LOADING}
     />
   )
 }

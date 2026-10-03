@@ -1,6 +1,6 @@
 import { PLANT_LIBRARY, PlantInfo } from '@/lib/data/plant-library'
 import { sunLabel } from '@/lib/garden/plan-summary'
-import { SiteBedInput, SiteFactsInput, SitePlantInput } from '@/lib/garden/site-facts'
+import { RecordedTaskInput, SiteBedInput, SiteFactsInput, SitePlantInput } from '@/lib/garden/site-facts'
 
 export interface GardenTools {
   sun: string[]
@@ -9,6 +9,9 @@ export interface GardenTools {
   sectors: string[]
   succession: string[]
   materials: string[]
+  zones: string[]
+  tasks: string[]
+  timeline: string[]
 }
 
 type WaterNeed = PlantInfo['requirements']['water']
@@ -299,8 +302,21 @@ export function summarizeGardenTools(input: SiteFactsInput): GardenTools {
   const sectors = sectorLines(input, beds)
   const succession = successionLines(beds)
   const materialFacts = materialLines(input, beds)
+  const zones = zoneLines(input, beds)
+  const tasks = taskLines(input.tasks)
+  const timeline = timelineLines(input, beds)
 
-  return { sun, water: waterLines, growth, sectors, succession, materials: materialFacts }
+  return {
+    sun,
+    water: waterLines,
+    growth,
+    sectors,
+    succession,
+    materials: materialFacts,
+    zones,
+    tasks,
+    timeline,
+  }
 }
 
 type SowingMethod = 'direct' | 'transplant' | 'succession'
@@ -331,6 +347,9 @@ function recordedSowing(value: unknown): string | null {
 }
 
 function recordedDate(value: unknown): string | null {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10)
+  }
   const text = recordedText(value)
   return text ? text.slice(0, 10) : null
 }
@@ -483,6 +502,157 @@ function materialLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
   return lines
 }
 
+type TaskCategory = 'build' | 'plant' | 'maintain' | 'harvest' | 'water' | 'fertilize' | 'cover' | 'maint'
+
+function isTaskCategory(value: string): value is TaskCategory {
+  return value === 'build'
+    || value === 'plant'
+    || value === 'maintain'
+    || value === 'harvest'
+    || value === 'water'
+    || value === 'fertilize'
+    || value === 'cover'
+    || value === 'maint'
+}
+
+function taskCategoryLabel(value: TaskCategory): string {
+  switch (value) {
+    case 'build':
+      return 'build'
+    case 'plant':
+      return 'plant'
+    case 'maintain':
+      return 'maintain'
+    case 'harvest':
+      return 'harvest'
+    case 'water':
+      return 'water'
+    case 'fertilize':
+      return 'fertilize'
+    case 'cover':
+      return 'cover'
+    case 'maint':
+      return 'maint'
+    default: {
+      const unexpected: never = value
+      return unexpected
+    }
+  }
+}
+
+function recordedZoneValue(value: unknown): string | null {
+  const number = recordedNumber(value)
+  if (number !== null) return formatQuantity(number)
+  return recordedText(value)
+}
+
+function zoneLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
+  const lines: string[] = []
+  const usda = recordedText(input.usdaZone)
+  lines.push(usda ? `USDA zone is recorded as ${usda}.` : 'USDA zone is not recorded.')
+  if (beds.length === 0) {
+    lines.push('No beds are saved.')
+    lines.push('A permaculture zone is not recorded.')
+    return lines
+  }
+  for (const bed of beds) {
+    const name = recordedText(bed.name) || 'Bed'
+    const notes = asRecord(bed.notes)
+    const zone = recordedZoneValue(bed.zone) || recordedZoneValue(notes?.zone)
+    lines.push(zone
+      ? `${name} permaculture zone is recorded as ${zone}.`
+      : `${name} permaculture zone is not recorded.`)
+  }
+  return lines
+}
+
+function taskLines(tasks: RecordedTaskInput[] | null | undefined): string[] {
+  const rows = tasks || []
+  if (rows.length === 0) return ['No tasks are recorded.']
+  const lines: string[] = []
+  let anyRecurrence = false
+  for (const task of rows) {
+    const title = recordedText(task.title) || 'Untitled task'
+    const categoryText = recordedText(task.category)
+    const category = categoryText
+      ? (isTaskCategory(categoryText) ? taskCategoryLabel(categoryText) : categoryText)
+      : null
+    const due = recordedDate(task.dueOn ?? task.due_on)
+    const completed = recordedBoolean(task.completed)
+    const status = completed === null
+      ? 'completion is not recorded'
+      : completed ? 'completed' : 'not completed'
+    const parts = [
+      category ? `recorded as ${category}` : 'category is not recorded',
+      due ? `due ${due}` : 'due date is not recorded',
+      status,
+    ]
+    lines.push(`${title} is ${parts.join(', ')}.`)
+    const description = recordedText(task.description)
+    if (description) lines.push(`${title} notes: ${description}.`)
+    const recurrence = recordedText(task.recurringPattern ?? task.recurring_pattern)
+    if (recurrence) {
+      anyRecurrence = true
+      lines.push(`${title} repeats as ${recurrence}.`)
+    }
+  }
+  if (!anyRecurrence) lines.push('A recurring schedule is not recorded.')
+  return lines
+}
+
+function timelineLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
+  const lines: string[] = []
+  const plantings = beds.flatMap((bed) => plantsOn(bed).map((plant) => ({ bed, plant })))
+  if (plantings.length === 0) {
+    lines.push('No plants are saved.')
+    lines.push('Planting season is not recorded.')
+  }
+  for (const { bed, plant } of plantings) {
+    const raw = String(plant.variety || plant.plantId || plant.name || '').trim()
+    if (!raw) continue
+    const known = libraryPlant(raw)
+    const name = known?.name || titleCase(raw)
+    const bedName = recordedText(bed.name) || 'Bed'
+    const seasonText = recordedText(plant.season)
+    const season = seasonText ? (isSeason(seasonText) ? seasonLabel(seasonText) : seasonText) : null
+    const year = recordedNumber(plant.year)
+    lines.push(season
+      ? `${name} in ${bedName} is recorded for ${year === null ? season : `${season} ${formatQuantity(year)}`}.`
+      : `${name} in ${bedName}: planting season is not recorded.`)
+    const days = recordedNumber(plant.targetDaysToMaturity ?? plant.target_days_to_maturity)
+    lines.push(days === null
+      ? `Days to maturity for ${name} in ${bedName} are not recorded.`
+      : `Days to maturity for ${name} in ${bedName} are recorded as ${formatQuantity(days)}.`)
+    const sowing = recordedSowing(plant.sowingMethod ?? plant.sowing_method)
+    lines.push(sowing
+      ? `Sowing method for ${name} in ${bedName} is recorded as ${sowing}.`
+      : `Sowing method for ${name} in ${bedName} is not recorded.`)
+    const sowDate = recordedDate(plant.sowDate ?? plant.sow_date)
+    const transplantDate = recordedDate(plant.transplantDate ?? plant.transplant_date)
+    const harvestStart = recordedDate(plant.harvestStart ?? plant.harvest_start)
+    const harvestEnd = recordedDate(plant.harvestEnd ?? plant.harvest_end)
+    lines.push(sowDate
+      ? `Sow date for ${name} in ${bedName} is recorded as ${sowDate}.`
+      : `Sow date for ${name} in ${bedName} is not recorded.`)
+    lines.push(transplantDate
+      ? `Transplant date for ${name} in ${bedName} is recorded as ${transplantDate}.`
+      : `Transplant date for ${name} in ${bedName} is not recorded.`)
+    lines.push(harvestStart || harvestEnd
+      ? `Harvest dates for ${name} in ${bedName} are recorded as ${harvestStart || 'not recorded'} to ${harvestEnd || 'not recorded'}.`
+      : `Harvest dates for ${name} in ${bedName} are not recorded.`)
+  }
+  const lastFrost = recordedDate(input.lastFrost)
+  const firstFrost = recordedDate(input.firstFrost)
+  if (lastFrost && firstFrost) {
+    lines.push(`Last frost is recorded as ${lastFrost}.`)
+    lines.push(`First frost is recorded as ${firstFrost}.`)
+  } else {
+    lines.push('Last frost and first frost are not recorded.')
+  }
+  lines.push('A planting calendar is not calculated.')
+  return lines
+}
+
 export function formatGardenTools(tools: GardenTools): string {
   const sections: Array<[string, string[]]> = [
     ['Sun', tools.sun],
@@ -491,6 +661,9 @@ export function formatGardenTools(tools: GardenTools): string {
     ['Sectors', tools.sectors],
     ['Succession', tools.succession],
     ['Materials', tools.materials],
+    ['Zones', tools.zones],
+    ['Tasks', tools.tasks],
+    ['Timeline', tools.timeline],
   ]
   return sections.flatMap(([title, lines]) => [title, ...lines.map((line) => `- ${line}`), '']).join('\n').trim()
 }

@@ -66,9 +66,74 @@ describe('summarizeGardenTools', () => {
     expect(text).toContain('No crop sequence is recorded.')
     expect(text).toContain('A crop rotation is not recorded.')
     expect(text).toContain('Soil volume, compost, mulch, lumber, screws, drip line, emitters, row cover, and cost are not recorded.')
+    expect(text).toContain('USDA zone is not recorded.')
+    expect(text).toContain('A permaculture zone is not recorded.')
+    expect(text).toContain('No tasks are recorded.')
+    expect(text).toContain('A planting calendar is not calculated.')
     expect(text).not.toContain('12 in')
     expect(text).not.toContain('spigot')
     expect(text).not.toContain('gallons')
+    expect(text).not.toContain('Apr 15')
+    expect(text).not.toContain('Oct 15')
+    expect(text).not.toContain('7a')
+  })
+
+  test('keeps a saved zone, task, and planting date without building a calendar', () => {
+    const tools = summarizeGardenTools({
+      usdaZone: '8b',
+      lastFrost: '2026-03-20',
+      firstFrost: '2026-11-02',
+      beds: [
+        {
+          name: 'Salad Greens',
+          notes: { zone: 1 },
+          plantings: [
+            {
+              variety: 'lettuce',
+              season: 'fall',
+              year: 2026,
+              target_days_to_maturity: 70,
+              sowing_method: 'direct',
+              sow_date: '2026-09-01',
+            },
+          ],
+        },
+        { name: 'Root Vegetables', notes: { points: [] } },
+      ],
+      tasks: [
+        {
+          title: 'Water the salad bed',
+          category: 'water',
+          due_on: '2026-10-10',
+          completed: false,
+          recurring_pattern: 'weekly',
+        },
+      ],
+    })
+
+    expect(tools.zones).toEqual([
+      'USDA zone is recorded as 8b.',
+      'Salad Greens permaculture zone is recorded as 1.',
+      'Root Vegetables permaculture zone is not recorded.',
+    ])
+    expect(tools.tasks).toEqual([
+      'Water the salad bed is recorded as water, due 2026-10-10, not completed.',
+      'Water the salad bed repeats as weekly.',
+    ])
+    expect(tools.timeline).toEqual(expect.arrayContaining([
+      'Lettuce in Salad Greens is recorded for fall 2026.',
+      'Days to maturity for Lettuce in Salad Greens are recorded as 70.',
+      'Sowing method for Lettuce in Salad Greens is recorded as direct.',
+      'Sow date for Lettuce in Salad Greens is recorded as 2026-09-01.',
+      'Transplant date for Lettuce in Salad Greens is not recorded.',
+      'Harvest dates for Lettuce in Salad Greens are not recorded.',
+      'Last frost is recorded as 2026-03-20.',
+      'First frost is recorded as 2026-11-02.',
+      'A planting calendar is not calculated.',
+    ]))
+    const text = formatGardenTools(tools)
+    expect(text).not.toContain('Apr 15')
+    expect(text).not.toContain('visit')
   })
 
   test('keeps a saved sector note, succession note, and material quantity', () => {
