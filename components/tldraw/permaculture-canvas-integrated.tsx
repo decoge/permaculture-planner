@@ -9,6 +9,7 @@ import { PlantTool } from './tools/plant-tool'
 import { ElementTool } from './tools/element-tool'
 import { GardenBed } from '@/lib/garden/garden-types'
 import { dataAdapter, gardenIdFromShape } from './data-adapter'
+import { placePlantsInBed } from '@/lib/garden/plant-label-layout'
 import { CanvasErrorBoundary } from './canvas-error-boundary'
 import { PlantInfo } from '@/lib/data/plant-library'
 import { ElementSubtype, ElementCategory } from '@/lib/canvas-elements'
@@ -172,12 +173,38 @@ const PermacultureCanvasIntegratedInner = forwardRef<PermacultureCanvasHandle, P
 
         syncingPlants = true
         try {
-          editor.updateShapes(plants.map((plant) => ({
-            id: plant.id,
-            type: 'plant' as const,
-            x: next.x + (plant.x - prev.x) * scaleX,
-            y: next.y + (plant.y - prev.y) * scaleY,
-          })))
+          if (resized) {
+            const ordered = plants.slice().sort((a, b) => a.y - b.y || a.x - b.x)
+            const spots = placePlantsInBed(
+              ordered.map((plant) => ({
+                id: plant.id,
+                name: String((plant.props as { plantName?: string }).plantName || 'Plant'),
+                x: plant.x - next.x,
+                y: plant.y - next.y,
+              })),
+              nextProps.w || prevW,
+              nextProps.h || prevH,
+            )
+            const spotById = new Map(spots.map((spot) => [spot.id, spot]))
+            editor.updateShapes(ordered.flatMap((plant) => {
+              const spot = spotById.get(plant.id)
+              if (!spot) return []
+              return [{
+                id: plant.id,
+                type: 'plant' as const,
+                x: next.x + spot.x,
+                y: next.y + spot.y,
+                props: { radius: spot.radius },
+              }]
+            }))
+          } else {
+            editor.updateShapes(plants.map((plant) => ({
+              id: plant.id,
+              type: 'plant' as const,
+              x: next.x + (plant.x - prev.x),
+              y: next.y + (plant.y - prev.y),
+            })))
+          }
         } finally {
           syncingPlants = false
         }

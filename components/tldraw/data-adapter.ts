@@ -1,6 +1,7 @@
 import { createShapeId, TLShape } from 'tldraw'
 import { GardenBed, PlantedItem } from '@/lib/garden/garden-types'
 import { placeBedPoints } from '@/lib/garden/bed-geometry'
+import { placePlantsInBed } from '@/lib/garden/plant-label-layout'
 import { BedShape } from './shapes/bed-shape'
 import { PlantShape } from './shapes/plant-shape'
 
@@ -63,11 +64,24 @@ export class DataAdapter {
 
       shapes.push(bedShape)
 
-      // Create plant shapes for plants in this bed
       if (bed.plants && bed.plants.length > 0) {
+        const width = bed.width || this.calculateWidth(bed.points)
+        const height = bed.height || this.calculateHeight(bed.points)
+        const spots = placePlantsInBed(
+          bed.plants.map((plant) => ({
+            id: plant.id,
+            name: this.getPlantName(plant.plantId),
+            x: plant.x,
+            y: plant.y,
+          })),
+          width,
+          height,
+        )
+        const spotById = new Map(spots.map((spot) => [spot.id, spot]))
         for (const plant of bed.plants) {
-          const plantShape = this.plantToShape(plant, bed)
-          shapes.push(plantShape)
+          const spot = spotById.get(plant.id)
+          if (!spot) continue
+          shapes.push(this.plantToShape(plant, bed, spot))
         }
       }
     }
@@ -160,17 +174,21 @@ export class DataAdapter {
   /**
    * Convert plant item to tldraw PlantShape
    */
-  private plantToShape(plant: PlantedItem, bed: GardenBed): PlantShape {
+  private plantToShape(
+    plant: PlantedItem,
+    bed: GardenBed,
+    spot: { x: number; y: number; radius: number },
+  ): PlantShape {
     return {
       id: createShapeId(plant.id),
       type: 'plant',
-      x: this.getBedX(bed.points) + plant.x,
-      y: this.getBedY(bed.points) + plant.y,
+      x: this.getBedX(bed.points) + spot.x,
+      y: this.getBedY(bed.points) + spot.y,
       rotation: 0,
       isLocked: false,
       opacity: 1,
       props: {
-        radius: 20,
+        radius: spot.radius,
         plantId: plant.plantId,
         plantName: this.getPlantName(plant.plantId),
         emoji: this.getPlantEmoji(plant.plantId),

@@ -7,6 +7,7 @@ import {
   Geometry2d,
   SVGContainer,
 } from 'tldraw'
+import { fontSizeForRadius } from '@/lib/garden/plant-label-layout'
 
 /**
  * PlantShape represents individual plants within garden beds
@@ -90,23 +91,11 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
    * Render the plant shape
    */
   component(shape: PlantShape) {
-    const { radius, plantName, emoji, color, spacing } = shape.props
+    const { radius, plantName, emoji, color } = shape.props
+    const fontSize = fontSizeForRadius(radius)
 
     return (
       <SVGContainer>
-        {/* Spacing guide circle (dashed, subtle) */}
-        <circle
-          cx={0}
-          cy={0}
-          r={spacing * 2.5} // Convert spacing to visual radius
-          fill="none"
-          stroke={color}
-          strokeWidth={1}
-          strokeDasharray="4 4"
-          opacity={0.2}
-        />
-
-        {/* Main plant circle */}
         <circle
           cx={0}
           cy={0}
@@ -117,29 +106,30 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
           strokeWidth={2}
         />
 
-        {/* Emoji or plant icon */}
         {emoji && (
           <text
             x={0}
             y={0}
             textAnchor="middle"
             dominantBaseline="central"
-            fontSize={radius * 1.2}
+            fontSize={Math.max(8, radius * 1.15)}
             style={{ pointerEvents: 'none', userSelect: 'none' }}
           >
             {emoji}
           </text>
         )}
 
-        {/* Plant name label (below the circle) */}
         <text
           x={0}
-          y={radius + 15}
+          y={radius + 2 + fontSize / 2}
           textAnchor="middle"
+          dominantBaseline="central"
           fill="currentColor"
-          fontSize={10}
-          fontWeight="500"
-          opacity={0.8}
+          fontSize={fontSize}
+          fontWeight="600"
+          stroke="#ffffff"
+          strokeWidth={2.5}
+          paintOrder="stroke"
           style={{ pointerEvents: 'none', userSelect: 'none' }}
         >
           {plantName}
