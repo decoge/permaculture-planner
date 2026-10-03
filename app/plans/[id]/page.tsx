@@ -16,6 +16,8 @@ import { BedLayout } from '@/components/garden/bed-layout'
 import { PlanInsights } from '@/components/garden/plan-insights'
 import { SiteConditionPanels } from '@/components/garden/site-condition-panels'
 import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
+import { GardenToolPanels } from '@/components/garden/garden-tool-panels'
+import { formatGardenTools, summarizeGardenTools } from '@/lib/garden/garden-tools'
 import { formatSiteFacts, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
 
 interface Plan {
@@ -125,6 +127,8 @@ export default function PlanViewPage() {
       }),
       '',
       formatSiteFacts(summarizeSiteFacts(siteFactsFromPlan(plan))),
+      '',
+      formatGardenTools(summarizeGardenTools(siteFactsFromPlan(plan))),
     ].join('\n')
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -177,6 +181,7 @@ export default function PlanViewPage() {
   const plantCount = plan.beds.reduce((sum, bed) => sum + (bed.plantings?.length || 0), 0)
   const summary = summarizePlan(plan.beds)
   const siteFacts = summarizeSiteFacts(siteFactsFromPlan(plan))
+  const gardenTools = summarizeGardenTools(siteFactsFromPlan(plan))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
@@ -341,6 +346,7 @@ export default function PlanViewPage() {
         <aside className="space-y-4 lg:sticky lg:top-4">
           <PlanInsights summary={summary} />
           <SiteConditionPanels facts={siteFacts} />
+          <GardenToolPanels tools={gardenTools} />
         </aside>
         </div>
       </div>

@@ -42,6 +42,7 @@ import {
   TopographyPanel,
 } from '@/components/garden/site-condition-panels'
 import { useRecordedSiteFacts } from '@/components/garden/use-recorded-site-facts'
+import { useRecordedGardenTools } from '@/components/garden/use-recorded-garden-tools'
 import { GardenBed } from '@/lib/garden/garden-types'
 import { PlantInfo } from '@/lib/data/plant-library'
 import { ElementSubtype, ElementCategory, ELEMENT_STYLES } from '@/lib/canvas-elements'
@@ -119,6 +120,7 @@ export function PermacultureEditorIntegrated({
   const [recentPanels, setRecentPanels] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const siteFacts = useRecordedSiteFacts(planId)
+  const gardenTools = useRecordedGardenTools(planId)
 
   // Load recent panels from localStorage
   useEffect(() => {
@@ -469,14 +471,7 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="sun" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="sun"
-                  featureName="Sun Analysis"
-                  featureDescription="Analyze sun exposure patterns throughout the day and seasons for optimal plant placement."
-                  requiredTier="premium"
-                >
-                  <SunAnalysisPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+                <SunAnalysisPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="sectors" className="flex-1 m-0">
@@ -502,14 +497,7 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="water" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="water"
-                  featureName="Water Management"
-                  featureDescription="Design rainwater harvesting, irrigation systems, and water conservation strategies."
-                  requiredTier="premium"
-                >
-                  <WaterManagementPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+                <WaterManagementPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="evolution" className="flex-1 m-0">
@@ -572,14 +560,7 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="simulation" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="simulation"
-                  featureName="Growth Simulation"
-                  featureDescription="Run animated simulations showing your garden's evolution over 10 years with realistic growth modeling and scenario testing."
-                  requiredTier="pro"
-                >
-                  <EnhancedSimulationPanel gardenBeds={gardenData} />
-                </LockedPanel>
+                <EnhancedSimulationPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="permaculture" className="flex-1 m-0">

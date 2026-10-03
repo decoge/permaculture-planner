@@ -7,6 +7,10 @@ export interface SitePlantInput {
   family?: unknown
   season?: unknown
   year?: unknown
+  spacingIn?: unknown
+  spacing_in?: unknown
+  targetDaysToMaturity?: unknown
+  target_days_to_maturity?: unknown
 }
 
 export interface HarvestInput {

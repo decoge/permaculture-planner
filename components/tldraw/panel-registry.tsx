@@ -139,7 +139,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'sun',
     name: 'Sun & Shade Analysis',
-    description: 'Map sun exposure patterns throughout day and seasons',
+    description: 'Recorded plant sun needs and saved spacing',
     icon: Sun,
     category: 'site',
     tier: 'premium',
@@ -148,7 +148,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'water',
     name: 'Water Management',
-    description: 'Rainwater harvesting, irrigation, drainage, and ponds',
+    description: 'Recorded water source and plant water needs',
     icon: Droplets,
     category: 'site',
     tier: 'premium',
@@ -271,7 +271,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'simulation',
     name: 'Growth Simulation',
-    description: 'Animated 10-year evolution with realistic growth modeling',
+    description: 'Recorded season and days to maturity',
     icon: Activity,
     category: 'advanced',
     tier: 'pro',
