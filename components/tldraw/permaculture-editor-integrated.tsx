@@ -404,7 +404,7 @@ export function PermacultureEditorIntegrated({
         {/* Right Panel - Properties/Analysis */}
         <div
           className={cn(
-            'flex h-full min-h-0 flex-col overflow-hidden border-l bg-card/30 backdrop-blur transition-all duration-300',
+            'flex h-full min-h-0 flex-col overflow-hidden border-l bg-card transition-all duration-300',
             rightPanelOpen ? 'w-80' : 'w-0'
           )}
         >
@@ -430,7 +430,7 @@ export function PermacultureEditorIntegrated({
                 <ZoneManagementPanel tools={gardenTools} />
               </TabsContent>
 
-              <TabsContent value="companions" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+              <TabsContent value="companions" className="m-0 min-h-0 flex-1 flex-col overflow-hidden bg-card data-[state=active]:flex data-[state=inactive]:hidden">
                 <CompanionPlantingPanel design={designFacts} />
               </TabsContent>
 
