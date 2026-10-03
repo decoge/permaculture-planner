@@ -13,6 +13,8 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { BedLayout } from '@/components/garden/bed-layout'
+import { PlanInsights } from '@/components/garden/plan-insights'
+import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
 
 interface Plan {
   id: string
@@ -93,19 +95,20 @@ export default function PlanViewPage() {
   const handleExport = () => {
     if (!plan) return
 
-    const exportData = {
-      plan,
-      exportedAt: new Date().toISOString()
-    }
-
-    const dataStr = JSON.stringify(exportData, null, 2)
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
-    const exportFileDefaultName = `${plan.name.replace(/\s+/g, '-')}-${Date.now()}.json`
-
-    const linkElement = document.createElement('a')
-    linkElement.setAttribute('href', dataUri)
-    linkElement.setAttribute('download', exportFileDefaultName)
-    linkElement.click()
+    const text = formatPlanSummary({
+      planName: plan.name,
+      siteName: plan.site.name,
+      usdaZone: plan.site.usda_zone,
+      summary: summarizePlan(plan.beds),
+    })
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const filename = `${plan.name.replace(/[^\w.-]+/g, '-')}-summary.txt`
+    const link = document.createElement('a')
+    link.href = url
+    link.download = filename
+    link.click()
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   if (loading) {
@@ -147,6 +150,7 @@ export default function PlanViewPage() {
 
   const totalArea = plan.beds.reduce((sum, bed) => sum + (bed.length_ft * bed.width_ft), 0)
   const plantCount = plan.beds.reduce((sum, bed) => sum + (bed.plantings?.length || 0), 0)
+  const summary = summarizePlan(plan.beds)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
@@ -189,6 +193,8 @@ export default function PlanViewPage() {
 
       {/* Content */}
       <div className="container mx-auto px-4 py-8">
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div>
         {/* Stats */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">
           <Card>
@@ -305,6 +311,11 @@ export default function PlanViewPage() {
             )}
           </CardContent>
         </Card>
+        </div>
+        <aside className="lg:sticky lg:top-4">
+          <PlanInsights summary={summary} />
+        </aside>
+        </div>
       </div>
     </div>
   )
