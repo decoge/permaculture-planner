@@ -58,10 +58,13 @@ export function Navigation() {
     return pathname?.startsWith(href)
   }
 
+  const scrollsWithPage = pathname === '/demo' || pathname?.startsWith('/editor') === true
+
   return (
     <>
       <nav className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        "z-50 transition-all duration-300",
+        scrollsWithPage ? "relative" : "fixed top-0 left-0 right-0",
         isScrolled ? "bg-white/95 backdrop-blur shadow-lg" : "bg-white/90 backdrop-blur-sm",
         "border-b border-gray-200"
       )}>
@@ -215,8 +218,7 @@ export function Navigation() {
         </div>
       </nav>
 
-      {/* Spacer to prevent content from going under fixed nav */}
-      <div className="h-16" />
+      {scrollsWithPage ? null : <div className="h-16" />}
     </>
   )
 }
