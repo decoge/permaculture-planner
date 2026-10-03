@@ -117,7 +117,13 @@ export class PostgresPersistence implements IPersistenceAdapter {
   }
 
   private toGardenBed(bed: StoredBed): GardenBed {
-    let notes: { points?: { x: number; y: number }[]; fill?: string; stroke?: string } = {}
+    let notes: {
+      points?: { x: number; y: number }[]
+      fill?: string
+      stroke?: string
+      width?: number
+      height?: number
+    } = {}
     if (bed.notes && bed.notes.startsWith('{')) {
       try {
         notes = JSON.parse(bed.notes)
@@ -126,8 +132,8 @@ export class PostgresPersistence implements IPersistenceAdapter {
       }
     }
     const position = bed.position_json || { x: 0, y: 0, rotation: 0 }
-    const width = (bed.length_ft || 4) * 12
-    const height = (bed.width_ft || 4) * 12
+    const width = notes.width && notes.width > 0 ? notes.width : (bed.length_ft || 4) * 12
+    const height = notes.height && notes.height > 0 ? notes.height : (bed.width_ft || 4) * 12
     const points = notes.points && notes.points.length > 0
       ? notes.points
       : [

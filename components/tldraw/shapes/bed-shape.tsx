@@ -1,6 +1,7 @@
 import {
   BaseBoxShapeUtil,
   TLBaseShape,
+  TLResizeInfo,
   RecordProps,
   T,
   Rectangle2d,
@@ -8,7 +9,9 @@ import {
   Polygon2d,
   SVGContainer,
   Vec,
+  resizeBox,
 } from 'tldraw'
+import { scalePointsToSize } from '@/lib/garden/bed-geometry'
 
 /**
  * Point structure for bed polygons
@@ -68,6 +71,20 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
       elementType: '',
       elementCategory: 'bed',
       zone: -1, // -1 = no zone assigned
+    }
+  }
+
+  override onResize(shape: BedShape, info: TLResizeInfo<BedShape>) {
+    const resized = resizeBox(shape, info)
+    const points = this.parsePoints(shape.props.pointsJson)
+    if (points.length < 3) return resized
+
+    return {
+      ...resized,
+      props: {
+        ...resized.props,
+        pointsJson: JSON.stringify(scalePointsToSize(points, resized.props.w, resized.props.h)),
+      },
     }
   }
 

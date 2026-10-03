@@ -34,7 +34,13 @@ export function EditorClient({ plan }: EditorClientProps) {
     try {
       // Convert Supabase beds to GardenBed format WITH plants
       const beds: GardenBed[] = plan.beds.map((bed: any) => {
-        let notes: { points?: { x: number; y: number }[]; fill?: string; stroke?: string } = {}
+        let notes: {
+          points?: { x: number; y: number }[]
+          fill?: string
+          stroke?: string
+          width?: number
+          height?: number
+        } = {}
         if (typeof bed.notes === 'string' && bed.notes.startsWith('{')) {
           try {
             notes = JSON.parse(bed.notes)
@@ -43,8 +49,8 @@ export function EditorClient({ plan }: EditorClientProps) {
           }
         }
         const position = bed.position_json || { x: 0, y: 0, rotation: 0 }
-        const width = (bed.length_ft || 4) * 12
-        const height = (bed.width_ft || 4) * 12
+        const width = notes.width && notes.width > 0 ? notes.width : (bed.length_ft || 4) * 12
+        const height = notes.height && notes.height > 0 ? notes.height : (bed.width_ft || 4) * 12
         const plants = bed.plantings?.map((planting: any) => {
           const plantPosition = planting.successions_json?.position || { x: 24, y: 24 }
           return {
