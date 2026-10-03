@@ -24,7 +24,7 @@ const MAX_RADIUS = 9
 const LABEL_GAP = 2
 const BOX_GAP = 2
 const PAD = 4
-const HEADER = 26
+const HEADER = 16
 
 /** Font size used for the name drawn beside a plant icon. */
 export function fontSizeForRadius(radius: number): number {

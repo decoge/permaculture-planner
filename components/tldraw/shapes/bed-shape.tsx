@@ -21,6 +21,16 @@ interface Point {
   y: number
 }
 
+function bedTitle(name: string, zone: number): string {
+  return zone >= 0 ? `Z${zone} ${name}` : name
+}
+
+function bedTitleSize(title: string, width: number): number {
+  const available = Math.max(width - 8, 12)
+  const fitted = available / Math.max(title.length * 0.56, 1)
+  return Math.max(5, Math.min(11, fitted))
+}
+
 /**
  * BedShape represents garden beds and permaculture elements
  * Supports both rectangular and custom polygon shapes
@@ -134,7 +144,8 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
     // Determine fill based on element category
     const fillColor = this.getCategoryColor(elementCategory, color)
     const strokeColor = color
-    const showZone = zone >= 0
+    const title = bedTitle(name, zone)
+    const titleSize = bedTitleSize(title, w)
 
     if (points.length > 2) {
       // Render as polygon
@@ -149,27 +160,16 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
             stroke={strokeColor}
             strokeWidth={2}
           />
-          {/* Zone label */}
-          {showZone && (
-            <text
-              x={10}
-              y={20}
-              fill={strokeColor}
-              fontSize={14}
-              fontWeight="bold"
-            >
-              Zone {zone}
-            </text>
-          )}
-          {/* Bed name */}
           <text
-            x={10}
-            y={showZone ? 40 : 25}
+            x={4}
+            y={titleSize + 2}
             fill="currentColor"
-            fontSize={12}
-            opacity={0.8}
+            fontSize={titleSize}
+            fontWeight="600"
+            textLength={Math.max(w - 8, 12)}
+            lengthAdjust="spacingAndGlyphs"
           >
-            {name}
+            {title}
           </text>
         </SVGContainer>
       )
@@ -188,27 +188,16 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
           rx={4}
           ry={4}
         />
-        {/* Zone label */}
-        {showZone && (
-          <text
-            x={10}
-            y={20}
-            fill={strokeColor}
-            fontSize={14}
-            fontWeight="bold"
-          >
-            Zone {zone}
-          </text>
-        )}
-        {/* Bed name */}
         <text
-          x={10}
-          y={showZone ? 40 : 25}
+          x={4}
+          y={titleSize + 2}
           fill="currentColor"
-          fontSize={12}
-          opacity={0.8}
+          fontSize={titleSize}
+          fontWeight="600"
+          textLength={Math.max(w - 8, 12)}
+          lengthAdjust="spacingAndGlyphs"
         >
-          {name}
+          {title}
         </text>
       </SVGContainer>
     )
