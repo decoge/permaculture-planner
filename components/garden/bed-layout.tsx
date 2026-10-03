@@ -147,39 +147,47 @@ export function BedLayout({
   const maxY = Math.max(...allPoints.map((point) => point.y)) + 16
 
   return (
-    <svg
-      viewBox={`${minX} ${minY} ${Math.max(1, maxX - minX)} ${Math.max(1, maxY - minY)}`}
-      className={`h-full w-full bg-emerald-50/70 ${className}`}
-      role="img"
-      aria-label="Garden bed layout"
-    >
-      {placed.map((item) => {
-        const origin = item.points[0]
-        const path = item.points.map((point) => `${point.x},${point.y}`).join(' ')
-        const labelSize = compact ? 0 : Math.max(12, Math.min(18, (item.points[1]?.x || 0) - origin.x) / 10)
-        return (
-          <g key={item.bed.id}>
-            <polygon points={path} fill={item.fill} stroke={item.stroke} strokeWidth={3} />
-            {!compact && (
-              <text x={origin.x + 10} y={origin.y + 22} fill="#14532d" fontSize={labelSize} fontWeight={600}>
-                {item.bed.name}
-              </text>
-            )}
-            {item.plants.slice(0, compact ? 0 : 8).map((plant, index) => {
-              const x = origin.x + (plant.x ?? 24 + (index % 4) * 28)
-              const y = origin.y + (plant.y ?? 40 + Math.floor(index / 4) * 28)
-              return (
-                <g key={plant.id || `${item.bed.id}-${index}`}>
-                  <circle cx={x} cy={y} r={7} fill="#15803d" />
-                  <text x={x + 10} y={y + 4} fill="#166534" fontSize={11}>
-                    {plantLabel(plant.name)}
-                  </text>
-                </g>
-              )
-            })}
-          </g>
-        )
-      })}
-    </svg>
+    <div className={`flex h-full min-h-0 flex-col ${className}`}>
+      <svg
+        viewBox={`${minX} ${minY} ${Math.max(1, maxX - minX)} ${Math.max(1, maxY - minY)}`}
+        className="min-h-0 w-full flex-1 bg-emerald-50/70"
+        role="img"
+        aria-label="Garden bed layout"
+      >
+        {placed.map((item) => {
+          const origin = item.points[0]
+          const path = item.points.map((point) => `${point.x},${point.y}`).join(' ')
+          const width = Math.abs((item.points[1]?.x ?? origin.x) - origin.x)
+          return (
+            <g key={item.bed.id}>
+              <polygon points={path} fill={item.fill} stroke={item.stroke} strokeWidth={3} />
+              {!compact && width > 70 && (
+                <text x={origin.x + 8} y={origin.y + 18} fill="#14532d" fontSize={12} fontWeight={600}>
+                  {item.bed.name}
+                </text>
+              )}
+              {(compact ? [] : item.plants.slice(0, 8)).map((plant, index) => {
+                const x = origin.x + (plant.x ?? 18 + (index % 4) * 16)
+                const y = origin.y + (plant.y ?? 28 + Math.floor(index / 4) * 16)
+                return <circle key={plant.id || `${item.bed.id}-${index}`} cx={x} cy={y} r={5} fill="#15803d" />
+              })}
+            </g>
+          )
+        })}
+      </svg>
+      {!compact && (
+        <ul className="grid gap-1 border-t bg-white px-3 py-2 text-xs text-gray-700 sm:grid-cols-2">
+          {placed.map((item) => {
+            const names = [...new Set(item.plants.map((plant) => plantLabel(plant.name)))]
+            return (
+              <li key={`${item.bed.id}-caption`}>
+                <span className="font-medium text-gray-900">{item.bed.name}:</span>{' '}
+                {names.length > 0 ? names.join(', ') : 'No plants yet'}
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
   )
 }

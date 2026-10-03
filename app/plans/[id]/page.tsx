@@ -236,8 +236,8 @@ export default function PlanViewPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-80 rounded-lg border bg-white">
-              <BedLayout beds={plan.beds} />
+            <div className="h-96 overflow-hidden rounded-lg border bg-white">
+              <BedLayout beds={plan.beds} className="h-full" />
             </div>
           </CardContent>
         </Card>

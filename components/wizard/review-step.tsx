@@ -36,8 +36,8 @@ export function ReviewStep({ data }: ReviewStepProps) {
         </p>
       </div>
 
-      <div className="h-72 rounded-lg border bg-white">
-        <BedLayout beds={layoutBeds} />
+      <div className="h-80 overflow-hidden rounded-lg border bg-white">
+        <BedLayout beds={layoutBeds} className="h-full" />
       </div>
 
       <div className="grid gap-4">
