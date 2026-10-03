@@ -6,6 +6,9 @@ export interface GardenTools {
   sun: string[]
   water: string[]
   growth: string[]
+  sectors: string[]
+  succession: string[]
+  materials: string[]
 }
 
 type WaterNeed = PlantInfo['requirements']['water']
@@ -293,7 +296,191 @@ export function summarizeGardenTools(input: SiteFactsInput): GardenTools {
   }
   growth.push('A growth curve is not calculated.')
 
-  return { sun, water: waterLines, growth }
+  const sectors = sectorLines(input, beds)
+  const succession = successionLines(beds)
+  const materialFacts = materialLines(input, beds)
+
+  return { sun, water: waterLines, growth, sectors, succession, materials: materialFacts }
+}
+
+type SowingMethod = 'direct' | 'transplant' | 'succession'
+
+function isSowingMethod(value: string): value is SowingMethod {
+  return value === 'direct' || value === 'transplant' || value === 'succession'
+}
+
+function sowingLabel(value: SowingMethod): string {
+  switch (value) {
+    case 'direct':
+      return 'direct'
+    case 'transplant':
+      return 'transplant'
+    case 'succession':
+      return 'succession'
+    default: {
+      const unexpected: never = value
+      return unexpected
+    }
+  }
+}
+
+function recordedSowing(value: unknown): string | null {
+  const text = recordedText(value)
+  if (!text) return null
+  return isSowingMethod(text) ? sowingLabel(text) : text
+}
+
+function recordedDate(value: unknown): string | null {
+  const text = recordedText(value)
+  return text ? text.slice(0, 10) : null
+}
+
+function sequenceNote(value: unknown): string | null {
+  const record = asRecord(value)
+  if (!record) return recordedText(value)
+  const extra = Object.entries(record).filter(([key]) => key !== 'position')
+  if (extra.length === 0) return null
+  return extra.map(([key, item]) => {
+    if (typeof item === 'string' || typeof item === 'number') return `${key} ${item}`
+    if (Array.isArray(item) && item.every((part) => typeof part === 'string' || typeof part === 'number')) {
+      return `${key} ${item.join(', ')}`
+    }
+    return key
+  }).join('; ')
+}
+
+function sectorLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
+  const lines: string[] = []
+  const shade = recordedText(input.shadeNotes)
+  const slope = recordedNumber(input.slopePct)
+  const lat = recordedNumber(input.lat)
+  const lng = recordedNumber(input.lng)
+  const constraints = asRecord(input.constraints)
+  const savedSectors = recordedText(constraints?.sectors) || recordedText(asRecord(constraints?.sectors)?.name)
+  lines.push(savedSectors
+    ? `A sector record is saved: ${savedSectors}.`
+    : 'No sector map is saved.')
+  lines.push('Wind, fire, wildlife, noise, and views are not recorded.')
+  lines.push(shade ? `Shade notes: ${shade}` : 'Shade notes are not recorded.')
+  lines.push(lat !== null && lng !== null
+    ? `Location is recorded as ${lat}, ${lng}. A sun path is not recorded.`
+    : 'Latitude and longitude are not recorded, so a sun path is not recorded.')
+  lines.push(slope === null
+    ? 'Slope is not recorded.'
+    : `Slope is recorded as ${formatQuantity(slope)}%.`)
+  if (beds.length === 0) lines.push('No beds are saved.')
+  for (const bed of beds) {
+    const name = recordedText(bed.name) || 'Bed'
+    const orientation = recordedText(bed.orientation)
+    lines.push(orientation
+      ? `${name} orientation is recorded as ${orientation}.`
+      : `${name} orientation is not recorded.`)
+  }
+  return lines
+}
+
+function successionLines(beds: SiteBedInput[]): string[] {
+  const lines: string[] = []
+  const plantings = beds.flatMap((bed) => plantsOn(bed).map((plant) => ({ bed, plant })))
+  if (plantings.length === 0) {
+    lines.push('No plants are saved.')
+    lines.push('Planting season is not recorded.')
+  }
+  let anySequence = false
+  for (const { bed, plant } of plantings) {
+    const raw = String(plant.variety || plant.plantId || plant.name || '').trim()
+    if (!raw) continue
+    const known = libraryPlant(raw)
+    const name = known?.name || titleCase(raw)
+    const bedName = recordedText(bed.name) || 'Bed'
+    const seasonText = recordedText(plant.season)
+    const season = seasonText ? (isSeason(seasonText) ? seasonLabel(seasonText) : seasonText) : null
+    const year = recordedNumber(plant.year)
+    if (season) {
+      lines.push(`${name} in ${bedName} is recorded for ${year === null ? season : `${season} ${formatQuantity(year)}`}.`)
+    } else {
+      lines.push(`${name} in ${bedName}: planting season is not recorded.`)
+    }
+    const family = recordedText(plant.family)
+    lines.push(family
+      ? `Saved plant family for ${name} in ${bedName} is recorded as ${family}.`
+      : `Plant family for ${name} in ${bedName} is not recorded.`)
+    const sowing = recordedSowing(plant.sowingMethod ?? plant.sowing_method)
+    lines.push(sowing
+      ? `Sowing method for ${name} in ${bedName} is recorded as ${sowing}.`
+      : `Sowing method for ${name} in ${bedName} is not recorded.`)
+    const sowDate = recordedDate(plant.sowDate ?? plant.sow_date)
+    const transplantDate = recordedDate(plant.transplantDate ?? plant.transplant_date)
+    const harvestStart = recordedDate(plant.harvestStart ?? plant.harvest_start)
+    const harvestEnd = recordedDate(plant.harvestEnd ?? plant.harvest_end)
+    lines.push(sowDate
+      ? `Sow date for ${name} in ${bedName} is recorded as ${sowDate}.`
+      : `Sow date for ${name} in ${bedName} is not recorded.`)
+    lines.push(transplantDate
+      ? `Transplant date for ${name} in ${bedName} is recorded as ${transplantDate}.`
+      : `Transplant date for ${name} in ${bedName} is not recorded.`)
+    lines.push(harvestStart || harvestEnd
+      ? `Harvest dates for ${name} in ${bedName} are recorded as ${harvestStart || 'not recorded'} to ${harvestEnd || 'not recorded'}.`
+      : `Harvest dates for ${name} in ${bedName} are not recorded.`)
+    const sequence = sequenceNote(plant.successionsJson ?? plant.successions_json)
+    if (sequence) {
+      anySequence = true
+      lines.push(`Succession note for ${name} in ${bedName}: ${sequence}.`)
+    }
+  }
+  if (!anySequence) {
+    lines.push('No crop sequence is recorded.')
+    lines.push('A crop rotation is not recorded.')
+  }
+  return lines
+}
+
+function materialQuantity(label: string, value: unknown, unit: string): string {
+  const recorded = recordedNumber(value)
+  return recorded === null
+    ? `${label} is not recorded.`
+    : `${label} is recorded as ${formatQuantity(recorded)} ${unit}.`
+}
+
+function materialLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
+  const lines: string[] = []
+  if (beds.length === 0) lines.push('No beds are saved.')
+  for (const bed of beds) {
+    const name = recordedText(bed.name) || 'Bed'
+    const length = recordedNumber(bed.lengthFt ?? bed.length_ft)
+    const width = recordedNumber(bed.widthFt ?? bed.width_ft)
+    const height = recordedNumber(bed.heightIn ?? bed.height_in)
+    const size = [
+      length === null ? 'length not recorded' : `${formatQuantity(length)} ft long`,
+      width === null ? 'width not recorded' : `${formatQuantity(width)} ft wide`,
+      height === null ? 'height not recorded' : `${formatQuantity(height)} in tall`,
+    ].join(', ')
+    lines.push(`${name} is recorded as ${size}.`)
+    const clearance = recordedNumber(bed.pathClearanceIn ?? bed.path_clearance_in)
+    lines.push(clearance === null
+      ? `${name} path clearance is not recorded.`
+      : `${name} path clearance is recorded as ${formatQuantity(clearance)} in.`)
+    const trellis = recordedBoolean(bed.trellis)
+    lines.push(trellis === null
+      ? `${name} trellis is not recorded.`
+      : `${name} trellis is recorded as ${trellis ? 'yes' : 'no'}.`)
+  }
+  const materials = input.materials
+  if (!materials) {
+    lines.push('Soil volume, compost, mulch, lumber, screws, drip line, emitters, row cover, and cost are not recorded.')
+    return lines
+  }
+  lines.push(materialQuantity('Soil volume', materials.soilCuft ?? materials.soil_cuft, 'cu ft'))
+  lines.push(materialQuantity('Compost', materials.compostCuft ?? materials.compost_cuft, 'cu ft'))
+  lines.push(materialQuantity('Mulch', materials.mulchCuft ?? materials.mulch_cuft, 'cu ft'))
+  lines.push(materialQuantity('Lumber', materials.lumberBoardfeet ?? materials.lumber_boardfeet, 'board feet'))
+  lines.push(materialQuantity('Screws', materials.screwsCount ?? materials.screws_count, 'screws'))
+  lines.push(materialQuantity('Drip line length', materials.dripLineFt ?? materials.drip_line_ft, 'ft'))
+  lines.push(materialQuantity('Emitters', materials.emittersCount ?? materials.emitters_count, 'emitters'))
+  lines.push(materialQuantity('Row cover', materials.rowCoverSqft ?? materials.row_cover_sqft, 'sq ft'))
+  const cost = recordedNumber(materials.costEstimateCents ?? materials.cost_estimate_cents)
+  lines.push(cost === null ? 'Cost is not recorded.' : `Cost is recorded as ${formatQuantity(cost)} cents.`)
+  return lines
 }
 
 export function formatGardenTools(tools: GardenTools): string {
@@ -301,6 +488,9 @@ export function formatGardenTools(tools: GardenTools): string {
     ['Sun', tools.sun],
     ['Water', tools.water],
     ['Growth', tools.growth],
+    ['Sectors', tools.sectors],
+    ['Succession', tools.succession],
+    ['Materials', tools.materials],
   ]
   return sections.flatMap(([title, lines]) => [title, ...lines.map((line) => `- ${line}`), '']).join('\n').trim()
 }

@@ -39,6 +39,9 @@ export function GardenToolPanels({ tools }: { tools: GardenTools | null }) {
       <SunToolCard tools={tools} />
       <WaterToolCard tools={tools} />
       <GrowthToolCard tools={tools} />
+      <SectorToolCard tools={tools} />
+      <SuccessionToolCard tools={tools} />
+      <MaterialsToolCard tools={tools} />
     </div>
   )
 }
@@ -72,6 +75,39 @@ export function GrowthToolCard({ tools }: { tools: GardenTools | null }) {
       title="Growth Simulation"
       description="Recorded season and days to maturity. A growth curve is not calculated."
       lines={tools?.growth || LOADING}
+    />
+  )
+}
+
+export function SectorToolCard({ tools }: { tools: GardenTools | null }) {
+  return (
+    <FactCard
+      id="sectors"
+      title="Sector Analysis"
+      description="Recorded orientation and site notes. Wind, fire, and wildlife are not inferred."
+      lines={tools?.sectors || LOADING}
+    />
+  )
+}
+
+export function SuccessionToolCard({ tools }: { tools: GardenTools | null }) {
+  return (
+    <FactCard
+      id="succession"
+      title="Ecological Succession"
+      description="Recorded season, family, and sowing method. A crop rotation is not created."
+      lines={tools?.succession || LOADING}
+    />
+  )
+}
+
+export function MaterialsToolCard({ tools }: { tools: GardenTools | null }) {
+  return (
+    <FactCard
+      id="materials"
+      title="Materials & Costs"
+      description="Recorded bed size and saved material quantities. Missing quantities are not estimated."
+      lines={tools?.materials || LOADING}
     />
   )
 }

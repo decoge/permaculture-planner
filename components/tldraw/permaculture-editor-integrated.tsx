@@ -449,14 +449,7 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="materials" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="materials"
-                  featureName="Materials Planning"
-                  featureDescription="Calculate materials, costs, and quantities needed for your garden design."
-                  requiredTier="premium"
-                >
-                  <MaterialsPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+                <MaterialsPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="tasks" className="flex-1 m-0">
@@ -475,25 +468,11 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="sectors" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="sectors"
-                  featureName="Sector Analysis"
-                  featureDescription="Map external energies (wind, sun, wildlife, fire) affecting your garden site."
-                  requiredTier="premium"
-                >
-                  <SectorAnalysisPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+                <SectorAnalysisPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="succession" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="succession"
-                  featureName="Succession Planning"
-                  featureDescription="Plan multi-year garden evolution with crop rotation and perennial establishment."
-                  requiredTier="premium"
-                >
-                  <SuccessionPlanningPanel gardenBeds={gardenData} planId={planId} />
-                </LockedPanel>
+                <SuccessionPlanningPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="water" className="flex-1 m-0">

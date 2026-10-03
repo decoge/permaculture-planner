@@ -177,7 +177,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'sectors',
     name: 'Sector Analysis',
-    description: 'Map external energies: wind, sun, fire, wildlife, views',
+    description: 'Recorded orientation and site notes',
     icon: Compass,
     category: 'permaculture',
     tier: 'premium',
@@ -204,7 +204,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'succession',
     name: 'Ecological Succession',
-    description: 'Multi-year succession from pioneer to climax species',
+    description: 'Recorded season, family, and sowing method',
     icon: Trees,
     category: 'permaculture',
     tier: 'premium',
@@ -251,7 +251,7 @@ export const PANEL_REGISTRY: PanelDefinition[] = [
   {
     id: 'materials',
     name: 'Materials & Costs',
-    description: 'Calculate materials, quantities, and budget estimates',
+    description: 'Recorded bed size and saved material quantities',
     icon: ShoppingCart,
     category: 'planning',
     tier: 'premium',

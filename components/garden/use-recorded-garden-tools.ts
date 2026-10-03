@@ -27,6 +27,9 @@ const unavailable: GardenTools = {
   sun: ['The saved plan could not be loaded.'],
   water: ['The saved plan could not be loaded.'],
   growth: ['The saved plan could not be loaded.'],
+  sectors: ['The saved plan could not be loaded.'],
+  succession: ['The saved plan could not be loaded.'],
+  materials: ['The saved plan could not be loaded.'],
 }
 
 export function useRecordedGardenTools(planId?: string): GardenTools | null {

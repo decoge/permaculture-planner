@@ -11,6 +11,18 @@ export interface SitePlantInput {
   spacing_in?: unknown
   targetDaysToMaturity?: unknown
   target_days_to_maturity?: unknown
+  sowingMethod?: unknown
+  sowing_method?: unknown
+  sowDate?: unknown
+  sow_date?: unknown
+  transplantDate?: unknown
+  transplant_date?: unknown
+  harvestStart?: unknown
+  harvest_start?: unknown
+  harvestEnd?: unknown
+  harvest_end?: unknown
+  successionsJson?: unknown
+  successions_json?: unknown
 }
 
 export interface HarvestInput {
@@ -22,6 +34,10 @@ export interface HarvestInput {
 
 export interface SiteBedInput {
   name?: unknown
+  lengthFt?: unknown
+  length_ft?: unknown
+  widthFt?: unknown
+  width_ft?: unknown
   surface?: unknown
   heightIn?: unknown
   height_in?: unknown
@@ -46,6 +62,14 @@ export interface SiteMaterialsInput {
   mulch_cuft?: unknown
   dripLineFt?: unknown
   drip_line_ft?: unknown
+  lumberBoardfeet?: unknown
+  lumber_boardfeet?: unknown
+  screwsCount?: unknown
+  screws_count?: unknown
+  emittersCount?: unknown
+  emitters_count?: unknown
+  rowCoverSqft?: unknown
+  row_cover_sqft?: unknown
   costEstimateCents?: unknown
   cost_estimate_cents?: unknown
 }

@@ -61,8 +61,64 @@ describe('summarizeGardenTools', () => {
     expect(text).toContain('Rainfall is not recorded.')
     expect(text).toContain('Days to maturity are not recorded.')
     expect(text).toContain('A growth curve is not calculated.')
+    expect(text).toContain('No sector map is saved.')
+    expect(text).toContain('Wind, fire, wildlife, noise, and views are not recorded.')
+    expect(text).toContain('No crop sequence is recorded.')
+    expect(text).toContain('A crop rotation is not recorded.')
+    expect(text).toContain('Soil volume, compost, mulch, lumber, screws, drip line, emitters, row cover, and cost are not recorded.')
     expect(text).not.toContain('12 in')
     expect(text).not.toContain('spigot')
     expect(text).not.toContain('gallons')
+  })
+
+  test('keeps a saved sector note, succession note, and material quantity', () => {
+    const tools = summarizeGardenTools({
+      slopePct: '0.00',
+      constraints: { sectors: 'north wind' },
+      beds: [
+        {
+          name: 'Salad Greens',
+          length_ft: '4.00',
+          width_ft: '9.17',
+          height_in: '12.0',
+          orientation: 'NS',
+          trellis: false,
+          path_clearance_in: '24.0',
+          plantings: [
+            {
+              variety: 'lettuce',
+              family: 'Other',
+              season: 'fall',
+              year: 2026,
+              sowing_method: 'direct',
+              successions_json: { position: { x: 12, y: 24 }, next: 'beans' },
+            },
+          ],
+        },
+      ],
+      materials: { soil_cuft: '18.5', lumber_boardfeet: null, cost_estimate_cents: 1250 },
+    })
+
+    expect(tools.sectors).toEqual(expect.arrayContaining([
+      'A sector record is saved: north wind.',
+      'Slope is recorded as 0%.',
+      'Salad Greens orientation is recorded as NS.',
+    ]))
+    expect(tools.succession).toEqual(expect.arrayContaining([
+      'Lettuce in Salad Greens is recorded for fall 2026.',
+      'Saved plant family for Lettuce in Salad Greens is recorded as Other.',
+      'Sowing method for Lettuce in Salad Greens is recorded as direct.',
+      'Sow date for Lettuce in Salad Greens is not recorded.',
+      'Succession note for Lettuce in Salad Greens: next beans.',
+    ]))
+    expect(tools.succession).not.toContain('A crop rotation is not recorded.')
+    expect(tools.materials).toEqual(expect.arrayContaining([
+      'Salad Greens is recorded as 4 ft long, 9.2 ft wide, 12 in tall.',
+      'Salad Greens path clearance is recorded as 24 in.',
+      'Salad Greens trellis is recorded as no.',
+      'Soil volume is recorded as 18.5 cu ft.',
+      'Lumber is not recorded.',
+      'Cost is recorded as 1250 cents.',
+    ]))
   })
 })
