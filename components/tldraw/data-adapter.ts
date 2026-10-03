@@ -1,7 +1,7 @@
 import { createShapeId, TLShape } from 'tldraw'
 import { GardenBed, PlantedItem } from '@/lib/garden/garden-types'
 import { placeBedPoints } from '@/lib/garden/bed-geometry'
-import { placePlantsInBed } from '@/lib/garden/plant-label-layout'
+import { bedLabelWidth, placePlantsInBed } from '@/lib/garden/plant-label-layout'
 import { BedShape } from './shapes/bed-shape'
 import { PlantShape } from './shapes/plant-shape'
 
@@ -81,7 +81,7 @@ export class DataAdapter {
         for (const plant of bed.plants) {
           const spot = spotById.get(plant.id)
           if (!spot) continue
-          shapes.push(this.plantToShape(plant, bed, spot))
+          shapes.push(this.plantToShape(plant, bed, spot, bedLabelWidth(width)))
         }
       }
     }
@@ -177,7 +177,8 @@ export class DataAdapter {
   private plantToShape(
     plant: PlantedItem,
     bed: GardenBed,
-    spot: { x: number; y: number; radius: number },
+    spot: { x: number; y: number; radius: number; fontSize: number },
+    labelMaxWidth: number,
   ): PlantShape {
     return {
       id: createShapeId(plant.id),
@@ -200,6 +201,8 @@ export class DataAdapter {
       },
       meta: {
         bedId: bed.id,
+        fontSize: spot.fontSize,
+        labelMaxWidth,
       },
       parentId: 'page:page' as any,
       index: 'a1' as any,

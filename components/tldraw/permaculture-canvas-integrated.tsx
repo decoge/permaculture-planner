@@ -9,7 +9,7 @@ import { PlantTool } from './tools/plant-tool'
 import { ElementTool } from './tools/element-tool'
 import { GardenBed } from '@/lib/garden/garden-types'
 import { dataAdapter, gardenIdFromShape } from './data-adapter'
-import { placePlantsInBed } from '@/lib/garden/plant-label-layout'
+import { bedLabelWidth, placePlantsInBed } from '@/lib/garden/plant-label-layout'
 import { CanvasErrorBoundary } from './canvas-error-boundary'
 import { PlantInfo } from '@/lib/data/plant-library'
 import { ElementSubtype, ElementCategory } from '@/lib/canvas-elements'
@@ -195,6 +195,11 @@ const PermacultureCanvasIntegratedInner = forwardRef<PermacultureCanvasHandle, P
                 x: next.x + spot.x,
                 y: next.y + spot.y,
                 props: { radius: spot.radius },
+                meta: {
+                  ...plant.meta,
+                  fontSize: spot.fontSize,
+                  labelMaxWidth: bedLabelWidth(nextProps.w || prevW),
+                },
               }]
             }))
           } else {
@@ -276,6 +281,12 @@ const PermacultureCanvasIntegratedInner = forwardRef<PermacultureCanvasHandle, P
 
     return (
       <div className={`w-full h-full ${className}`}>
+        <style>{`
+          .permaculture-canvas .tlui-layout__top__right {
+            justify-content: flex-end;
+            padding-bottom: 8px;
+          }
+        `}</style>
         <Tldraw
           shapeUtils={permacultureShapes}
           tools={permacultureTools}

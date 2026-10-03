@@ -7,7 +7,7 @@ import {
   Geometry2d,
   SVGContainer,
 } from 'tldraw'
-import { fontSizeForRadius } from '@/lib/garden/plant-label-layout'
+import { FittedSvgText } from '@/components/tldraw/fitted-svg-text'
 
 /**
  * PlantShape represents individual plants within garden beds
@@ -92,7 +92,12 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
    */
   component(shape: PlantShape) {
     const { radius, plantName, emoji, color } = shape.props
-    const fontSize = fontSizeForRadius(radius)
+    const storedSize = shape.meta.fontSize
+    const storedWidth = shape.meta.labelMaxWidth
+    const maxSize = typeof storedSize === 'number' && storedSize > 0 ? storedSize : 10
+    const maxWidth = typeof storedWidth === 'number' && storedWidth > 0
+      ? storedWidth
+      : Math.max(radius * 2, 8)
 
     return (
       <SVGContainer>
@@ -103,7 +108,7 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
           fill={color}
           fillOpacity={0.9}
           stroke="#fff"
-          strokeWidth={2}
+          strokeWidth={1}
         />
 
         {emoji && (
@@ -112,28 +117,22 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
             y={0}
             textAnchor="middle"
             dominantBaseline="central"
-            fontSize={Math.max(8, radius * 1.15)}
+            fontSize={Math.max(radius * 0.9, 3)}
             style={{ pointerEvents: 'none', userSelect: 'none' }}
           >
             {emoji}
           </text>
         )}
 
-        <text
+        <FittedSvgText
+          text={plantName}
           x={0}
-          y={radius + 2 + fontSize / 2}
-          textAnchor="middle"
-          dominantBaseline="central"
-          fill="currentColor"
-          fontSize={fontSize}
-          fontWeight="600"
-          stroke="#ffffff"
-          strokeWidth={2.5}
-          paintOrder="stroke"
-          style={{ pointerEvents: 'none', userSelect: 'none' }}
-        >
-          {plantName}
-        </text>
+          y={radius + 2}
+          maxWidth={maxWidth}
+          maxSize={maxSize}
+          fontWeight={500}
+          label="plant"
+        />
       </SVGContainer>
     )
   }

@@ -12,6 +12,8 @@ import {
   resizeBox,
 } from 'tldraw'
 import { scalePointsToSize } from '@/lib/garden/bed-geometry'
+import { bedLabelWidth } from '@/lib/garden/plant-label-layout'
+import { FittedSvgText } from '@/components/tldraw/fitted-svg-text'
 
 /**
  * Point structure for bed polygons
@@ -19,16 +21,6 @@ import { scalePointsToSize } from '@/lib/garden/bed-geometry'
 interface Point {
   x: number
   y: number
-}
-
-function bedTitle(name: string, zone: number): string {
-  return zone >= 0 ? `Z${zone} ${name}` : name
-}
-
-function bedTitleSize(title: string, width: number): number {
-  const available = Math.max(width - 8, 12)
-  const fitted = available / Math.max(title.length * 0.56, 1)
-  return Math.max(5, Math.min(11, fitted))
 }
 
 /**
@@ -138,14 +130,23 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
    * Render the bed shape as SVG
    */
   component(shape: BedShape) {
-    const { w, h, name, color, pointsJson, zone, elementCategory } = shape.props
+    const { w, h, name, color, pointsJson, elementCategory } = shape.props
     const points = this.parsePoints(pointsJson)
 
     // Determine fill based on element category
     const fillColor = this.getCategoryColor(elementCategory, color)
     const strokeColor = color
-    const title = bedTitle(name, zone)
-    const titleSize = bedTitleSize(title, w)
+    const title = (
+      <FittedSvgText
+        text={name}
+        x={w / 2}
+        y={3}
+        maxWidth={bedLabelWidth(w)}
+        maxSize={12}
+        fontWeight={600}
+        label="title"
+      />
+    )
 
     if (points.length > 2) {
       // Render as polygon
@@ -160,17 +161,7 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
             stroke={strokeColor}
             strokeWidth={2}
           />
-          <text
-            x={4}
-            y={titleSize + 2}
-            fill="currentColor"
-            fontSize={titleSize}
-            fontWeight="600"
-            textLength={Math.max(w - 8, 12)}
-            lengthAdjust="spacingAndGlyphs"
-          >
-            {title}
-          </text>
+          {title}
         </SVGContainer>
       )
     }
@@ -188,17 +179,7 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
           rx={4}
           ry={4}
         />
-        <text
-          x={4}
-          y={titleSize + 2}
-          fill="currentColor"
-          fontSize={titleSize}
-          fontWeight="600"
-          textLength={Math.max(w - 8, 12)}
-          lengthAdjust="spacingAndGlyphs"
-        >
-          {title}
-        </text>
+        {title}
       </SVGContainer>
     )
   }
