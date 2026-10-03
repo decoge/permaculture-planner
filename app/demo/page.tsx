@@ -83,13 +83,12 @@ function DemoPageContent() {
 
         await load(planId)
 
-        if (beds.length > 0) {
-          toast.success('Loaded your garden plan from wizard')
+        const loadedBeds = useGardenStore.getState().beds
+        const loadError = useGardenStore.getState().error
+        if (loadedBeds.length > 0) {
+          toast.success('Loaded your garden plan')
         } else {
-          toast.error('Could not load your garden plan', {
-            description: 'Showing starter garden instead'
-          })
-          updateBeds(STARTER_GARDEN)
+          toast.error(loadError || 'Could not load your garden plan')
         }
       } else {
         // Priority 2: Demo mode with localStorage

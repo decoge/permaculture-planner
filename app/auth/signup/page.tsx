@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { api, ApiError } from '@/lib/api/http'
+import { safeNextPath } from '@/lib/auth/next-path'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -30,7 +31,8 @@ export default function SignupPage() {
         method: 'POST',
         body: JSON.stringify({ email, password, name: fullName }),
       })
-      router.push('/dashboard')
+      const params = new URLSearchParams(window.location.search)
+      router.push(safeNextPath(params.get('redirectTo') || params.get('redirect_to')))
       router.refresh()
     } catch (err) {
       setError(err instanceof ApiError ? err.message : 'An unexpected error occurred')

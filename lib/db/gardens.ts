@@ -408,14 +408,22 @@ export async function listDashboardPlans(userId: string) {
       const width = Number(bed.width_ft) || 0
       return sum + length * width
     }, 0)
+    const plantingStats = await queryOne<{ plants: number; varieties: number }>(
+      `SELECT COUNT(pl.id)::int AS plants,
+              COUNT(DISTINCT pl.variety)::int AS varieties
+       FROM plantings pl
+       JOIN beds b ON b.id = pl.bed_id
+       WHERE b.plan_id = $1`,
+      [plan.id as string]
+    )
     detailed.push({
       ...plan,
       site,
       beds,
       materials_estimates: materials,
       stats: {
-        plants: Math.floor(totalArea * 2),
-        varieties: Math.min(beds.length * 3, 20),
+        plants: plantingStats?.plants || 0,
+        varieties: plantingStats?.varieties || 0,
         area: totalArea,
         beds: beds.length,
       },

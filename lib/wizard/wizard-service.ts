@@ -154,7 +154,7 @@ export class WizardService {
           { x: currentX + bedSize.width, y: currentY + bedSize.height },
           { x: currentX, y: currentY + bedSize.height }
         ],
-        fill: this.getBedColor(data.crops.focus[index % data.crops.focus.length]),
+        fill: this.getBedColor(this.focusAt(data.crops.focus, index)),
         stroke: '#22c55e',
         plants: this.generatePlantsForBed(bedSize, data.crops.focus, index),
         width: bedSize.width,
@@ -162,7 +162,7 @@ export class WizardService {
         rotation: 0,
         elementType: 'raised_bed',
         elementCategory: 'bed',
-        zone: this.determineZone(data.crops.focus[index % data.crops.focus.length])
+        zone: this.determineZone(this.focusAt(data.crops.focus, index))
       }
 
       beds.push(bed)
@@ -183,11 +183,11 @@ export class WizardService {
           currentX = 50
         }
       } else {
-        // Scattered layout - more random positioning
-        currentX += bedSize.width + bedSpacing + Math.random() * 20
-        currentY += Math.random() * 40 - 20
+        const jitter = (index * 17) % 24
+        currentX += bedSize.width + bedSpacing + jitter
+        currentY += ((index * 11) % 30) - 10
         if (currentX > 350) {
-          currentX = 50 + Math.random() * 50
+          currentX = 50 + ((index * 13) % 40)
           currentY += bedSize.height + bedSpacing
         }
       }
@@ -229,15 +229,18 @@ export class WizardService {
     const bedLength = data.surface.accessibility_needs ? 6 : 8 // feet
 
     return Array(numBeds).fill(null).map((_, index) => {
-      // Vary sizes slightly for visual interest
-      const widthVariation = 0.8 + (Math.random() * 0.4) // 0.8 to 1.2 multiplier
-      const lengthVariation = 0.9 + (Math.random() * 0.2) // 0.9 to 1.1 multiplier
+      const lengthVariation = index % 2 === 0 ? 1 : 0.85
 
       return {
-        width: Math.round(bedWidth * pixelsPerFoot * widthVariation),
+        width: Math.round(bedWidth * pixelsPerFoot),
         height: Math.round(bedLength * pixelsPerFoot * lengthVariation)
       }
     })
+  }
+
+  private focusAt(cropFocus: string[], index: number): string {
+    if (cropFocus.length === 0) return 'vegetables'
+    return cropFocus[index % cropFocus.length]
   }
 
   /**
@@ -278,9 +281,9 @@ export class WizardService {
    */
   private generatePlantsForBed(bedSize: { width: number; height: number }, cropFocus: string[], bedIndex: number) {
     const plants = []
-    const plantsPerBed = Math.floor((bedSize.width * bedSize.height) / 1400) // Rough spacing calculation
-
-    const plantOptions = this.getPlantOptionsForCrop(cropFocus[bedIndex % cropFocus.length])
+    const plantsPerBed = Math.max(2, Math.floor((bedSize.width * bedSize.height) / 1400))
+    const focus = cropFocus.length > 0 ? cropFocus : ['vegetables']
+    const plantOptions = this.getPlantOptionsForCrop(focus[bedIndex % focus.length])
 
     for (let i = 0; i < Math.min(plantsPerBed, 12); i++) {
       const plant = plantOptions[i % plantOptions.length]

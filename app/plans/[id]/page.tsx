@@ -12,6 +12,7 @@ import {
   Loader2, AlertCircle
 } from 'lucide-react'
 import Link from 'next/link'
+import { BedLayout } from '@/components/garden/bed-layout'
 
 interface Plan {
   id: string
@@ -32,6 +33,12 @@ interface Plan {
     length_ft: number
     width_ft: number
     shape: string
+    notes?: string | null
+    plantings?: Array<{
+      id: string
+      variety: string | null
+      successions_json?: { position?: { x: number; y: number } } | null
+    }>
   }>
 }
 
@@ -139,6 +146,7 @@ export default function PlanViewPage() {
   }
 
   const totalArea = plan.beds.reduce((sum, bed) => sum + (bed.length_ft * bed.width_ft), 0)
+  const plantCount = plan.beds.reduce((sum, bed) => sum + (bed.plantings?.length || 0), 0)
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
@@ -220,6 +228,20 @@ export default function PlanViewPage() {
           </Card>
         </div>
 
+        <Card className="mb-8 overflow-hidden">
+          <CardHeader>
+            <CardTitle>Bed layout</CardTitle>
+            <CardDescription>
+              {plan.beds.length} beds and {plantCount} plants from this plan
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80 rounded-lg border bg-white">
+              <BedLayout beds={plan.beds} />
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Site Info */}
         <Card className="mb-8">
           <CardHeader>
@@ -269,7 +291,10 @@ export default function PlanViewPage() {
                       <div>
                         <h4 className="font-semibold">{bed.name}</h4>
                         <p className="text-sm text-gray-600">
-                          {bed.length_ft}' × {bed.width_ft}' • {bed.length_ft * bed.width_ft} ft²
+                          {bed.length_ft}&apos; × {bed.width_ft}&apos; • {bed.length_ft * bed.width_ft} ft²
+                          {bed.plantings && bed.plantings.length > 0
+                            ? ` • ${bed.plantings.map((planting) => planting.variety || 'plant').join(', ')}`
+                            : ''}
                         </p>
                       </div>
                     </div>

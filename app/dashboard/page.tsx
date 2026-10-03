@@ -15,6 +15,7 @@ import {
   Star, Heart, MessageCircle, Users, Award
 } from 'lucide-react'
 import { api } from '@/lib/api/http'
+import { BedLayout } from '@/components/garden/bed-layout'
 import { Database } from '@/types/database.types'
 
 type Plan = Database['public']['Tables']['plans']['Row']
@@ -277,10 +278,8 @@ export default function DashboardPage() {
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {plans.map((plan, index) => (
                   <Card key={plan.id} className="overflow-hidden hover:shadow-lg transition-shadow opacity-0 animate-scale-in" style={{ animationDelay: `${0.7 + index * 0.1}s`, animationFillMode: 'forwards' }}>
-                    <div className="h-48 bg-gradient-to-br from-green-100 to-emerald-100 relative">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Trees className="h-16 w-16 text-green-600/30" />
-                      </div>
+                    <div className="h-48 bg-emerald-50 relative">
+                      <BedLayout beds={plan.beds} compact className="absolute inset-0" />
                       <Badge className="absolute top-3 right-3">
                         {plan.stats.beds} beds
                       </Badge>
@@ -343,35 +342,30 @@ export default function DashboardPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Plans saved to your account</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
-                    <Plus className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">Created new permaculture design</p>
-                    <p className="text-sm text-gray-600">2 hours ago</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <Award className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">Earned "First Garden" achievement</p>
-                    <p className="text-sm text-gray-600">Yesterday</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                  <div className="h-10 w-10 bg-purple-100 rounded-full flex items-center justify-center">
-                    <Star className="h-5 w-5 text-purple-600" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium">Reached Level 2</p>
-                    <p className="text-sm text-gray-600">3 days ago</p>
-                  </div>
-                </div>
+                {plans.length === 0 ? (
+                  <p className="text-sm text-gray-600">No saved plans yet. Start with the garden wizard.</p>
+                ) : (
+                  plans.map((plan) => (
+                    <Link
+                      key={plan.id}
+                      href={`/plans/${plan.id}`}
+                      className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg hover:bg-green-50"
+                    >
+                      <div className="h-10 w-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <Plus className="h-5 w-5 text-green-600" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium">{plan.name}</p>
+                        <p className="text-sm text-gray-600">
+                          Saved {new Date(plan.created_at).toLocaleDateString()} · {plan.stats.beds} beds · {plan.stats.plants} plants
+                        </p>
+                      </div>
+                    </Link>
+                  ))
+                )}
               </CardContent>
             </Card>
           </TabsContent>

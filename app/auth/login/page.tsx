@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Leaf, Mail, Lock, LogIn, ArrowRight } from 'lucide-react'
 import { api, ApiError } from '@/lib/api/http'
+import { safeNextPath } from '@/lib/auth/next-path'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
@@ -41,7 +42,9 @@ export default function LoginPage() {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       })
-      router.push('/dashboard')
+      const params = new URLSearchParams(window.location.search)
+      const nextPath = safeNextPath(params.get('redirectTo') || params.get('redirect_to'))
+      router.push(nextPath)
       router.refresh()
     } catch (loginError) {
       setError(loginError instanceof ApiError ? loginError.message : 'An unexpected error occurred')
