@@ -163,7 +163,17 @@ describe('Storage Integration', () => {
 
     // 4. Verify the plan was saved
     const savedPlan = await db.getPlan('offline-plan')
-    expect(savedPlan).toEqual(plan)
+    expect(savedPlan).not.toBeNull()
+    // savePlan re-stamps `timestamp` with the write time, so only the stable
+    // fields round-trip identically; the stamp is monotonic, never the
+    // caller's original value.
+    expect(savedPlan).toMatchObject({
+      id: plan.id,
+      name: plan.name,
+      data: plan.data,
+      synced: false,
+    })
+    expect(savedPlan!.timestamp).toBeGreaterThanOrEqual(plan.timestamp)
   })
 
   test('supports draft recovery', async () => {

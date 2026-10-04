@@ -58,7 +58,7 @@ export class MaterialsCalculator {
     let compostCuFt = 0
     let mulchCuFt = 0
     let cardboardSqFt = 0
-    let lumberBoardFeet = 0
+    let lumberLinearFeet = 0
     let dripLineFt = 0
     let emitterCount = 0
     let rowCoverSqFt = 0
@@ -108,13 +108,14 @@ export class MaterialsCalculator {
         mulchCuFt += pathAreaSqFt * (4/12) // 4 inches for paths
       }
       
-      // Lumber calculation - ACCURATE board feet
-      // Board feet = (Thickness × Width × Length in inches) / 144
-      // For 2x10: (2 × 10 × length in inches) / 144
+      // Lumber calculation in LINEAR feet of 2x10
+      // A 2x10 laid flat spans a 9.25" course, so each course around the
+      // perimeter consumes that many linear feet. Linear feet (not board
+      // feet) is the unit the cut optimizer below consumes, so converting to
+      // board feet here would inflate every board count by 10/6.
       const perimeterFt = (bed.width + bed.length) * 2
       const boardsHigh = Math.ceil(bed.height / 9.25) // 2x10 actual height is 9.25"
-      const boardFeetPerLinearFoot = (2 * 10) / 12 // = 1.667 board feet per linear foot
-      lumberBoardFeet += perimeterFt * boardsHigh * boardFeetPerLinearFoot
+      lumberLinearFeet += perimeterFt * boardsHigh
       
       // Drip irrigation
       if (enableDrip) {
@@ -133,7 +134,7 @@ export class MaterialsCalculator {
     })
     
     // Convert to standard units and packages
-    const lumber = this.calculateLumber(lumberBoardFeet, beds.length)
+    const lumber = this.calculateLumber(lumberLinearFeet, beds.length)
     
     // Cost estimates - UPDATED 2024 prices
     const costLow =
@@ -197,26 +198,26 @@ export class MaterialsCalculator {
   }
   
   private calculateLumber(
-    totalBoardFeet: number,
+    totalLinearFeet: number,
     bedCount: number
   ): MaterialsEstimate['lumber'] {
-    // Optimize lumber cuts
-    // Assuming 2x10 boards for raised beds
-    let remaining = totalBoardFeet
+    // Cut linear feet of 2x10 into stock lengths, preferring 12ft boards
+    // because they yield the fewest cuts and least waste.
+    let remaining = totalLinearFeet
     let boards8 = 0
     let boards10 = 0
     let boards12 = 0
-    
+
     // Try to use 12ft boards first (most efficient)
     boards12 = Math.floor(remaining / 12)
     remaining = remaining % 12
-    
+
     // Then 10ft boards
-    if (remaining >= 10) {
-      boards10 = 1
+    while (remaining >= 10) {
+      boards10 += 1
       remaining -= 10
     }
-    
+
     // Finally 8ft boards
     if (remaining > 0) {
       boards8 = Math.ceil(remaining / 8)
