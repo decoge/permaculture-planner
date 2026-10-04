@@ -407,15 +407,22 @@ export function calculateExpectedYield(input: YieldCalculationInput): YieldCalcu
   const plantYields: YieldCalculationResult['byPlant'] = []
 
   // Calculate condition modifier
-  let conditionModifier = 1.0
-  if (input.conditions.soil === 'excellent' && input.conditions.sun === 'full' && input.conditions.water === 'optimal') {
-    conditionModifier = YIELD_CONSTANTS.OPTIMAL_CONDITIONS
-  } else if (input.conditions.soil === 'good' && input.conditions.water === 'adequate') {
-    conditionModifier = YIELD_CONSTANTS.GOOD_CONDITIONS
-  } else if (input.conditions.soil === 'fair' || input.conditions.water === 'adequate') {
-    conditionModifier = YIELD_CONSTANTS.FAIR_CONDITIONS
-  } else {
+  //
+  // Order matters and each tier must be reachable: the previous chain tested
+  // `soil === 'good' && water === 'adequate'` and then
+  // `soil === 'fair' || water === 'adequate'`, which left good soil with
+  // *optimal* water falling through to POOR_CONDITIONS — strictly worse than
+  // fair soil with merely adequate water. Score the water tier first, then
+  // soil, so more favourable inputs can never produce a lower multiplier.
+  let conditionModifier: number
+  if (input.conditions.water === 'insufficient') {
     conditionModifier = YIELD_CONSTANTS.POOR_CONDITIONS
+  } else if (input.conditions.water === 'optimal' && input.conditions.soil === 'excellent') {
+    conditionModifier = YIELD_CONSTANTS.OPTIMAL_CONDITIONS
+  } else if (input.conditions.soil === 'good' || input.conditions.soil === 'excellent') {
+    conditionModifier = YIELD_CONSTANTS.GOOD_CONDITIONS
+  } else {
+    conditionModifier = YIELD_CONSTANTS.FAIR_CONDITIONS
   }
 
   // Apply experience and method modifiers
@@ -514,10 +521,17 @@ export function calculateROI(
   const firstYearProfit = annualValue - setupCost - annualMaintenance
   const fiveYearProfit = (annualValue * 5) - setupCost - (annualMaintenance * 5)
 
+  // A garden that produces no market value never breaks even. Guard the
+  // division: setupCost / 0 is Infinity, which JSON.stringify turns into null,
+  // so the UI would silently render a blank month count.
+  const monthlyValue = annualValue / 12
+  const breakEvenMonths =
+    setupCost > 0 && monthlyValue > 0 ? Math.ceil(setupCost / monthlyValue) : 0
+
   return {
-    firstYearROI: Math.round((firstYearProfit / setupCost) * 100),
-    fiveYearROI: Math.round((fiveYearProfit / setupCost) * 100),
-    breakEvenMonths: Math.ceil((setupCost / (annualValue / 12))),
+    firstYearROI: setupCost > 0 ? Math.round((firstYearProfit / setupCost) * 100) : 0,
+    fiveYearROI: setupCost > 0 ? Math.round((fiveYearProfit / setupCost) * 100) : 0,
+    breakEvenMonths,
     annualSavings: Math.round(annualValue - annualMaintenance)
   }
 }
