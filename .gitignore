@@ -41,6 +41,14 @@ next-env.d.ts
 /playwright-report/
 /playwright/.cache/
 
+# stray test output committed by mistake
+test-results.txt
+final-test-results.txt
+
+# editor and OS backups
+*.bak
+*.orig
+
 # IDE
 .idea/
 .vscode/

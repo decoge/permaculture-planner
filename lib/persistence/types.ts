@@ -77,7 +77,7 @@ export interface IPersistenceAdapter {
    * Auto-save with debouncing
    * Implementation should debounce this call to avoid excessive saves
    */
-  autoSave(data: GardenBed[], metadata?: CanvasMetadata): void
+  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void
 
   /**
    * Check if there are unsaved changes

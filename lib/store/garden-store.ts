@@ -127,10 +127,20 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
       metadata: { ...state.metadata, ...metadata },
       isDirty: true,
     }))
+
+    // Trigger auto-save
+    if (get().persistence) {
+      get().autoSave()
+    }
   },
 
   updatePlanName: (planName) => {
     set({ planName, isDirty: true })
+
+    // Trigger auto-save
+    if (get().persistence) {
+      get().autoSave()
+    }
   },
 
   // ========== Persistence Actions ==========
@@ -206,10 +216,10 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
   },
 
   autoSave: () => {
-    const { persistence, beds, metadata } = get()
+    const { persistence, beds, metadata, planName } = get()
 
     if (persistence) {
-      persistence.autoSave(beds, metadata)
+      persistence.autoSave(beds, metadata, planName)
     }
   },
 

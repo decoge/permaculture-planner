@@ -119,10 +119,11 @@ free of React and DB imports so they stay unit-testable.
 
 - Unit: `__tests__/*.test.ts`, Jest + jsdom. `fake-indexeddb/auto` and DOM observers
   are polyfilled in `jest.setup.js` — add new polyfills there, not in test files.
-- E2E: `e2e/**` (Playwright, testDir `./e2e`). `e2e/fixtures.ts` exports a
-  `pageWithStorage` fixture for localStorage-backed flows.
-- `tests/` is ignored by Jest (`testPathIgnorePatterns`) and is not the Playwright
-  testDir — do not put new tests there.
+- E2E: `e2e/**` (Playwright, `testDir: './e2e'`). `e2e/fixtures.ts` exports a
+  `pageWithStorage` fixture for localStorage-backed flows. Playwright needs a dev
+  server; `webServer.reuseExistingServer` means it will start one if needed.
+- There is no `tests/` directory. Jest ignores `/tests/` and Playwright's testDir is
+  `./e2e`, so tests placed there run in neither suite.
 
 New domain logic needs a unit test. Bug fixes need a test that fails without the fix.
 
@@ -131,9 +132,8 @@ New domain logic needs a unit test. Bug fixes need a test that fails without the
 - **Don't commit secrets.** `.env*` and `.env*.local` are gitignored. Read
   `.env.local.example` / `.env.example` for the shape.
 - **Don't commit build output.** `.next/`, `*.tsbuildinfo`, `test-results/`,
-  `playwright-report/` are ignored. A few stale artifacts (`test-results.txt`,
-  `final-test-results.txt`, `app/demo/page-old.tsx`, `components/context-menu.tsx.bak`)
-  are tracked and are cleanup candidates — don't add more.
+  `playwright-report/` are ignored, as are `*.bak` and stray `test-results.txt`
+  output. Don't add more.
 - **Migrations are append-only.** Never edit an applied file in `db/migrations/`;
   add a new numbered one.
 - **`tsconfig.json` includes `**/*.ts(x)`**, so stray files in the repo get

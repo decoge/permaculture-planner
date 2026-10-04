@@ -93,11 +93,11 @@ export class PostgresPersistence implements IPersistenceAdapter {
     }
   }
 
-  autoSave(data: GardenBed[], metadata?: CanvasMetadata): void {
+  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void {
     this.isDirty = true
     if (this.debounceTimer) clearTimeout(this.debounceTimer)
     this.debounceTimer = setTimeout(() => {
-      this.save(data, metadata).catch((error) => {
+      this.save(data, metadata, planName).catch((error) => {
         console.error('Auto-save failed:', error)
       })
     }, 2000)

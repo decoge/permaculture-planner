@@ -157,7 +157,7 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
   /**
    * Auto-save with 3 second debouncing
    */
-  autoSave(data: GardenBed[], metadata?: CanvasMetadata): void {
+  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void {
     this.isDirty = true
 
     // Clear existing timer
@@ -167,7 +167,7 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
 
     // Set new timer for 3 seconds
     this.debounceTimer = setTimeout(() => {
-      this.save(data, metadata).catch((error) => {
+      this.save(data, metadata, planName).catch((error) => {
         console.error('Auto-save failed:', error)
       })
     }, 3000)
