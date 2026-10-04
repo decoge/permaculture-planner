@@ -219,12 +219,17 @@ export const cachePresets = {
   },
 
   // User-specific cache
+  //
+  // Keys on the session cookie, which is how this app actually authenticates.
+  // The previous version read an `Authorization: Bearer` header that no route
+  // ever sends, so every caller collapsed to the same `anonymous` key and one
+  // user's cached response would be served to the next.
   user: {
     ttl: 10 * 60 * 1000, // 10 minutes
     keyGenerator: (req: NextRequest) => {
-      const authHeader = req.headers.get('authorization')
-      const userId = authHeader ? authHeader.split(' ')[1] : 'anonymous'
-      return `${req.url}:${userId}`
+      const cookie = req.headers.get('cookie') || ''
+      const match = /(?:^|;\s*)pp_session=([^;]+)/.exec(cookie)
+      return `${req.url}:${match ? match[1] : 'anonymous'}`
     }
   },
 
@@ -299,10 +304,14 @@ export const cacheInvalidation = {
   }
 }
 
-// Cleanup expired cache entries periodically
-setInterval(() => {
+// Cleanup expired cache entries periodically.
+//
+// unref() so this timer never holds the process open -- without it every Jest
+// suite that imports this module hangs until the worker is force-exited.
+const cleanupTimer = setInterval(() => {
   globalCache.cleanup(24 * 60 * 60 * 1000) // Clean entries older than 24 hours
 }, 60 * 60 * 1000) // Run every hour
+if (typeof cleanupTimer.unref === 'function') cleanupTimer.unref()
 
 // Export cache store for testing
 export { globalCache }
