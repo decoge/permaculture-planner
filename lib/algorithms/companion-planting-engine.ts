@@ -90,13 +90,15 @@ export function analyzeCompanionPlanting(beds: GardenBed[]): CompanionAnalysis {
 
   // Analyze each bed
   beds.forEach(bed => {
-    if (!bed.plants || bed.plants.length < 2) return
+    const plants = bed.plants || []
+    if (plants.length === 0) return
 
-    // Check all plant pairs in the bed
-    for (let i = 0; i < bed.plants.length; i++) {
-      for (let j = i + 1; j < bed.plants.length; j++) {
-        const plant1 = bed.plants[i]
-        const plant2 = bed.plants[j]
+    // Check all plant pairs in the bed. A bed with fewer than two plants has
+    // no pairs, but still gets the per-plant companion check below.
+    for (let i = 0; i < plants.length; i++) {
+      for (let j = i + 1; j < plants.length; j++) {
+        const plant1 = plants[i]
+        const plant2 = plants[j]
 
         const plant1Info = PLANT_LIBRARY.find(p => p.id === plant1.plantId)
         const plant2Info = PLANT_LIBRARY.find(p => p.id === plant2.plantId)
@@ -158,11 +160,11 @@ export function analyzeCompanionPlanting(beds: GardenBed[]): CompanionAnalysis {
       }
 
       // Check for missing companions
-      const plant = bed.plants[i]
+      const plant = plants[i]
       const plantInfo = PLANT_LIBRARY.find(p => p.id === plant.plantId)
 
       if (plantInfo && plantInfo.companions.length > 0) {
-        const presentCompanions = bed.plants
+        const presentCompanions = plants
           .filter(p => p.id !== plant.id)
           .map(p => p.plantId)
 
