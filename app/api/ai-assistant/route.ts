@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
+import { requireUser } from '@/lib/auth/guard'
 
 // Initialize OpenAI client (API key will be added via environment variable)
 const openai = new OpenAI({
@@ -23,6 +24,11 @@ Provide practical, actionable advice based on permaculture principles. Consider 
 
 export async function POST(request: NextRequest) {
   try {
+    // This endpoint spends the owner's OpenAI budget, so it must never be
+    // reachable anonymously — proxy.ts does not cover /api/ai-assistant.
+    const user = await requireUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { messages, context } = await request.json()
 
     // Check if API key is configured
@@ -94,6 +100,9 @@ export async function POST(request: NextRequest) {
 // Permaculture-specific analysis endpoint
 export async function PUT(request: NextRequest) {
   try {
+    const user = await requireUser()
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
     const { type, data } = await request.json()
 
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-placeholder') {
