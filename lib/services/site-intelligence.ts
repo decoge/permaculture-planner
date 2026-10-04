@@ -164,7 +164,12 @@ export class SiteIntelligenceService {
   private async fetchClimateData(lat: number, lng: number): Promise<ClimateData> {
     // For demo purposes, return estimated data based on latitude
     const zone = this.getHardinessZone(lat)
-    const isNorthern = lat > 0
+    // `lat >= 0` rather than `lat > 0`: at exactly 0 the old comparison fell
+    // through to the southern dates, so an equatorial site reported
+    // last_frost (Oct 15) *after* first_frost (Apr 15) while frost_free_days
+    // claimed a year-round season. The two fields contradicted each other.
+    const isNorthern = lat >= 0
+    const frostFreeDays = Math.max(120, 365 - Math.abs(lat) * 4)
     
     return {
       temperature: {
@@ -178,12 +183,12 @@ export class SiteIntelligenceService {
         driest_month: isNorthern ? 'July' : 'January'
       },
       humidity: {
-        annual_avg: 60 + (Math.abs(lat) / 10)
+        annual_avg: Math.min(100, 60 + (Math.abs(lat) / 10))
       },
       frost: {
         last_frost: isNorthern ? 'April 15' : 'October 15',
         first_frost: isNorthern ? 'October 15' : 'April 15',
-        frost_free_days: Math.max(120, 365 - Math.abs(lat) * 4)
+        frost_free_days: frostFreeDays
       },
       hardiness_zone: zone,
       climate_type: this.getClimateType(lat, lng)
