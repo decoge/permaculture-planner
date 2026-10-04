@@ -148,6 +148,24 @@ New domain logic needs a unit test. Bug fixes need a test that fails without the
 - **`tsconfig.json` includes `**/*.ts(x)`**, so stray files in the repo get
   typechecked. A leftover scratch file will break `npm run lint`.
 
+### Jest gotchas
+
+- **Mocking a module a class under test imports requires a *dynamic* import of
+  that class.** A static `import` at the top of the test binds the real module
+  before `jest.mock` installs the factory, so the mock is never called and the
+  code under test fails with its own generic error (e.g. `'Failed to load
+  plan'`) rather than anything pointing at the mock. Load it in `beforeAll`
+  instead — see `__tests__/postgres-adapter-roundtrip.test.ts`.
+- **Route tests need `@jest-environment node`.** Next's server runtime needs
+  undici's `Request`/`Response`, which jsdom does not provide. That is why
+  `jest.setup.js` guards its browser polyfills behind a DOM check.
+- **Top-level `await` does not compile** in this Jest config; use `beforeAll`.
+- Mock the API layer (`@/lib/api/http`), not `fetch`. That keeps tests off the
+  network and avoids asserting on Response plumbing.
+- **Assert that the fix is load-bearing.** Temporarily revert it and confirm
+  the new tests go red, then restore. A test that passes both ways proves
+  nothing.
+
 ## Commit conventions
 
 Present-tense imperative subject, scoped where useful (`garden:`, `auth:`, `db:`).
