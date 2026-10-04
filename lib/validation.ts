@@ -5,9 +5,24 @@ export const emailSchema = z.string().email('Invalid email address')
 export const passwordSchema = z
   .string()
   .min(8, 'Password must be at least 8 characters')
+  .max(200, 'Password must be at most 200 characters')
   .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
   .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
   .regex(/[0-9]/, 'Password must contain at least one number')
+
+/**
+ * Shared password policy for the signup and reset routes.
+ *
+ * Both routes used to hand-roll a bare `length < 6` check, which meant the
+ * complexity rules above were never enforced on real signups -- passwordSchema
+ * was only ever exercised by its own unit test. Callers get the first issue
+ * message so the route can surface a consistent 400.
+ */
+export function validatePassword(password: string): { success: true } | { success: false; error: string } {
+  const result = passwordSchema.safeParse(password)
+  if (result.success) return { success: true }
+  return { success: false, error: result.error.issues[0]?.message || 'Invalid password' }
+}
 
 // Location validation
 export const locationSchema = z.object({
@@ -184,55 +199,6 @@ export function sanitizeBoolean(value: unknown, defaultValue = false): boolean {
   return defaultValue
 }
 
-// Form validation hook
-export function useFormValidation<T>(schema: z.ZodSchema<T>) {
-  const [errors, setErrors] = useState<Record<string, string>>({})
-
-  const validate = (data: unknown): data is T => {
-    const result = validateData(schema, data)
-    if (result.success) {
-      setErrors({})
-      return true
-    } else {
-      const newErrors: Record<string, string> = {}
-      result.errors.issues.forEach(error => {
-        const path = error.path.join('.')
-        newErrors[path] = error.message
-      })
-      setErrors(newErrors)
-      return false
-    }
-  }
-
-  const validateField = (field: string, value: unknown) => {
-    try {
-      // For object schemas, try to parse just the field
-      if (schema instanceof z.ZodObject) {
-        const fieldSchema = (schema as any).shape[field]
-        if (fieldSchema) {
-          fieldSchema.parse(value)
-          setErrors(prev => {
-            const newErrors = { ...prev }
-            delete newErrors[field]
-            return newErrors
-          })
-        }
-      }
-    } catch (error) {
-      if (error instanceof z.ZodError) {
-        setErrors(prev => ({
-          ...prev,
-          [field]: error.issues[0].message
-        }))
-      }
-    }
-  }
-
-  const clearErrors = () => setErrors({})
-
-  return { errors, validate, validateField, clearErrors }
-}
-
 // Constraints validation
 export function validateBedConstraints(bed: any): string[] {
   const errors: string[] = []
@@ -295,5 +261,3 @@ export function validateOverlap(
   }
   return true // Far enough apart - validation passes
 }
-
-import { useState } from 'react'

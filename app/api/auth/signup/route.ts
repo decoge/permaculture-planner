@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createUser } from '@/lib/db/users'
 import { routeError } from '@/lib/api/route-error'
+import { validatePassword } from '@/lib/validation'
 
 export async function POST(request: Request) {
   try {
@@ -12,8 +13,9 @@ export async function POST(request: Request) {
     if (!email.includes('@') || !email.includes('.')) {
       return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
     }
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+    const passwordCheck = validatePassword(password)
+    if (!passwordCheck.success) {
+      return NextResponse.json({ error: passwordCheck.error }, { status: 400 })
     }
 
     const user = await createUser({ email, password, name })

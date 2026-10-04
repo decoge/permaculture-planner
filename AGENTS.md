@@ -41,6 +41,15 @@ npm run build  # completes
 Do not report success on `lint` + `test` alone — `build` runs type generation
 against `.next/types` and has caught errors the other two miss.
 
+**`lint` and `test` both pass while `build` still fails** when an API route
+imports a module that pulls in React hooks. A single `import { useState } from
+'react'` anywhere in a route's module graph makes it a client component and
+`next build` rejects it — `tsc` and Jest are both happy, because neither
+resolves the server/client boundary. Keep `lib/` modules imported by routes
+free of React; hooks live in `hooks/`. This has already broken the build once
+(`lib/validation.ts` → `app/api/auth/signup/route.ts`), so check it after any
+new import from a route.
+
 ## Architecture
 
 ### Persistence: adapter pattern

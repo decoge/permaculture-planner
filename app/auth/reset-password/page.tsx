@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, Leaf, Lock, ArrowLeft, CheckCircle } from 'lucide-react'
 import { api, ApiError } from '@/lib/api/http'
+import { validatePassword } from '@/lib/validation'
 
 function ResetPasswordContent() {
   const [password, setPassword] = useState('')
@@ -36,9 +37,10 @@ function ResetPasswordContent() {
       return
     }
 
-    // Validate password strength
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters')
+    // Validate password strength against the same policy the API enforces
+    const passwordCheck = validatePassword(password)
+    if (!passwordCheck.success) {
+      setError(passwordCheck.error)
       setLoading(false)
       return
     }
@@ -199,11 +201,14 @@ function ResetPasswordContent() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10"
                     required
-                    minLength={6}
+                    minLength={8}
+                    maxLength={200}
                     disabled={loading}
                   />
                 </div>
-                <p className="text-xs text-gray-500">Minimum 6 characters</p>
+                <p className="text-xs text-gray-500">
+                  At least 8 characters, with upper case, lower case, and a number
+                </p>
               </div>
 
               <div className="space-y-2">

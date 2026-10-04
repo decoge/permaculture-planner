@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { resetPasswordWithToken } from '@/lib/db/users'
 import { routeError } from '@/lib/api/route-error'
+import { validatePassword } from '@/lib/validation'
 
 export async function POST(request: Request) {
   try {
@@ -9,8 +10,9 @@ export async function POST(request: Request) {
     const password = typeof body.password === 'string' ? body.password : ''
 
     if (!token) return NextResponse.json({ error: 'Reset link is missing or expired' }, { status: 400 })
-    if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+    const passwordCheck = validatePassword(password)
+    if (!passwordCheck.success) {
+      return NextResponse.json({ error: passwordCheck.error }, { status: 400 })
     }
 
     const updated = await resetPasswordWithToken(token, password)

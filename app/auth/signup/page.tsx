@@ -101,10 +101,13 @@ export default function SignupPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                minLength={6}
+                minLength={8}
+                maxLength={200}
                 disabled={loading}
               />
-              <p className="text-xs text-gray-500">Minimum 6 characters</p>
+              <p className="text-xs text-gray-500">
+                At least 8 characters, with upper case, lower case, and a number
+              </p>
             </div>
 
             <Button
