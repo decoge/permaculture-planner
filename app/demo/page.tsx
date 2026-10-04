@@ -142,7 +142,7 @@ function DemoPageContent() {
   }
 
   return (
-    <div className="w-full h-screen flex flex-col bg-background">
+    <div className="flex h-[calc(100vh-4rem)] w-full flex-col overflow-hidden bg-background">
       {/* Error alert */}
       {error && (
         <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-sm text-red-800 flex justify-between items-center">
@@ -164,7 +164,7 @@ function DemoPageContent() {
       )}
 
       {/* Main editor - now directly reads from store */}
-      <div className="flex-1 overflow-hidden">
+      <div className="min-h-0 flex-1 overflow-hidden">
         <PermacultureEditorIntegrated
           key={planId ?? 'demo'}
           initialData={beds}

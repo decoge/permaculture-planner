@@ -104,7 +104,7 @@ export function PanelSelector({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-96 p-0"
+        className="w-96 border bg-card p-0 text-card-foreground shadow-md data-[state=open]:animate-none data-[state=closed]:animate-none data-[state=closed]:!hidden data-[state=open]:bg-card"
         align="start"
         sideOffset={0}
       >

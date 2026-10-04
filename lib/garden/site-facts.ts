@@ -7,6 +7,23 @@ export interface SitePlantInput {
   family?: unknown
   season?: unknown
   year?: unknown
+  spacingIn?: unknown
+  spacing_in?: unknown
+  targetDaysToMaturity?: unknown
+  target_days_to_maturity?: unknown
+  sowingMethod?: unknown
+  sowing_method?: unknown
+  sowDate?: unknown
+  sow_date?: unknown
+  transplantDate?: unknown
+  transplant_date?: unknown
+  harvestStart?: unknown
+  harvest_start?: unknown
+  harvestEnd?: unknown
+  harvest_end?: unknown
+  successionsJson?: unknown
+  successions_json?: unknown
+  notes?: unknown
 }
 
 export interface HarvestInput {
@@ -14,10 +31,24 @@ export interface HarvestInput {
   unit?: unknown
   variety?: unknown
   notes?: unknown
+  harvestedOn?: unknown
+  harvested_on?: unknown
+}
+
+export interface JournalInput {
+  title?: unknown
+  content?: unknown
+  createdAt?: unknown
+  created_at?: unknown
+  images?: unknown
 }
 
 export interface SiteBedInput {
   name?: unknown
+  lengthFt?: unknown
+  length_ft?: unknown
+  widthFt?: unknown
+  width_ft?: unknown
   surface?: unknown
   heightIn?: unknown
   height_in?: unknown
@@ -29,6 +60,7 @@ export interface SiteBedInput {
   elementCategory?: unknown
   elementType?: unknown
   notes?: unknown
+  zone?: unknown
   plants?: SitePlantInput[]
   plantings?: SitePlantInput[]
 }
@@ -42,8 +74,27 @@ export interface SiteMaterialsInput {
   mulch_cuft?: unknown
   dripLineFt?: unknown
   drip_line_ft?: unknown
+  lumberBoardfeet?: unknown
+  lumber_boardfeet?: unknown
+  screwsCount?: unknown
+  screws_count?: unknown
+  emittersCount?: unknown
+  emitters_count?: unknown
+  rowCoverSqft?: unknown
+  row_cover_sqft?: unknown
   costEstimateCents?: unknown
   cost_estimate_cents?: unknown
+}
+
+export interface RecordedTaskInput {
+  title?: unknown
+  dueOn?: unknown
+  due_on?: unknown
+  category?: unknown
+  completed?: unknown
+  description?: unknown
+  recurringPattern?: unknown
+  recurring_pattern?: unknown
 }
 
 export interface SiteFactsInput {
@@ -60,6 +111,9 @@ export interface SiteFactsInput {
   beds?: SiteBedInput[]
   materials?: SiteMaterialsInput | null
   harvests?: HarvestInput[] | null
+  tasks?: RecordedTaskInput[] | null
+  journal?: JournalInput[] | null
+  template?: unknown
 }
 
 export interface SiteFacts {
@@ -701,6 +755,9 @@ export function siteFactsFromPlan(plan: {
   beds?: SiteBedInput[]
   materials_estimates?: SiteMaterialsInput | null
   harvests?: HarvestInput[] | null
+  tasks?: RecordedTaskInput[] | null
+  journal?: JournalInput[] | null
+  meta?: { template?: unknown } | null
 }): SiteFactsInput {
   const site = plan.site || {}
   return {
@@ -717,5 +774,8 @@ export function siteFactsFromPlan(plan: {
     beds: plan.beds,
     materials: plan.materials_estimates,
     harvests: plan.harvests,
+    tasks: plan.tasks,
+    journal: plan.journal,
+    template: plan.meta?.template,
   }
 }

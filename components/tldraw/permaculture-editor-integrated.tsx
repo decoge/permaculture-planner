@@ -27,7 +27,6 @@ import { TemplateLibraryPanel } from './panels/template-library-panel'
 import { EnhancedSimulationPanel } from './panels/growth-simulation-enhanced-panel'
 import { HolisticDashboardPanel } from './panels/holistic-dashboard-panel'
 import { RelationshipMapperPanel } from './panels/relationship-mapper-panel'
-import { LockedPanel } from '@/components/subscription/locked-panel'
 import { PanelSelector } from './panel-selector'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -42,6 +41,7 @@ import {
   TopographyPanel,
 } from '@/components/garden/site-condition-panels'
 import { useRecordedSiteFacts } from '@/components/garden/use-recorded-site-facts'
+import { useRecordedPlanTools } from '@/components/garden/use-recorded-garden-tools'
 import { GardenBed } from '@/lib/garden/garden-types'
 import { PlantInfo } from '@/lib/data/plant-library'
 import { ElementSubtype, ElementCategory, ELEMENT_STYLES } from '@/lib/canvas-elements'
@@ -119,6 +119,7 @@ export function PermacultureEditorIntegrated({
   const [recentPanels, setRecentPanels] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const siteFacts = useRecordedSiteFacts(planId)
+  const { tools: gardenTools, design: designFacts } = useRecordedPlanTools(planId)
 
   // Load recent panels from localStorage
   useEffect(() => {
@@ -274,10 +275,10 @@ export function PermacultureEditorIntegrated({
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-background">
       {/* Header */}
       {showHeader && (
-        <header className="border-b bg-card/50 backdrop-blur">
+        <header className="shrink-0 border-b bg-card/50 backdrop-blur">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-4">
               <div>
@@ -318,7 +319,7 @@ export function PermacultureEditorIntegrated({
       )}
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex min-h-0 flex-1 overflow-hidden">
         {/* Left Panel - Plant/Element Libraries */}
         <div
           className={cn(
@@ -403,12 +404,12 @@ export function PermacultureEditorIntegrated({
         {/* Right Panel - Properties/Analysis */}
         <div
           className={cn(
-            'border-l bg-card/30 backdrop-blur transition-all duration-300',
+            'flex h-full min-h-0 flex-col overflow-hidden border-l bg-card transition-all duration-300',
             rightPanelOpen ? 'w-80' : 'w-0'
           )}
         >
           {rightPanelOpen && (
-            <Tabs value={rightPanelTab} onValueChange={handlePanelChange} className="flex-1 flex flex-col h-full">
+            <Tabs value={rightPanelTab} onValueChange={handlePanelChange} className="flex h-full min-h-0 flex-col overflow-hidden">
               {/* Beautiful Panel Selector - replaces messy 19-tab interface */}
               <PanelSelector
                 currentPanel={rightPanelTab}
@@ -426,175 +427,79 @@ export function PermacultureEditorIntegrated({
               </TabsContent>
 
               <TabsContent value="zones" className="flex-1 m-0">
-                <ZoneManagementPanel gardenBeds={gardenData} />
+                <ZoneManagementPanel tools={gardenTools} />
               </TabsContent>
 
-              <TabsContent value="companions" className="flex-1 m-0">
-                <CompanionPlantingPanel gardenBeds={gardenData} />
+              <TabsContent value="companions" className="m-0 min-h-0 flex-1 flex-col overflow-hidden bg-card data-[state=active]:flex data-[state=inactive]:hidden">
+                <CompanionPlantingPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="relationships" className="flex-1 m-0">
-                <RelationshipMapperPanel gardenBeds={gardenData} />
+              <TabsContent value="relationships" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <RelationshipMapperPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="timeline" className="flex-1 m-0">
-                <SeasonalTimelinePanel
-                  gardenBeds={gardenData}
-                  frostDates={siteData?.frostDates || undefined}
-                  usdaZone={siteData?.usdaZone}
-                  planId={planId}
-                />
+              <TabsContent value="timeline" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <SeasonalTimelinePanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="materials" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="materials"
-                  featureName="Materials Planning"
-                  featureDescription="Calculate materials, costs, and quantities needed for your garden design."
-                  requiredTier="premium"
-                >
-                  <MaterialsPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+                <MaterialsPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="tasks" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="tasks"
-                  featureName="Task Management"
-                  featureDescription="Track and organize all your gardening tasks with deadlines and priorities."
-                  requiredTier="premium"
-                >
-                  <TasksPanel planId={planId} />
-                </LockedPanel>
+                <TasksPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="sun" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="sun"
-                  featureName="Sun Analysis"
-                  featureDescription="Analyze sun exposure patterns throughout the day and seasons for optimal plant placement."
-                  requiredTier="premium"
-                >
-                  <SunAnalysisPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+                <SunAnalysisPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="sectors" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="sectors"
-                  featureName="Sector Analysis"
-                  featureDescription="Map external energies (wind, sun, wildlife, fire) affecting your garden site."
-                  requiredTier="premium"
-                >
-                  <SectorAnalysisPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+                <SectorAnalysisPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="succession" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="succession"
-                  featureName="Succession Planning"
-                  featureDescription="Plan multi-year garden evolution with crop rotation and perennial establishment."
-                  requiredTier="premium"
-                >
-                  <SuccessionPlanningPanel gardenBeds={gardenData} planId={planId} />
-                </LockedPanel>
+                <SuccessionPlanningPanel tools={gardenTools} />
               </TabsContent>
 
               <TabsContent value="water" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="water"
-                  featureName="Water Management"
-                  featureDescription="Design rainwater harvesting, irrigation systems, and water conservation strategies."
-                  requiredTier="premium"
-                >
-                  <WaterManagementPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+                <WaterManagementPanel tools={gardenTools} />
               </TabsContent>
 
-              <TabsContent value="evolution" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="evolution"
-                  featureName="Garden Evolution Timeline"
-                  featureDescription="Visualize how your garden will mature over 1-10 years with yield projections and milestone tracking."
-                  requiredTier="pro"
-                >
-                  <GardenEvolutionPanel gardenBeds={gardenData} />
-                </LockedPanel>
+              <TabsContent value="evolution" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <GardenEvolutionPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="implementation" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="implementation"
-                  featureName="Implementation Phasing"
-                  featureDescription="Break your project into budgeted phases with realistic timelines and ROI calculations."
-                  requiredTier="pro"
-                >
-                  <ImplementationPhasingPanel gardenBeds={gardenData} />
-                </LockedPanel>
+              <TabsContent value="implementation" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <ImplementationPhasingPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="critique" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="critique"
-                  featureName="AI Design Critique"
-                  featureDescription="Get professional-grade design analysis with automated scoring and actionable recommendations."
-                  requiredTier="pro"
-                >
-                  <DesignCritiquePanel gardenBeds={gardenData} />
-                </LockedPanel>
+              <TabsContent value="critique" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <DesignCritiquePanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="progress" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="progress"
-                  featureName="Progress Tracking"
-                  featureDescription="Document your garden journey with photos, observations, and performance tracking."
-                  requiredTier="pro"
-                >
-                  <ProgressTrackingPanel gardenBeds={gardenData} />
-                </LockedPanel>
+              <TabsContent value="progress" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <ProgressTrackingPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="knowledge" className="flex-1 m-0">
-                <KnowledgeBasePanel gardenBeds={gardenData} />
+              <TabsContent value="knowledge" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <KnowledgeBasePanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="templates" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="templates"
-                  featureName="Template Library"
-                  featureDescription="Access 8+ proven permaculture designs and patterns to jumpstart your planning."
-                  requiredTier="pro"
-                >
-                  <TemplateLibraryPanel gardenBeds={gardenData} />
-                </LockedPanel>
+              <TabsContent value="templates" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <TemplateLibraryPanel design={designFacts} />
               </TabsContent>
 
               <TabsContent value="simulation" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="simulation"
-                  featureName="Growth Simulation"
-                  featureDescription="Run animated simulations showing your garden's evolution over 10 years with realistic growth modeling and scenario testing."
-                  requiredTier="pro"
-                >
-                  <EnhancedSimulationPanel gardenBeds={gardenData} />
-                </LockedPanel>
+                <EnhancedSimulationPanel tools={gardenTools} />
               </TabsContent>
 
-              <TabsContent value="permaculture" className="flex-1 m-0">
-                <LockedPanel
-                  panelId="permaculture"
-                  featureName="Permaculture Analysis"
-                  featureDescription="Deep analysis of permaculture principles, patterns, and best practices for your design."
-                  requiredTier="premium"
-                >
-                  <PermacultureAnalysisPanel gardenBeds={gardenData} siteData={siteData} />
-                </LockedPanel>
+              <TabsContent value="permaculture" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <PermacultureAnalysisPanel design={designFacts} />
               </TabsContent>
 
-              <TabsContent value="analytics" className="flex-1 m-0">
-                <AnalyticsPanel gardenBeds={gardenData} siteData={siteData} />
+              <TabsContent value="analytics" className="m-0 min-h-0 flex-1 flex-col overflow-hidden data-[state=active]:flex data-[state=inactive]:hidden">
+                <AnalyticsPanel design={designFacts} />
               </TabsContent>
 
               {/* ========== NEW SITE ANALYSIS PANELS ========== */}
@@ -676,7 +581,7 @@ export function PermacultureEditorIntegrated({
       </div>
 
       {/* Bottom Status Bar */}
-      <div className="border-t bg-card/50 backdrop-blur px-4 py-2">
+      <div className="shrink-0 border-t bg-card/50 backdrop-blur px-4 py-2">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-4">
             <span>Holistic Permaculture System • 32 Integrated Panels • AI-Powered Recommendations</span>

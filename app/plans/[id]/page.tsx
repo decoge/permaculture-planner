@@ -16,7 +16,11 @@ import { BedLayout } from '@/components/garden/bed-layout'
 import { PlanInsights } from '@/components/garden/plan-insights'
 import { SiteConditionPanels } from '@/components/garden/site-condition-panels'
 import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
-import { formatSiteFacts, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
+import { GardenToolPanels } from '@/components/garden/garden-tool-panels'
+import { DesignFactPanels } from '@/components/garden/design-fact-panels'
+import { formatDesignFacts, summarizeDesignFacts } from '@/lib/garden/design-facts'
+import { formatGardenTools, summarizeGardenTools } from '@/lib/garden/garden-tools'
+import { formatSiteFacts, JournalInput, RecordedTaskInput, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
 
 interface Plan {
   id: string
@@ -63,6 +67,9 @@ interface Plan {
     mulch_cuft?: number | string | null
     drip_line_ft?: number | string | null
   } | null
+  tasks?: RecordedTaskInput[] | null
+  journal?: JournalInput[] | null
+  meta?: { template?: unknown } | null
 }
 
 export default function PlanViewPage() {
@@ -125,6 +132,10 @@ export default function PlanViewPage() {
       }),
       '',
       formatSiteFacts(summarizeSiteFacts(siteFactsFromPlan(plan))),
+      '',
+      formatGardenTools(summarizeGardenTools(siteFactsFromPlan(plan))),
+      '',
+      formatDesignFacts(summarizeDesignFacts(siteFactsFromPlan(plan))),
     ].join('\n')
     const blob = new Blob([text], { type: 'text/plain;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -177,6 +188,7 @@ export default function PlanViewPage() {
   const plantCount = plan.beds.reduce((sum, bed) => sum + (bed.plantings?.length || 0), 0)
   const summary = summarizePlan(plan.beds)
   const siteFacts = summarizeSiteFacts(siteFactsFromPlan(plan))
+  const gardenTools = summarizeGardenTools(siteFactsFromPlan(plan))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
@@ -338,9 +350,11 @@ export default function PlanViewPage() {
           </CardContent>
         </Card>
         </div>
-        <aside className="space-y-4 lg:sticky lg:top-4">
+        <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-4">
           <PlanInsights summary={summary} />
           <SiteConditionPanels facts={siteFacts} />
+          <GardenToolPanels tools={gardenTools} />
+          <DesignFactPanels design={summarizeDesignFacts(siteFactsFromPlan(plan))} />
         </aside>
         </div>
       </div>

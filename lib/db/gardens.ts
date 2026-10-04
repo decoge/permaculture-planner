@@ -457,6 +457,20 @@ export async function getPlanDetail(userId: string, planId: string) {
      ORDER BY h.harvested_on`,
     [planId]
   )
+  const tasks = await query(
+    `SELECT title, due_on, category, completed, description, recurring_pattern
+     FROM tasks
+     WHERE plan_id = $1
+     ORDER BY due_on ASC, created_at ASC`,
+    [planId]
+  )
+  const journal = await query(
+    `SELECT title, content, created_at, images
+     FROM journal_entries
+     WHERE plan_id = $1
+     ORDER BY created_at ASC`,
+    [planId]
+  )
 
   const bedsWithPlants = beds.map((bed) => ({
     ...bed,
@@ -497,6 +511,8 @@ export async function getPlanDetail(userId: string, planId: string) {
     beds: bedsWithPlants,
     materials_estimates: materials,
     harvests,
+    tasks,
+    journal,
   }
 }
 
