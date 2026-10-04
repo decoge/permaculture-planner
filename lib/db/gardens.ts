@@ -310,7 +310,8 @@ export async function updateGarden(
   userId: string,
   planId: string,
   beds: CanvasBedInput[],
-  metadata?: Record<string, unknown>
+  metadata?: Record<string, unknown>,
+  planName?: string
 ) {
   return withTransaction(async (client) => {
     const plan = await client.query<OwnedPlan>(
@@ -329,11 +330,15 @@ export async function updateGarden(
       updated_at: new Date().toISOString(),
     }
 
+    // Only bump the name when a non-empty one was supplied, so a bed-only save
+    // never blanks an existing plan name.
     await client.query(
       `UPDATE plans
-       SET version = version + 1, meta = meta || $2::jsonb
+       SET version = version + 1,
+           name = COALESCE(NULLIF($3, ''), name),
+           meta = meta || $2::jsonb
        WHERE id = $1`,
-      [planId, JSON.stringify({ canvas: metadata || {} })]
+      [planId, JSON.stringify({ canvas: metadata || {} }), planName ?? '']
     )
     await client.query('UPDATE sites SET constraints_json = $2::jsonb WHERE id = $1', [
       current.site_id,
@@ -516,6 +521,12 @@ export async function getPlanDetail(userId: string, planId: string) {
   }
 }
 
-export async function syncPlanBeds(userId: string, planId: string, beds: CanvasBedInput[]) {
-  return updateGarden(userId, planId, beds)
+export async function syncPlanBeds(
+  userId: string,
+  planId: string,
+  beds: CanvasBedInput[],
+  metadata?: Record<string, unknown>,
+  planName?: string
+) {
+  return updateGarden(userId, planId, beds, metadata, planName)
 }
