@@ -75,7 +75,7 @@ export class CropRotationEngine {
           
           // Track family history
           const bedHistory = this.familyHistory.get(bed.id)!
-          bedHistory.set(year * 10 + this.getSeasonIndex(season), family)
+          bedHistory.set(this.seasonKey(year, season), family)
         } else {
           warnings.push(`No suitable crops for ${bed.name} in ${season} ${year}`)
         }
@@ -193,8 +193,8 @@ export class CropRotationEngine {
     currentSeason: Season
   ): CropFamily[] {
     const recentFamilies: CropFamily[] = []
-    const currentKey = currentYear * 10 + this.getSeasonIndex(currentSeason)
-    
+    const currentKey = this.seasonKey(currentYear, currentSeason)
+
     // Check last 2 years (8 seasons)
     for (let i = 1; i <= 8; i++) {
       const family = bedHistory.get(currentKey - i)
@@ -202,8 +202,18 @@ export class CropRotationEngine {
         recentFamilies.push(family)
       }
     }
-    
+
     return recentFamilies
+  }
+
+  /**
+   * Absolute season ordinal, so consecutive seasons always differ by 1.
+   * A year*10+season encoding steps by 1 within a year but jumps by 7 across
+   * a year boundary, which makes a fixed lookback window span the wrong number
+   * of seasons and silently skip recent plantings.
+   */
+  private seasonKey(year: number, season: Season): number {
+    return year * 4 + this.getSeasonIndex(season)
   }
   
   private generatePlantingNotes(crops: Crop[], bed: BedLayout, season: Season): string {
