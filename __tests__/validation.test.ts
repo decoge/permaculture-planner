@@ -9,9 +9,6 @@ import {
   cropsSchema,
   wizardDataSchema,
   validateData,
-  sanitizeInput,
-  sanitizeNumber,
-  sanitizeBoolean,
   validateBedConstraints,
   validatePathConstraints,
   validateOverlap
@@ -158,72 +155,6 @@ describe('Validation Helpers', () => {
         expect(result.errors.issues).toBeDefined()
         expect(result.errors.issues.length).toBeGreaterThan(0)
       }
-    })
-  })
-
-  describe('sanitizeInput', () => {
-    test('removes script tags', () => {
-      const input = 'Hello <script>alert("xss")</script> World'
-      expect(sanitizeInput(input)).toBe('Hello  World')
-    })
-
-    test('removes iframe tags', () => {
-      const input = '<iframe src="evil.com"></iframe>Content'
-      expect(sanitizeInput(input)).toBe('Content')
-    })
-
-    test('removes javascript: protocol', () => {
-      const input = '<a href="javascript:alert(1)">Click</a>'
-      expect(sanitizeInput(input)).toBe('<a href="">Click</a>')
-    })
-
-    test('removes event handlers', () => {
-      const input = '<div onclick="alert(1)">Content</div>'
-      expect(sanitizeInput(input)).toBe('<div>Content</div>')
-    })
-
-    test('preserves safe content', () => {
-      const input = 'Normal text with <strong>emphasis</strong>'
-      expect(sanitizeInput(input)).toBe('Normal text with <strong>emphasis</strong>')
-    })
-  })
-
-  describe('sanitizeNumber', () => {
-    test('returns valid numbers within range', () => {
-      expect(sanitizeNumber(5, 0, 10, 0)).toBe(5)
-      expect(sanitizeNumber('7', 0, 10, 0)).toBe(7)
-    })
-
-    test('clamps to min value', () => {
-      expect(sanitizeNumber(-5, 0, 10, 5)).toBe(0)
-    })
-
-    test('clamps to max value', () => {
-      expect(sanitizeNumber(15, 0, 10, 5)).toBe(10)
-    })
-
-    test('returns default for invalid input', () => {
-      expect(sanitizeNumber('invalid', 0, 10, 5)).toBe(5)
-      expect(sanitizeNumber(undefined, 0, 10, 5)).toBe(5)
-      expect(sanitizeNumber(null, 0, 10, 5)).toBe(5)
-    })
-  })
-
-  describe('sanitizeBoolean', () => {
-    test('returns boolean for boolean input', () => {
-      expect(sanitizeBoolean(true)).toBe(true)
-      expect(sanitizeBoolean(false)).toBe(false)
-    })
-
-    test('parses string boolean values', () => {
-      expect(sanitizeBoolean('true')).toBe(true)
-      expect(sanitizeBoolean('false')).toBe(false)
-    })
-
-    test('returns default for invalid input', () => {
-      expect(sanitizeBoolean('yes')).toBe(false)
-      expect(sanitizeBoolean(1)).toBe(false)
-      expect(sanitizeBoolean(null, true)).toBe(true)
     })
   })
 })

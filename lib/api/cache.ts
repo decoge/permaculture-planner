@@ -243,67 +243,6 @@ export const cachePresets = {
   }
 }
 
-// Response cache wrapper for easier use in API routes
-export async function withCache<T>(
-  req: NextRequest,
-  config: CacheConfig,
-  handler: () => Promise<T>
-): Promise<NextResponse> {
-  const cache = createCache(config)
-
-  // Check cache first
-  const cached = await cache.get(req)
-  if (cached) {
-    return cached
-  }
-
-  // Execute handler
-  const data = await handler()
-
-  // Cache the response
-  cache.set(req, data)
-
-  // Return response
-  return NextResponse.json(data, {
-    headers: {
-      'Cache-Control': `max-age=${Math.round((config.ttl || 300000) / 1000)}`,
-      'X-Cache': 'MISS'
-    }
-  })
-}
-
-// Cache invalidation utilities
-export const cacheInvalidation = {
-  // Invalidate all caches for a specific user
-  invalidateUser(userId: string) {
-    const entries = Array.from((globalCache as any).cache.entries()) as [string, any][]
-    for (const [key, _] of entries) {
-      if (key.includes(`:${userId}`)) {
-        globalCache.delete(key)
-      }
-    }
-  },
-
-  // Invalidate all caches for a specific resource
-  invalidateResource(resourceType: string, resourceId?: string) {
-    const pattern = resourceId
-      ? new RegExp(`/${resourceType}/${resourceId}`)
-      : new RegExp(`/${resourceType}/`)
-
-    const entries = Array.from((globalCache as any).cache.entries()) as [string, any][]
-    for (const [key, _] of entries) {
-      if (pattern.test(key)) {
-        globalCache.delete(key)
-      }
-    }
-  },
-
-  // Invalidate all API caches
-  invalidateAll() {
-    globalCache.clear()
-  }
-}
-
 // Cleanup expired cache entries periodically.
 //
 // unref() so this timer never holds the process open -- without it every Jest
@@ -312,6 +251,3 @@ const cleanupTimer = setInterval(() => {
   globalCache.cleanup(24 * 60 * 60 * 1000) // Clean entries older than 24 hours
 }, 60 * 60 * 1000) // Run every hour
 if (typeof cleanupTimer.unref === 'function') cleanupTimer.unref()
-
-// Export cache store for testing
-export { globalCache }

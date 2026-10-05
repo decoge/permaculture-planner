@@ -200,41 +200,6 @@ export function validateData<T>(
   }
 }
 
-export function sanitizeInput(input: string): string {
-  // Remove any potential XSS vectors
-  let sanitized = input
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, '')
-    .trim()
-
-  // Remove javascript: protocol from href attributes
-  sanitized = sanitized.replace(/href\s*=\s*["']\s*javascript:[^"']*["']/gi, 'href=""')
-
-  // Remove event handlers (onclick, onmouseover, etc.) - improved regex
-  sanitized = sanitized.replace(/\s+on\w+\s*=\s*["'][^"']*["']/gi, '')
-
-  return sanitized
-}
-
-export function sanitizeNumber(
-  value: unknown,
-  min: number,
-  max: number,
-  defaultValue: number
-): number {
-  if (value === null || value === undefined) return defaultValue
-  const num = Number(value)
-  if (isNaN(num)) return defaultValue
-  return Math.min(Math.max(num, min), max)
-}
-
-export function sanitizeBoolean(value: unknown, defaultValue = false): boolean {
-  if (typeof value === 'boolean') return value
-  if (value === 'true') return true
-  if (value === 'false') return false
-  return defaultValue
-}
-
 // Constraints validation
 export function validateBedConstraints(bed: any): string[] {
   const errors: string[] = []
