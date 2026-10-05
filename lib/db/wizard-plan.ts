@@ -1,5 +1,5 @@
 import { withTransaction } from '@/lib/db/pool'
-import { clampHeight, familyOrOther, surfaceOrSoil, taskCategory, waterOrSpigot } from '@/lib/db/ids'
+import { asUuid, clampHeight, familyOrOther, surfaceOrSoil, taskCategory, waterOrSpigot } from '@/lib/db/ids'
 
 export interface WizardSiteInput {
   name: string
@@ -98,60 +98,113 @@ export async function createWizardPlan(input: {
     )
     const planId = plan.rows[0].id
 
-    const bedIds = new Map<string, string>()
-    for (const bed of input.beds) {
-      const inserted = await client.query<{ id: string; name: string }>(
+    // Generate the bed ids here rather than reading them back from RETURNING,
+    // so the whole set can go in as one statement and the plantings below can
+    // still resolve a bed by name.
+    const beds = input.beds.map((bed) => ({
+      id: asUuid(),
+      name: bed.name,
+      lengthFt: Math.min(100, Math.max(0.1, bed.lengthFt)),
+      widthFt: Math.min(100, Math.max(0.1, bed.widthFt)),
+      heightIn: clampHeight(bed.heightIn),
+      orientation: bed.orientation === 'EW' ? 'EW' : 'NS',
+      surface: surfaceOrSoil(bed.surface),
+      wicking: Boolean(bed.wicking),
+      trellis: Boolean(bed.trellis),
+      pathClearanceIn: bed.pathClearanceIn ?? 18,
+      orderIndex: bed.orderIndex,
+    }))
+
+    if (beds.length > 0) {
+      // One INSERT for the whole plan rather than one per bed: a large site can
+      // generate dozens of beds, and this all runs in a single transaction.
+      await client.query(
         `INSERT INTO beds (
-          plan_id, name, shape, length_ft, width_ft, height_in, orientation,
+          plan_id, id, name, shape, length_ft, width_ft, height_in, orientation,
           surface, wicking, trellis, path_clearance_in, order_index
-        ) VALUES (
-          $1, $2, 'rect', $3, $4, $5, $6::orientation,
-          $7::surface_type, $8, $9, $10, $11
-        ) RETURNING id, name`,
+        )
+        SELECT $1, t.id, t.name, 'rect'::bed_shape, t.length_ft, t.width_ft, t.height_in,
+               t.orientation::orientation, t.surface::surface_type, t.wicking, t.trellis,
+               t.path_clearance_in, t.order_index
+        FROM unnest(
+          $2::uuid[], $3::text[], $4::numeric[], $5::numeric[], $6::numeric[], $7::text[],
+          $8::text[], $9::boolean[], $10::boolean[], $11::numeric[], $12::int[]
+        ) AS t(id, name, length_ft, width_ft, height_in, orientation, surface,
+               wicking, trellis, path_clearance_in, order_index)`,
         [
           planId,
-          bed.name,
-          Math.min(100, Math.max(0.1, bed.lengthFt)),
-          Math.min(100, Math.max(0.1, bed.widthFt)),
-          clampHeight(bed.heightIn),
-          bed.orientation === 'EW' ? 'EW' : 'NS',
-          surfaceOrSoil(bed.surface),
-          Boolean(bed.wicking),
-          Boolean(bed.trellis),
-          bed.pathClearanceIn ?? 18,
-          bed.orderIndex,
+          beds.map((bed) => bed.id),
+          beds.map((bed) => bed.name),
+          beds.map((bed) => bed.lengthFt),
+          beds.map((bed) => bed.widthFt),
+          beds.map((bed) => bed.heightIn),
+          beds.map((bed) => bed.orientation),
+          beds.map((bed) => bed.surface),
+          beds.map((bed) => bed.wicking),
+          beds.map((bed) => bed.trellis),
+          beds.map((bed) => bed.pathClearanceIn),
+          beds.map((bed) => bed.orderIndex),
         ]
       )
-      bedIds.set(inserted.rows[0].name, inserted.rows[0].id)
     }
 
-    for (const planting of input.plantings) {
-      const bedId = bedIds.get(planting.bedName)
-      if (!bedId) continue
-      const season = ['spring', 'summer', 'fall', 'winter'].includes(planting.season)
-        ? planting.season
-        : 'spring'
+    const bedIds = new Map(beds.map((bed) => [bed.name, bed.id]))
+
+    // Plantings whose bedName matches no saved bed are dropped, as before.
+    const plantings = input.plantings
+      .map((planting) => {
+        const bedId = bedIds.get(planting.bedName)
+        if (!bedId) return null
+        return {
+          bedId,
+          season: ['spring', 'summer', 'fall', 'winter'].includes(planting.season)
+            ? planting.season
+            : 'spring',
+          year: planting.year,
+          variety: planting.variety ?? null,
+          spacingIn: planting.spacingIn > 0 ? planting.spacingIn : 12,
+          family: familyOrOther(planting.family),
+          daysToMaturity: planting.daysToMaturity ?? null,
+        }
+      })
+      .filter((planting): planting is NonNullable<typeof planting> => planting !== null)
+
+    if (plantings.length > 0) {
       await client.query(
         `INSERT INTO plantings (
           bed_id, season, year, variety, spacing_in, family, target_days_to_maturity, sowing_method
-        ) VALUES ($1, $2::season, $3, $4, $5, $6::plant_family, $7, 'direct')`,
+        )
+        SELECT t.bed_id, t.season::season, t.year, t.variety, t.spacing_in,
+               t.family::plant_family, t.days_to_maturity, 'direct'::sowing_method
+        FROM unnest(
+          $1::uuid[], $2::text[], $3::int[], $4::text[], $5::numeric[],
+          $6::text[], $7::int[]
+        ) AS t(bed_id, season, year, variety, spacing_in, family, days_to_maturity)`,
         [
-          bedId,
-          season,
-          planting.year,
-          planting.variety ?? null,
-          planting.spacingIn > 0 ? planting.spacingIn : 12,
-          familyOrOther(planting.family),
-          planting.daysToMaturity ?? null,
+          plantings.map((p) => p.bedId),
+          plantings.map((p) => p.season),
+          plantings.map((p) => p.year),
+          plantings.map((p) => p.variety),
+          plantings.map((p) => p.spacingIn),
+          plantings.map((p) => p.family),
+          plantings.map((p) => p.daysToMaturity),
         ]
       )
     }
 
-    for (const task of input.tasks) {
+    const tasks = input.tasks.filter((task) => typeof task.title === 'string' && task.title.trim())
+    if (tasks.length > 0) {
       await client.query(
         `INSERT INTO tasks (plan_id, title, category, due_on, completed)
-         VALUES ($1, $2, $3::task_category, $4, false)`,
-        [planId, task.title, taskCategory(task.category), task.dueOn.slice(0, 10)]
+         SELECT $1, t.title, t.category::task_category, t.due::date, false
+         FROM unnest($2::text[], $3::text[], $4::text[])
+              AS t(title, category, due)`,
+        [
+          planId,
+          tasks.map((task) => task.title.trim()),
+          tasks.map((task) => taskCategory(task.category)),
+          tasks.map((task) => task.dueOn.slice(0, 10)),
+        ]
       )
     }
 
