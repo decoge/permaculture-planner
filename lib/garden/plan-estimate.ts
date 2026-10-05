@@ -95,7 +95,28 @@ export interface SpacingEstimate {
   note: string
 }
 
+export interface SunFitInput {
+  /** Hours of direct sun the site receives, from the wizard. */
+  sunHours?: unknown
+  /** Or the free-text note the site was saved with, e.g. "7 hours sun". */
+  shadeNotes?: unknown
+}
+
+export interface SunMismatch {
+  label: string
+  wants: 'full' | 'partial' | 'shade'
+  note: string
+}
+
 export interface PlanEstimate {
+  sun: {
+    hours: number | null
+    /** 'full' | 'partial' | 'shade' derived from the hours, or null if unknown. */
+    exposure: 'full' | 'partial' | 'shade' | null
+    /** Plants planted somewhere they will not get the light they need. */
+    mismatched: SunMismatch[]
+    note: string
+  }
   spacing: SpacingEstimate[]
   water: {
     gallonsPerWeek: number
@@ -255,6 +276,95 @@ export function estimateYieldFor(
 const WATER_PRICE_PER_GALLON = 0.004
 
 /**
+ * Minimum hours of direct sun each requirement band needs.
+ *
+ * The 6-hour threshold matches the one the wizard and crop-rotation already
+ * use for full sun, so a plan is not scored full sun by one module and partial
+ * by the next.
+ */
+const SUN_HOURS: Record<'full' | 'partial' | 'shade', number> = {
+  full: 6,
+  partial: 3,
+  shade: 0,
+}
+
+/** Read the site's sun hours from a number or from a note like "7 hours sun". */
+function sunHoursOf(input: SunFitInput | undefined): number | null {
+  if (!input) return null
+  const direct = number(input.sunHours)
+  if (direct !== null && direct >= 0 && direct <= 24) return direct
+  const note = text(input.shadeNotes)
+  if (note) {
+    const match = /(\d+(?:\.\d+)?)\s*(?:hours|hrs|hr|h)\b/i.exec(note)
+    if (match) {
+      const parsed = Number(match[1])
+      if (Number.isFinite(parsed) && parsed >= 0 && parsed <= 24) return parsed
+    }
+  }
+  return null
+}
+
+/**
+ * Whether the plants saved suit the light the site actually gets.
+ *
+ * This is the part of the deleted solar calculator worth keeping. The full
+ * NOAA sun-position maths it contained computed sunrise and obstruction
+ * shading, which nothing called and which needs a geolocated observer to mean
+ * anything. What a gardener needs to know is simpler and fully answerable from
+ * data the app already stores: the wizard records sun_hours, and every plant in
+ * the library records the band it needs. Comparing the two catches planting a
+ * fruiting crop in a shady corner before it fails in August.
+ *
+ * A plant needing *more* light than the site gets is a mismatch. One needing
+ * less is only worth mentioning, and only as information.
+ */
+export function estimateSunFit(
+  plants: PlantEstimateInput[],
+  input?: SunFitInput
+): PlanEstimate['sun'] {
+  const hours = sunHoursOf(input)
+  const exposure: 'full' | 'partial' | 'shade' | null =
+    hours === null ? null : hours >= SUN_HOURS.full ? 'full' : hours >= SUN_HOURS.partial ? 'partial' : 'shade'
+
+  if (hours === null) {
+    return {
+      hours: null,
+      exposure: null,
+      mismatched: [],
+      note: 'Sun exposure is not recorded, so the plants cannot be checked against it.',
+    }
+  }
+
+  const mismatched: SunMismatch[] = []
+  if (exposure !== null) {
+    for (const item of plants) {
+      const plant = resolvePlant(item)
+      if (!plant) continue
+      const wants = plant.requirements.sun
+      const available = SUN_HOURS[exposure]
+      const needed = SUN_HOURS[wants]
+      if (needed > available) {
+        const shortfall = needed - available
+        mismatched.push({
+          label: plant.name,
+          wants,
+          note: `${plant.name} needs ${wants} sun (${needed}+ hours) but the site records about ${hours} hours, ${formatCount(shortfall)} short.`,
+        })
+      }
+    }
+  }
+
+  let note = `The site records about ${formatCount(hours)} hours of sun, which is ${exposure === 'full' ? 'full sun' : exposure === 'partial' ? 'partial sun' : 'shade'}.`
+  if (mismatched.length === 0) {
+    note += ' Every plant saved suits that.'
+  } else {
+    note += ` ${mismatched.length} plant${mismatched.length === 1 ? '' : 's'} will not get enough light there.`
+  }
+
+  return { hours, exposure, mismatched, note }
+}
+
+/**
  * How well a bed's plantings match the space available.
  *
  * Capacity is the area divided by the square of the tightest spacing any plant
@@ -368,7 +478,8 @@ function formatCount(value: number): string {
 export function estimatePlan(
   plants: PlantEstimateInput[],
   setupCostCents?: unknown,
-  beds?: BedSpacingInput[]
+  beds?: BedSpacingInput[],
+  sun?: SunFitInput
 ): PlanEstimate {
   const list = Array.isArray(plants) ? plants : []
 
@@ -498,7 +609,13 @@ export function estimatePlan(
     }
   }
 
+  const sunFit = estimateSunFit(list, sun)
+  for (const mismatch of sunFit.mismatched) {
+    cautions.push(mismatch.note)
+  }
+
   return {
+    sun: sunFit,
     spacing,
     water: {
       gallonsPerWeek,

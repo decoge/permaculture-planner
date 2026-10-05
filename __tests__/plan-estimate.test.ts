@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals'
 import { summarizeDesignFacts } from '@/lib/garden/design-facts'
-import { estimateBedSpacing, estimatePlan, estimateWaterFor, estimateYieldFor, resolvePlant } from '@/lib/garden/plan-estimate'
+import { estimateBedSpacing, estimatePlan, estimateSunFit, estimateWaterFor, estimateYieldFor, resolvePlant } from '@/lib/garden/plan-estimate'
 import { PLANT_LIBRARY } from '@/lib/data/plant-library'
 import { PLANT_YIELD_DATABASE } from '@/lib/data/plant-yield-data'
 
@@ -285,6 +285,86 @@ describe('estimateBedSpacing', () => {
 
   test('spacing is optional and empty when no beds are supplied', () => {
     expect(estimatePlan([{ variety: 'tomato' }]).spacing).toEqual([])
+  })
+})
+
+describe('estimateSunFit', () => {
+  test('reads hours from a number', () => {
+    const fit = estimateSunFit([{ variety: 'tomato' }], { sunHours: 8 })
+    expect(fit.hours).toBe(8)
+    expect(fit.exposure).toBe('full')
+  })
+
+  test('falls back to parsing the saved shade note', () => {
+    // The wizard writes "7 hours sun" into shade_notes, and that is what a
+    // loaded plan actually carries.
+    const fit = estimateSunFit([{ variety: 'tomato' }], { shadeNotes: '7 hours sun' })
+    expect(fit.hours).toBe(7)
+    expect(fit.exposure).toBe('full')
+  })
+
+  test('says so when no sun exposure is recorded', () => {
+    const fit = estimateSunFit([{ variety: 'tomato' }])
+    expect(fit.hours).toBeNull()
+    expect(fit.exposure).toBeNull()
+    expect(fit.note).toMatch(/not recorded/)
+  })
+
+  test('classifies exposure on the same 6-hour line the wizard uses', () => {
+    expect(estimateSunFit([], { sunHours: 8 }).exposure).toBe('full')
+    expect(estimateSunFit([], { sunHours: 6 }).exposure).toBe('full')
+    expect(estimateSunFit([], { sunHours: 4 }).exposure).toBe('partial')
+    expect(estimateSunFit([], { sunHours: 1 }).exposure).toBe('shade')
+  })
+
+  test('flags a full-sun crop in a shady site', () => {
+    const fit = estimateSunFit([{ variety: 'tomato' }], { sunHours: 2 })
+    expect(fit.mismatched).toHaveLength(1)
+    expect(fit.mismatched[0].label).toBe('Tomato')
+    expect(fit.mismatched[0].wants).toBe('full')
+    expect(fit.note).toMatch(/will not get enough light/)
+  })
+
+  test('does not flag a shade-tolerant plant in partial sun', () => {
+  // Lettuce wants partial sun (3+ hours), so 2 hours is genuinely short of
+  // it. Spinach also wants partial, and is the better choice at 4 hours.
+  expect(estimateSunFit([{ variety: 'spinach' }], { sunHours: 4 }).mismatched).toEqual([])
+  expect(estimateSunFit([{ variety: 'spinach' }], { sunHours: 2 }).mismatched).toHaveLength(1)
+  })
+
+  test('does not flag a plant wanting less light than the site gets', () => {
+  // A shade plant in full sun is not the same problem as a fruiting crop in
+  // shade, so it is not counted as a mismatch.
+  const fit = estimateSunFit([{ variety: 'marigold' }], { sunHours: 10 })
+  expect(fit.mismatched).toEqual([])
+  })
+
+  test('ignores plants outside the library', () => {
+    const fit = estimateSunFit([{ plantId: 'not-real' }], { sunHours: 1 })
+    expect(fit.mismatched).toEqual([])
+  })
+
+  test('rejects impossible hour values', () => {
+    expect(estimateSunFit([], { sunHours: 99 }).hours).toBeNull()
+    expect(estimateSunFit([], { sunHours: -3 }).hours).toBeNull()
+    expect(estimateSunFit([], { shadeNotes: 'very sunny' }).hours).toBeNull()
+  })
+
+  test('a mismatched plant becomes a caution on the plan', () => {
+    const estimate = estimatePlan(
+      [{ variety: 'tomato' }],
+      undefined,
+      undefined,
+      { sunHours: 2 }
+    )
+    expect(estimate.sun.mismatched).toHaveLength(1)
+    expect(estimate.cautions.join(' ')).toMatch(/needs full sun/)
+  })
+
+  test('is optional and inert when no sun data is supplied', () => {
+    const estimate = estimatePlan([{ variety: 'tomato' }])
+    expect(estimate.sun.hours).toBeNull()
+    expect(estimate.cautions.join(' ')).not.toMatch(/sun/)
   })
 })
 

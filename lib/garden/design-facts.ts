@@ -291,10 +291,33 @@ function allPlants(beds: SiteBedInput[]): SitePlantInput[] {
   return beds.flatMap(plantsOn)
 }
 
+/**
+ * The site's sun hours, from the wizard's constraints.
+ *
+ * The wizard collects `surface.sun_hours` and the plan saves it into
+ * `shade_notes` as free text ("7 hours sun"). Read the structured value when it
+ * survives in the constraints and fall back to parsing the note, which is the
+ * copy that reaches a loaded plan.
+ */
+function sunHoursOf(input: SiteFactsInput): number | null {
+  const constraints = constraintsOf(input)
+  const surface = asRecord(constraints?.surface)
+  return (
+    recordedNumber(surface?.sun_hours ?? surface?.sunHours) ??
+    recordedNumber(asRecord(constraints?.surface)?.sunHours)
+  )
+}
+
 function critiqueLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
   const lines: string[] = []
-  const estimate = estimatePlan(allPlants(beds), input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents, beds)
+  const estimate = estimatePlan(
+  allPlants(beds),
+  input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents,
+  beds,
+  { sunHours: sunHoursOf(input), shadeNotes: input.shadeNotes }
+)
   lines.push(`Design score is ${estimate.score} out of 100 from the plants saved.`)
+  lines.push(estimate.sun.note)
   for (const strength of estimate.strengths) lines.push(strength)
   for (const caution of estimate.cautions) lines.push(caution)
   const usda = recordedText(input.usdaZone)
@@ -442,7 +465,12 @@ function analyticsLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
       : 'Harvest quantities are not recorded; the figures below are projected from the plant library.')
 
     // Projections from the plants actually saved, rather than a placeholder.
-  const estimate = estimatePlan(allPlants(beds), input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents, beds)
+  const estimate = estimatePlan(
+  allPlants(beds),
+  input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents,
+  beds,
+  { sunHours: sunHoursOf(input), shadeNotes: input.shadeNotes }
+)
     if (plants === 0) {
       lines.push('Water, yield and return cannot be estimated without plants.')
       lines.push('Performance score is not recorded.')
@@ -464,6 +492,7 @@ function analyticsLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
     lines.push(`That is about ${formatQuantity(estimate.yield.totalValue)} dollars of produce at retail.`)
     lines.push(`${formatQuantity(estimate.yield.varieties)} varieties are planted.`)
 
+    lines.push(estimate.sun.note)
     // Per-bed spacing fit, using the tightest spacing any plant in a bed wants.
     for (const bed of estimate.spacing) lines.push(bed.note)
 
