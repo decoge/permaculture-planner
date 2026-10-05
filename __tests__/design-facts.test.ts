@@ -4,29 +4,29 @@ import { formatDesignFacts, summarizeDesignFacts } from '@/lib/garden/design-fac
 describe('summarizeDesignFacts', () => {
   test('uses saved plants, area, and time without inventing companions or yields', () => {
     const facts = summarizeDesignFacts({
-      usdaZone: '8b',
-      waterSource: 'spigot',
-      constraints: {
-        area: { total_sqft: 100, usable_fraction: 0.8 },
-        crops: { time_weekly_minutes: 60 },
-      },
-      beds: [
-        {
-          name: 'Salad Greens',
-          length_ft: '4.00',
-          width_ft: '9.17',
-          plantings: [
-            { variety: 'lettuce', season: 'fall', year: 2026 },
-            { variety: 'tomato', season: 'fall', year: 2026, notes: 'watch for aphids' },
-          ],
-        },
-        {
-          name: 'Root Vegetables',
-          length_ft: 4,
-          width_ft: 6.83,
-          plantings: [{ variety: 'carrot', season: 'fall', year: 2026 }],
-        },
-      ],
+    usdaZone: '8b',
+    waterSource: 'spigot',
+    constraints: {
+    area: { total_sqft: 100, usable_fraction: 0.8 },
+    crops: { time_weekly_minutes: 60 },
+    },
+    beds: [
+    {
+    name: 'Salad Greens',
+    length_ft: '4.00',
+    width_ft: '9.17',
+    plantings: [
+    { variety: 'lettuce', season: 'fall', year: 2026 },
+    { variety: 'tomato', season: 'fall', year: 2026, notes: 'watch for aphids' },
+    ],
+    },
+    {
+    name: 'Root Vegetables',
+    length_ft: 4,
+    width_ft: 6.83,
+    plantings: [{ variety: 'carrot', season: 'fall', year: 2026 }],
+    },
+    ],
     })
     const text = formatDesignFacts(facts)
 
@@ -41,7 +41,9 @@ describe('summarizeDesignFacts', () => {
     expect(facts.implementation).toContain('Weekly garden time is recorded as 60 minutes.')
     expect(facts.implementation).toContain('Implementation phases are not recorded.')
     expect(facts.implementation).toContain('A phase schedule is not recorded.')
-    expect(facts.critique).toContain('A design score is not recorded.')
+    // Water, yield and score are now estimated from the plants saved rather than
+    // reported as absent.
+    expect(facts.critique.join('\n')).toMatch(/Design score is \d+ out of 100/)
     expect(facts.critique).toContain('Last frost is not recorded.')
     expect(facts.progress).toContain('No journal entries are recorded.')
     expect(facts.progress).toContain('No harvests are recorded.')
@@ -51,7 +53,7 @@ describe('summarizeDesignFacts', () => {
     expect(facts.analytics).toContain('Site area is recorded as 100 sq ft.')
     expect(facts.analytics).toContain('Usable fraction is recorded as 0.8.')
     expect(facts.analytics).toContain('Salad Greens is recorded as 4 ft by 9.2 ft.')
-    expect(facts.analytics).toContain('Yields are not recorded.')
+    expect(facts.analytics).toContain('Harvest quantities are not recorded; the figures below are projected from the plant library.')
     expect(facts.permaculture).toContain('USDA zone is recorded as 8b.')
     expect(facts.permaculture).toContain('Water source is recorded as a spigot.')
     expect(facts.permaculture).toContain('A permaculture principle score is not recorded.')
@@ -67,23 +69,25 @@ describe('summarizeDesignFacts', () => {
     expect(text).toContain('Guilds, energy flows, and nutrient cycles are not recorded.')
     expect(text).toContain('A multi-year timeline is not recorded.')
     expect(text).toContain('Implementation phases are not recorded.')
-    expect(text).toContain('A design score is not recorded.')
+    expect(text).toContain('Water, yield and return cannot be estimated without plants.')
     expect(text).toContain('No journal entries are recorded.')
     expect(text).toContain('Knowledge notes are not recorded.')
     expect(text).toContain('No template is saved on this plan.')
     expect(text).toContain('Site area is not recorded.')
-    expect(text).toContain('Yields are not recorded.')
+    expect(text).toContain('Performance score is not recorded.')
     expect(text).toContain('A permaculture principle score is not recorded.')
     expect(text).not.toContain('basil')
-    expect(text).not.toContain('100')
-  })
+    // No area was saved, so no sq-ft figure may appear. "out of 100" is the
+    // score scale, not a measurement, so match the units rather than the digits.
+    expect(text).not.toContain('sq ft')
+    })
 
   test('keeps a saved template, journal entry, and harvest', () => {
     const facts = summarizeDesignFacts({
-      template: 'kitchen garden',
-      journal: [{ title: 'First sowing', content: 'Direct sowed lettuce.', created_at: '2026-09-01', images: [] }],
-      harvests: [{ variety: 'lettuce', quantity: 2, unit: 'lb', harvested_on: '2026-11-01' }],
-      tasks: [{ title: 'Water', due_on: '2026-10-10', completed: false }],
+    template: 'kitchen garden',
+    journal: [{ title: 'First sowing', content: 'Direct sowed lettuce.', created_at: '2026-09-01', images: [] }],
+    harvests: [{ variety: 'lettuce', quantity: 2, unit: 'lb', harvested_on: '2026-11-01' }],
+    tasks: [{ title: 'Water', due_on: '2026-10-10', completed: false }],
     })
     expect(facts.templates).toContain('A template is saved: kitchen garden.')
     expect(facts.progress).toContain('First sowing is recorded on 2026-09-01.')
@@ -96,23 +100,23 @@ describe('summarizeDesignFacts', () => {
 
   test('uses plant-library companion pairs saved in the same bed', () => {
     const facts = summarizeDesignFacts({
-      beds: [
-        {
-          name: 'Salad Greens',
-          plantings: [
-            { variety: 'lettuce' },
-            { variety: 'tomato' },
-            { variety: 'carrot' },
-          ],
-        },
-        {
-          name: 'Root Vegetables',
-          plantings: [
-            { variety: 'lettuce' },
-            { variety: 'tomato' },
-          ],
-        },
-      ],
+    beds: [
+    {
+    name: 'Salad Greens',
+    plantings: [
+    { variety: 'lettuce' },
+    { variety: 'tomato' },
+    { variety: 'carrot' },
+    ],
+    },
+    {
+    name: 'Root Vegetables',
+    plantings: [
+    { variety: 'lettuce' },
+    { variety: 'tomato' },
+    ],
+    },
+    ],
     })
 
     expect(facts.companions).toContain('From the plant library, Lettuce with Carrot in Salad Greens.')

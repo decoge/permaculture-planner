@@ -5,6 +5,7 @@ import {
   SiteFactsInput,
   SitePlantInput,
 } from '@/lib/garden/site-facts'
+import { estimatePlan } from '@/lib/garden/plan-estimate'
 
 export interface DesignFacts {
   companions: string[]
@@ -279,8 +280,23 @@ function implementationLines(input: SiteFactsInput, beds: SiteBedInput[]): strin
   return lines
 }
 
+/**
+ * Every planting across every bed, flattened.
+ *
+ * The estimate engine takes a flat list so it does not care how beds are
+ * stored -- a canvas bed keeps `plants`, a plan read from the database may carry
+ * `plantings` instead. plantsOn() already normalises that difference.
+ */
+function allPlants(beds: SiteBedInput[]): SitePlantInput[] {
+  return beds.flatMap(plantsOn)
+}
+
 function critiqueLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
-  const lines = ['A design score is not recorded.', 'No critique notes are recorded.']
+  const lines: string[] = []
+  const estimate = estimatePlan(allPlants(beds), input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents)
+  lines.push(`Design score is ${estimate.score} out of 100 from the plants saved.`)
+  for (const strength of estimate.strengths) lines.push(strength)
+  for (const caution of estimate.cautions) lines.push(caution)
   const usda = recordedText(input.usdaZone)
   lines.push(usda ? `USDA zone is recorded as ${usda}.` : 'USDA zone is not recorded.')
   const lastFrost = recordedDate(input.lastFrost)
@@ -421,10 +437,49 @@ function analyticsLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
     ? 'Weekly garden time is not recorded.'
     : `Weekly garden time is recorded as ${formatQuantity(minutes)} minutes.`)
   const recordedYield = (input.harvests || []).some((harvest) => recordedNumber(harvest.quantity) !== null)
-  lines.push(recordedYield ? 'Harvest quantities are recorded.' : 'Yields are not recorded.')
-  lines.push('A performance score is not recorded.')
-  return lines
-}
+    lines.push(recordedYield
+      ? 'Harvest quantities are recorded.'
+      : 'Harvest quantities are not recorded; the figures below are projected from the plant library.')
+
+    // Projections from the plants actually saved, rather than a placeholder.
+    const estimate = estimatePlan(allPlants(beds), input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents)
+    if (plants === 0) {
+      lines.push('Water, yield and return cannot be estimated without plants.')
+      lines.push('Performance score is not recorded.')
+      return lines
+    }
+
+    lines.push(
+      `Water demand is about ${formatQuantity(estimate.water.gallonsPerWeek)} gallons a week (${formatQuantity(estimate.water.gallonsPerDay)} a day).`
+    )
+    if (estimate.water.weeklyCost !== null) {
+      lines.push(`At typical mains rates that is about ${formatQuantity(estimate.water.weeklyCost)} dollars a week.`)
+    }
+    lines.push(`Peak season demand is about ${formatQuantity(estimate.water.peakGallonsPerWeek)} gallons a week.`)
+    for (const note of estimate.water.notes) lines.push(note)
+
+    lines.push(
+      `Projected yield is about ${formatQuantity(estimate.yield.totalPounds)} lbs a year (${formatQuantity(estimate.yield.lowPounds)} to ${formatQuantity(estimate.yield.highPounds)}).`
+    )
+    lines.push(`That is about ${formatQuantity(estimate.yield.totalValue)} dollars of produce at retail.`)
+    lines.push(`${formatQuantity(estimate.yield.varieties)} varieties are planted.`)
+
+    if (estimate.roi.setupCost === null) {
+      lines.push('Build cost is not recorded, so a return figure cannot be given.')
+    } else {
+      lines.push(`Build cost is recorded as ${formatQuantity(estimate.roi.setupCost)} cents.`)
+      lines.push(`First-year net is about ${formatQuantity(estimate.roi.firstYearNet ?? 0)} dollars.`)
+      if (estimate.roi.breakEvenYears !== null) {
+        lines.push(`At this output the cost is repaid in about ${formatQuantity(estimate.roi.breakEvenYears)} years.`)
+      } else if ((estimate.roi.firstYearNet ?? 0) >= 0) {
+        lines.push('The first year covers the build cost.')
+      } else {
+        lines.push('Recorded yield does not exceed the build cost in a year.')
+      }
+    }
+    lines.push(`Performance score from the plants saved is ${estimate.score} out of 100.`)
+    return lines
+  }
 
 function permacultureLines(input: SiteFactsInput): string[] {
   const lines: string[] = []
