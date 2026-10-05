@@ -144,3 +144,53 @@ describe('createPasswordReset supersedes old links', () => {
     expect(query).not.toHaveBeenCalled()
   })
 })
+
+describe('display names are capped before they are stored', () => {
+  const userRow = (name: string | null) => ({
+    id: 'u1',
+    email: 'a@b.com',
+    name,
+    full_name: name,
+    is_admin: false,
+    token_version: 0,
+    created_at: '2026-01-01',
+  })
+
+  test('truncates an absurdly long profile name', async () => {
+    queryOne.mockResolvedValue(userRow(null))
+
+    await users.updateUserProfile('u1', 'x'.repeat(50_000))
+
+    const params = queryOne.mock.calls[0][1] as unknown[]
+    const stored = params[1] as string
+    expect(stored.length).toBeLessThanOrEqual(100)
+  })
+
+  test('truncates an absurdly long name at signup', async () => {
+    queryOne.mockResolvedValue(userRow(null))
+
+    await users.createUser({ email: 'a@b.com', password: 'Garden2026', name: 'y'.repeat(50_000) })
+
+    const params = queryOne.mock.calls[0][1] as unknown[]
+    const stored = params[2] as string
+    expect(stored.length).toBeLessThanOrEqual(100)
+  })
+
+  test('still clears the field for an all-whitespace name', async () => {
+    queryOne.mockResolvedValue(userRow(null))
+
+    await users.updateUserProfile('u1', '     ')
+
+    const params = queryOne.mock.calls[0][1] as unknown[]
+    expect(params[1]).toBeNull()
+  })
+
+  test('leaves an ordinary name untouched', async () => {
+    queryOne.mockResolvedValue(userRow('Ada Lovelace'))
+
+    await users.updateUserProfile('u1', '  Ada Lovelace  ')
+
+    const params = queryOne.mock.calls[0][1] as unknown[]
+    expect(params[1]).toBe('Ada Lovelace')
+  })
+})

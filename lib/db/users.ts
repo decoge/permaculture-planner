@@ -3,6 +3,13 @@ import { query, queryOne, withTransaction } from '@/lib/db/pool'
 import { hashPassword, verifyPassword } from '@/lib/auth/password'
 import { writeSession, clearSession, type SessionUser } from '@/lib/auth/session'
 
+/**
+ * Display names are stored verbatim and rendered on every page that shows the
+ * user, so cap the length rather than trusting the client. `users.name` is an
+ * unbounded TEXT column.
+ */
+const MAX_NAME_LENGTH = 100
+
 export interface UserRecord {
   id: string
   email: string
@@ -56,7 +63,7 @@ export async function createUser(input: {
 }): Promise<SessionUser> {
   const email = normalizeEmail(input.email)
   const passwordHash = await hashPassword(input.password)
-  const name = input.name?.trim() || null
+  const name = input.name?.trim().slice(0, MAX_NAME_LENGTH) || null
   const adminEmail = process.env.ADMIN_EMAIL?.trim().toLowerCase()
 
   const user = await queryOne<UserRecord>(
@@ -90,7 +97,9 @@ export async function authenticateUser(email: string, password: string): Promise
 }
 
 export async function updateUserProfile(userId: string, name: string): Promise<SessionUser | null> {
-  const trimmed = name.trim()
+  // Trim, then cap. An all-whitespace name clears the field, matching the
+  // existing behaviour of the update.
+  const trimmed = name.trim().slice(0, MAX_NAME_LENGTH)
   const user = await queryOne<UserRecord>(
     `UPDATE users
      SET name = $2, full_name = $2
