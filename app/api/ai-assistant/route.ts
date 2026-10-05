@@ -22,6 +22,44 @@ const SYSTEM_PROMPT = `You are an expert permaculture designer and consultant wi
 
 Provide practical, actionable advice based on permaculture principles. Consider the user's climate zone, available space, and resources. Always emphasize sustainable, regenerative solutions that work with nature rather than against it.`
 
+/**
+ * Per-message and total size limits for the chat endpoint.
+ *
+ * The request body is attacker-controlled and every token here is billed to the
+ * owner's OpenAI account, so an unbounded `messages` array (or an enormous
+ * `context` blob) is a direct way to spend money. These caps are generous for
+ * a real conversation and stop the unbounded case.
+ */
+const MAX_MESSAGES = 50
+const MAX_MESSAGE_CHARS = 8000
+const MAX_CONTEXT_CHARS = 4000
+const ALLOWED_ROLES = new Set(['user', 'assistant'])
+
+interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+/**
+ * Keep only well-formed user/assistant turns and cap both count and length.
+ *
+ * Dropping non user/assistant roles matters beyond validation: the messages are
+ * appended after the system prompt, so a client-supplied `system` turn could
+ * otherwise replace the guardrails in SYSTEM_PROMPT.
+ */
+function sanitizeMessages(input: unknown): ChatMessage[] {
+  if (!Array.isArray(input)) return []
+  const out: ChatMessage[] = []
+  for (const message of input.slice(0, MAX_MESSAGES)) {
+    if (!message || typeof message !== 'object') continue
+    const { role, content } = message as { role?: unknown; content?: unknown }
+    if (typeof role !== 'string' || !ALLOWED_ROLES.has(role)) continue
+    if (typeof content !== 'string') continue
+    out.push({ role: role as 'user' | 'assistant', content: content.slice(0, MAX_MESSAGE_CHARS) })
+  }
+  return out
+}
+
 export async function POST(request: NextRequest) {
   try {
     // This endpoint spends the owner's OpenAI budget, so it must never be
@@ -32,13 +70,21 @@ export async function POST(request: NextRequest) {
     const { messages, context } = await request.json()
 
     // Check if API key is configured
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-placeholder') {
+    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === '***') {
       return NextResponse.json(
         {
           error: 'OpenAI API key not configured',
           message: 'Please add your OpenAI API key to continue'
         },
         { status: 503 }
+      )
+    }
+
+    const sanitized = sanitizeMessages(messages)
+    if (sanitized.length === 0) {
+      return NextResponse.json(
+        { error: 'At least one user or assistant message is required' },
+        { status: 400 }
       )
     }
 
@@ -51,12 +97,15 @@ export async function POST(request: NextRequest) {
     if (context) {
       aiMessages.push({
         role: 'system',
-        content: `Current design context: ${JSON.stringify(context)}`
+        // JSON.stringify can return undefined for a value like a function, and
+        // can be enormous for a large object; either way it must not go to the
+        // model unbounded.
+        content: `Current design context: ${JSON.stringify(context).slice(0, MAX_CONTEXT_CHARS)}`
       })
     }
 
     // Add user messages
-    aiMessages.push(...messages)
+    aiMessages.push(...sanitized)
 
     // Call OpenAI API
     const completion = await openai.chat.completions.create({
