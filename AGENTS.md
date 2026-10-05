@@ -165,6 +165,20 @@ New domain logic needs a unit test. Bug fixes need a test that fails without the
 - **Assert that the fix is load-bearing.** Temporarily revert it and confirm
   the new tests go red, then restore. A test that passes both ways proves
   nothing.
+- **Testing `lib/db/gardens.ts` or `lib/db/tasks.ts` needs two extra mocks.**
+  Both import `lib/db/ids`, which pulls in `uuid` — ESM-only, so it cannot be
+  required under Jest's CommonJS runtime ("Must use import to load ES Module").
+  Mock `@/lib/db/ids` alongside `@/lib/db/pool`. Separately, `updateGarden`
+  reads `.rowCount` and `.rows` off the client result, so a mocked `PoolClient`
+  must return `{ rowCount, rows }`, not a bare array. See
+  `__tests__/canvas-save-batching.test.ts` for the working shape.
+- **Index mocked statements by SQL content, not call position.** These helpers
+  run several statements per call (plan lookup, UPDATEs, delete, inserts), so
+  `mock.calls[1]` is brittle; find the call whose SQL contains a fragment.
+- **The patch tool redacts secrets in its diff output.** A line like
+  `process.env.OPENAI_API_KEY === 'sk-placeholder'` displays as `'***'` even
+  when unchanged. Before assuming an edit changed a secret-adjacent line, diff
+  the bytes (`git show HEAD:file | grep -n ...`) instead of trusting the diff.
 
 ## Commit conventions
 
