@@ -26,6 +26,7 @@ import {
   Command,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { exportCanvas } from '@/lib/export/canvas-exporter'
 import { toast } from 'sonner'
 
 interface PermacultureEditorProps {
@@ -106,10 +107,25 @@ export function PermacultureEditor({
   }, [gardenData, onSave])
 
   // Handle export
-  const handleExport = useCallback((format: 'png' | 'pdf' | 'svg' | 'json') => {
-    toast.info(`Exporting as ${format.toUpperCase()}...`)
-    // TODO: Implement export functionality
-  }, [])
+  const handleExport = useCallback(
+    async (format: 'png' | 'json') => {
+      const toastId = toast.loading(`Exporting as ${format.toUpperCase()}...`)
+      try {
+        await exportCanvas(gardenData, format, {
+          title: planId ? `Plan ${planId}` : 'Garden plan',
+        })
+        toast.success(`Exported as ${format.toUpperCase()}`, { id: toastId })
+      } catch (error) {
+        // Surface the real reason instead of the old unconditional "exporting"
+        // toast that never resolved either way.
+        toast.error(
+          `Export failed: ${error instanceof Error ? error.message : 'unknown error'}`,
+          { id: toastId }
+        )
+      }
+    },
+    [gardenData, planId]
+  )
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -176,7 +192,15 @@ export function PermacultureEditor({
                 onClick={() => handleExport('json')}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export
+                Export JSON
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleExport('png')}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export PNG
               </Button>
               <Button
                 size="sm"
