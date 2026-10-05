@@ -49,8 +49,21 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
         planName: planName || 'Demo Garden',
       }
 
-      // Check storage quota
-      const dataSize = JSON.stringify(payload).length
+      // Serialise both values before writing either. localStorage has no
+      // transaction, so writing the beds first and then the metadata could
+      // leave the plan half-saved if the second write hit the quota: beds on
+      // disk, metadata describing a different, older save.
+      const bedsJson = JSON.stringify(payload.beds)
+      const metadataJson = JSON.stringify({
+        planName: payload.planName,
+        lastSaved: new Date().toISOString(),
+        ...payload.metadata,
+      })
+
+      // Measure what is actually written, not the wrapping payload object --
+      // the two differ, so the old check compared the wrong number against the
+      // limit and could reject a plan that fit comfortably.
+      const dataSize = bedsJson.length + metadataJson.length
       if (dataSize > 4.5 * 1024 * 1024) {
         // 4.5MB limit (localStorage is typically 5-10MB)
         return {
@@ -59,16 +72,8 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
         }
       }
 
-      // Save to localStorage
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(payload.beds))
-      localStorage.setItem(
-        this.METADATA_KEY,
-        JSON.stringify({
-          planName: payload.planName,
-          lastSaved: new Date().toISOString(),
-          ...payload.metadata,
-        })
-      )
+      localStorage.setItem(this.STORAGE_KEY, bedsJson)
+      localStorage.setItem(this.METADATA_KEY, metadataJson)
 
       this.lastSaved = new Date()
       this.isDirty = false
@@ -121,11 +126,19 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
         this.lastSaved = new Date(metadata.lastModified)
       }
 
+      // The plan name is stored in the metadata on save; returning the literal
+      // 'Demo Garden' instead threw it away, so a saved plan always came back
+      // under the default name.
+      const planName =
+        typeof (metadata as { planName?: unknown }).planName === 'string'
+          ? (metadata as { planName: string }).planName
+          : undefined
+
       return {
         success: true,
         data: beds,
         metadata,
-        planName: metadata.lastModified ? 'Demo Garden' : undefined,
+        planName,
       }
     } catch (error) {
       return {
