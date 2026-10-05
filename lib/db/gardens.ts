@@ -391,50 +391,72 @@ export async function listDashboardPlans(userId: string) {
     [userId]
   )
 
-  const detailed = []
-  for (const plan of plans) {
-    const site = await queryOne(
-      'SELECT * FROM sites WHERE id = $1',
-      [plan.site_id as string]
-    )
-    const beds = await query(
-      'SELECT * FROM beds WHERE plan_id = $1 ORDER BY order_index',
-      [plan.id as string]
-    )
-    const materials = await queryOne(
-      `SELECT * FROM materials_estimates
-       WHERE plan_id = $1
-       ORDER BY created_at DESC
-       LIMIT 1`,
-      [plan.id as string]
-    )
-    const totalArea = beds.reduce((sum, bed) => {
+  if (plans.length === 0) return []
+
+  // One query per related table for all plans, not one per plan per table. The
+  // dashboard loads every plan a user owns, so the old per-plan loop turned a
+  // five-plan dashboard into 21 round trips, and it blocked on each one in turn.
+  const planIds = plans.map((plan) => plan.id as string)
+
+  const [sites, beds, materials, plantingStats] = await Promise.all([
+    // One site row per plan is guaranteed: a plan cannot exist without its
+    // site, and the id comes from that same row.
+    query<Record<string, unknown>>('SELECT * FROM sites WHERE id = ANY($1::uuid[])', [planIds]),
+    query<Record<string, unknown>>(
+      'SELECT * FROM beds WHERE plan_id = ANY($1::uuid[]) ORDER BY plan_id, order_index',
+      [planIds]
+    ),
+    query<Record<string, unknown>>(
+      `SELECT DISTINCT ON (plan_id) *
+       FROM materials_estimates
+       WHERE plan_id = ANY($1::uuid[])
+       ORDER BY plan_id, created_at DESC`,
+      [planIds]
+    ),
+    query<{ plan_id: string; plants: number; varieties: number }>(
+      `SELECT b.plan_id,
+              COUNT(pl.id)::int AS plants,
+              COUNT(DISTINCT pl.variety)::int AS varieties
+       FROM beds b
+       JOIN plantings pl ON pl.bed_id = b.id
+       WHERE b.plan_id = ANY($1::uuid[])
+       GROUP BY b.plan_id`,
+      [planIds]
+    ),
+  ])
+
+  const sitesById = new Map(sites.map((site) => [site.id as string, site]))
+  const bedsByPlan = new Map<string, Record<string, unknown>[]>()
+  for (const bed of beds) {
+    const planId = bed.plan_id as string
+    const list = bedsByPlan.get(planId)
+    if (list) list.push(bed)
+    else bedsByPlan.set(planId, [bed])
+  }
+  const materialsByPlan = new Map(materials.map((row) => [row.plan_id as string, row]))
+  const statsByPlan = new Map(plantingStats.map((row) => [row.plan_id, row]))
+
+  return plans.map((plan) => {
+    const planBeds = bedsByPlan.get(plan.id as string) || []
+    const totalArea = planBeds.reduce((sum, bed) => {
       const length = Number(bed.length_ft) || 0
       const width = Number(bed.width_ft) || 0
       return sum + length * width
     }, 0)
-    const plantingStats = await queryOne<{ plants: number; varieties: number }>(
-      `SELECT COUNT(pl.id)::int AS plants,
-              COUNT(DISTINCT pl.variety)::int AS varieties
-       FROM plantings pl
-       JOIN beds b ON b.id = pl.bed_id
-       WHERE b.plan_id = $1`,
-      [plan.id as string]
-    )
-    detailed.push({
+    const stats = statsByPlan.get(plan.id as string)
+    return {
       ...plan,
-      site,
-      beds,
-      materials_estimates: materials,
+      site: sitesById.get(plan.site_id as string) || null,
+      beds: planBeds,
+      materials_estimates: materialsByPlan.get(plan.id as string) || null,
       stats: {
-        plants: plantingStats?.plants || 0,
-        varieties: plantingStats?.varieties || 0,
+        plants: stats?.plants || 0,
+        varieties: stats?.varieties || 0,
         area: totalArea,
-        beds: beds.length,
+        beds: planBeds.length,
       },
-    })
-  }
-  return detailed
+    }
+  })
 }
 
 export async function getPlanDetail(userId: string, planId: string) {
