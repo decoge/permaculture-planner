@@ -503,40 +503,55 @@ export async function getPlanDetail(userId: string, planId: string) {
     [planId]
   )
   const bedIds = beds.map((bed) => bed.id as string)
-  const plantings = bedIds.length
-    ? await query('SELECT * FROM plantings WHERE bed_id = ANY($1::uuid[])', [bedIds])
-    : []
-  const materials = await queryOne(
-    `SELECT * FROM materials_estimates WHERE plan_id = $1 ORDER BY created_at DESC LIMIT 1`,
-    [planId]
-  )
-  const harvests = await query(
-    `SELECT h.quantity, h.unit, h.notes, pl.variety
-     FROM harvests h
-     JOIN plantings pl ON pl.id = h.planting_id
-     JOIN beds b ON b.id = pl.bed_id
-     WHERE b.plan_id = $1
-     ORDER BY h.harvested_on`,
-    [planId]
-  )
-  const tasks = await query(
-    `SELECT title, due_on, category, completed, description, recurring_pattern
-     FROM tasks
-     WHERE plan_id = $1
-     ORDER BY due_on ASC, created_at ASC`,
-    [planId]
-  )
-  const journal = await query(
-    `SELECT title, content, created_at, images
-     FROM journal_entries
-     WHERE plan_id = $1
-     ORDER BY created_at ASC`,
-    [planId]
-  )
+
+  // Only the plantings query depends on the beds; the other four are keyed off
+  // plan_id alone and were being awaited one after another for no reason.
+  const [plantings, materials, harvests, tasks, journal] = await Promise.all([
+    bedIds.length
+      ? query('SELECT * FROM plantings WHERE bed_id = ANY($1::uuid[])', [bedIds])
+      : Promise.resolve([]),
+    queryOne(
+      `SELECT * FROM materials_estimates WHERE plan_id = $1 ORDER BY created_at DESC LIMIT 1`,
+      [planId]
+    ),
+    query(
+      `SELECT h.quantity, h.unit, h.notes, pl.variety
+       FROM harvests h
+       JOIN plantings pl ON pl.id = h.planting_id
+       JOIN beds b ON b.id = pl.bed_id
+       WHERE b.plan_id = $1
+       ORDER BY h.harvested_on`,
+      [planId]
+    ),
+    query(
+      `SELECT title, due_on, category, completed, description, recurring_pattern
+       FROM tasks
+       WHERE plan_id = $1
+       ORDER BY due_on ASC, created_at ASC`,
+      [planId]
+    ),
+    query(
+      `SELECT title, content, created_at, images
+       FROM journal_entries
+       WHERE plan_id = $1
+       ORDER BY created_at ASC`,
+      [planId]
+    ),
+  ])
+
+  // Group in one pass rather than filtering the full planting list per bed,
+  // which was quadratic in the size of the garden.
+  const plantingsByBed = new Map<string, unknown[]>()
+  for (const planting of plantings as Array<Record<string, unknown>>) {
+    const bedId = planting.bed_id as string
+    const list = plantingsByBed.get(bedId)
+    if (list) list.push(planting)
+    else plantingsByBed.set(bedId, [planting])
+  }
 
   const bedsWithPlants = beds.map((bed) => ({
     ...bed,
-    plantings: plantings.filter((planting) => planting.bed_id === bed.id),
+    plantings: plantingsByBed.get(bed.id as string) || [],
   }))
 
   const site = {
