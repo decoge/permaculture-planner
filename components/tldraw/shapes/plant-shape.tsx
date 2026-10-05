@@ -155,31 +155,43 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
   /**
    * Check if this plant is compatible with another plant
    * Used for companion planting features
+   *
+   * Takes the props explicitly rather than reading `this.props`. A ShapeUtil is
+   * a singleton per shape type, not per shape, so there is no instance state to
+   * read -- the old private `props` getter returned getDefaultProps(), which
+   * means both relationship lists were always empty and every pair compared
+   * compatible.
+   *
+   * Antagonism is treated as a property of the pair, so both lists are
+   * consulted. The library only declares one side for 25 relationships (corn
+   * lists tomato, but tomato does not list corn), and an order-dependent check
+   * would mean dragging one shape left instead of right changes the answer.
    */
-  isCompatibleWith(otherPlant: PlantShape): boolean {
-    const antagonists = this.parseCompanions(this.props.antagonistsJson)
-    const companions = this.parseCompanions(this.props.companionsJson)
+  isCompatibleWith(
+    self: Pick<PlantShape, 'props'>,
+    other: Pick<PlantShape, 'props'>
+  ): boolean {
+    const selfAntagonists = this.parseCompanions(self.props.antagonistsJson)
+    const otherAntagonists = this.parseCompanions(other.props.antagonistsJson)
+    const companions = this.parseCompanions(self.props.companionsJson)
+    const otherCompanions = this.parseCompanions(other.props.companionsJson)
 
-    // Check if antagonistic
-    if (antagonists.includes(otherPlant.props.plantId)) {
+    if (
+      selfAntagonists.includes(other.props.plantId) ||
+      otherAntagonists.includes(self.props.plantId)
+    ) {
       return false
     }
 
     // Check if companion
-    if (companions.includes(otherPlant.props.plantId)) {
+    if (
+      companions.includes(other.props.plantId) ||
+      otherCompanions.includes(self.props.plantId)
+    ) {
       return true
     }
 
     // Neutral by default
     return true
-  }
-
-  /**
-   * Helper to access props for instance methods
-   */
-  private get props() {
-    // This is a workaround since we don't have shape instance in class methods
-    // In actual use, you'd pass the shape instance
-    return this.getDefaultProps()
   }
 }

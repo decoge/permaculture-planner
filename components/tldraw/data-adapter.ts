@@ -2,6 +2,7 @@ import { createShapeId, TLShape } from 'tldraw'
 import { GardenBed, PlantedItem } from '@/lib/garden/garden-types'
 import { placeBedPoints } from '@/lib/garden/bed-geometry'
 import { bedLabelWidth, placePlantsInBed } from '@/lib/garden/plant-label-layout'
+import { PLANT_LIBRARY, getPlantById } from '@/lib/data/plant-library'
 import { BedShape } from './shapes/bed-shape'
 import { PlantShape } from './shapes/plant-shape'
 
@@ -180,6 +181,7 @@ export class DataAdapter {
     spot: { x: number; y: number; radius: number; fontSize: number },
     labelMaxWidth: number,
   ): PlantShape {
+    const info = getPlantById(plant.plantId)
     return {
       id: createShapeId(plant.id),
       type: 'plant',
@@ -194,9 +196,15 @@ export class DataAdapter {
         plantName: this.getPlantName(plant.plantId),
         emoji: this.getPlantEmoji(plant.plantId),
         color: '#22c55e',
-        companionsJson: '[]', // TODO: Look up from plant database
-        antagonistsJson: '[]', // TODO: Look up from plant database
-        spacing: 12,
+        // Real relationships from the library. These were hardcoded to '[]',
+        // which made every loaded plant report itself compatible with
+        // everything -- isCompatibleWith on a reloaded canvas could never
+        // return false. plant-tool.ts already looked them up correctly, so
+        // only the load path was blind.
+        companionsJson: JSON.stringify(info?.companions ?? []),
+        antagonistsJson: JSON.stringify(info?.antagonists ?? []),
+        // Prefer the library's mature spacing over the flat 12in default.
+        spacing: info?.size.spacing ?? 12,
         plantedDate: plant.plantedDate?.toISOString() || '',
       },
       meta: {
@@ -286,10 +294,15 @@ export class DataAdapter {
   }
 
   /**
-   * Get human-readable plant name from ID
-   * TODO: Replace with actual plant database lookup
+   * Get human-readable plant name from ID.
+   *
+   * The library is authoritative and all 50 entries carry a proper display name;
+   * the id-derived fallback only applies to a plant the library does not know.
    */
   private getPlantName(plantId: string): string {
+    const info = getPlantById(plantId)
+    if (info) return info.name
+
     // Capitalize and format plant ID as name
     return plantId
       .split(/[-_]/)
@@ -298,37 +311,23 @@ export class DataAdapter {
   }
 
   /**
-   * Get emoji for plant based on ID
-   * TODO: Replace with actual plant database lookup
+   * Get emoji for plant based on ID.
+   *
+   * Was a hand-maintained 20-entry map that matched by substring, so the 30
+   * plants it did not list -- squash, all the berries, the herbs and flowers --
+   * every rendered as the same generic seedling. Every library entry has an
+   * icon, so look that up and only fall back to a guess for an unknown id.
    */
   private getPlantEmoji(plantId: string): string {
-    const emojiMap: Record<string, string> = {
-      tomato: '🍅',
-      carrot: '🥕',
-      lettuce: '🥬',
-      pepper: '🌶️',
-      cucumber: '🥒',
-      basil: '🌿',
-      mint: '🌿',
-      rosemary: '🌿',
-      strawberry: '🍓',
-      corn: '🌽',
-      pumpkin: '🎃',
-      bean: '🫘',
-      pea: '🫛',
-      onion: '🧅',
-      garlic: '🧄',
-      potato: '🥔',
-      eggplant: '🍆',
-      broccoli: '🥦',
-      cabbage: '🥬',
-      spinach: '🥬',
-    }
+    const info = getPlantById(plantId)
+    if (info?.icon) return info.icon
 
+    // Substring match for an id the library does not have, e.g. a crop id that
+    // is not in the plant library but shares a name with one.
     const lowerPlantId = plantId.toLowerCase()
-    for (const [key, emoji] of Object.entries(emojiMap)) {
-      if (lowerPlantId.includes(key)) {
-        return emoji
+    for (const plant of PLANT_LIBRARY) {
+      if (lowerPlantId.includes(plant.id) || plant.id.includes(lowerPlantId)) {
+        return plant.icon
       }
     }
 
