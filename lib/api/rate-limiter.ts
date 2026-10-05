@@ -37,6 +37,11 @@ class RateLimiter {
         }
       }
     }, this.config.windowMs)
+
+    // unref() so this timer never holds the process open. Without it every Jest
+    // suite that imports this module hangs until the worker is force-exited --
+    // the same problem the response-cache sweeper had.
+    if (typeof this.cleanupInterval.unref === 'function') this.cleanupInterval.unref()
   }
 
   private getKey(req: NextRequest): string {
@@ -44,11 +49,9 @@ class RateLimiter {
       return this.config.keyGenerator(req)
     }
 
-    // Default key generator uses IP address + pathname
-    const forwarded = req.headers.get('x-forwarded-for')
-    const ip = forwarded ? forwarded.split(',')[0] : 'unknown'
-    const pathname = new URL(req.url).pathname
-    return `${ip}:${pathname}`
+    // Default key generator uses IP address + pathname. Same rule as clientIp:
+    // the rightmost x-forwarded-for entry, not the client-controlled first one.
+    return `${clientIp(req)}:${new URL(req.url).pathname}`
   }
 
   async check(req: NextRequest): Promise<NextResponse | null> {
@@ -134,21 +137,6 @@ export function createRateLimiter(
 }
 
 // Middleware factory for common rate limiting scenarios
-export function rateLimit(config: Partial<RateLimitConfig> = {}) {
-  const finalConfig: RateLimitConfig = {
-    windowMs: 60 * 1000, // 1 minute default
-    maxRequests: 10, // 10 requests per minute default
-    ...config
-  }
-
-  const limiter = new RateLimiter(finalConfig)
-
-  return async function middleware(req: NextRequest) {
-    return await limiter.check(req)
-  }
-}
-
-// Preset configurations for different API endpoints
 export const rateLimitPresets = {
   // Strict rate limiting for authentication endpoints
   auth: {
@@ -186,99 +174,33 @@ export const rateLimitPresets = {
   }
 }
 
+/**
+ * Client IP for rate-limit keys.
+ *
+ * `x-forwarded-for` is a comma-separated list that proxies append to, so the
+ * *last* entry is the one the outermost trusted proxy observed. The previous
+ * code read index 0, which is whatever the client put there -- meaning a caller
+ * could send a fresh value on every request and get an unlimited supply of
+ * rate-limit buckets, defeating the limiter entirely.
+ *
+ * Read from the right, and cap the value's length so it cannot be used as an
+ * unbounded map key.
+ */
+export function clientIp(req: NextRequest): string {
+  const forwarded = req.headers.get('x-forwarded-for')
+  const fromRight = forwarded?.split(',').pop()?.trim()
+  if (fromRight) return fromRight.slice(0, 64)
+  const real = req.headers.get('x-real-ip')?.trim()
+  if (real) return real.slice(0, 64)
+  return 'unknown'
+}
+
 // IP-based rate limiter for DDoS protection
 export function createIPRateLimiter() {
   return createRateLimiter('ip-limiter', {
     windowMs: 60 * 1000, // 1 minute
     maxRequests: 100, // 100 requests per minute per IP
-    keyGenerator: (req: NextRequest) => {
-      const forwarded = req.headers.get('x-forwarded-for')
-      return forwarded ? forwarded.split(',')[0] : 'unknown'
-    },
+    keyGenerator: clientIp,
     message: 'Too many requests from this IP address'
   })
-}
-
-// User-based rate limiter (requires authentication)
-export function createUserRateLimiter() {
-  return createRateLimiter('user-limiter', {
-    windowMs: 60 * 1000, // 1 minute
-    maxRequests: 60, // 60 requests per minute per user
-    keyGenerator: (req: NextRequest) => {
-      // Extract user ID from JWT or session
-      // This is a placeholder - implement based on your auth system
-      const authHeader = req.headers.get('authorization')
-      if (authHeader?.startsWith('Bearer ')) {
-        // Parse JWT and extract user ID
-        return `user:${authHeader.slice(7).split('.')[1]}` // Simplified
-      }
-      return 'anonymous'
-    },
-    message: 'User rate limit exceeded'
-  })
-}
-
-// Endpoint-specific rate limiter
-export function createEndpointRateLimiter(endpoint: string, config?: Partial<RateLimitConfig>) {
-  return createRateLimiter(`endpoint:${endpoint}`, {
-    windowMs: 60 * 1000,
-    maxRequests: 20,
-    ...config,
-    keyGenerator: (req: NextRequest) => {
-      const forwarded = req.headers.get('x-forwarded-for')
-      const ip = forwarded ? forwarded.split(',')[0] : 'unknown'
-      return `${ip}:${endpoint}`
-    }
-  })
-}
-
-// Sliding window rate limiter for more accurate rate limiting
-export class SlidingWindowRateLimiter {
-  private requests: Map<string, number[]> = new Map()
-
-  constructor(
-    private windowMs: number,
-    private maxRequests: number
-  ) {}
-
-  check(key: string): boolean {
-    const now = Date.now()
-    const windowStart = now - this.windowMs
-
-    // Get or create request timestamps array
-    let timestamps = this.requests.get(key) || []
-
-    // Remove expired timestamps
-    timestamps = timestamps.filter(t => t > windowStart)
-
-    // Check if limit exceeded
-    if (timestamps.length >= this.maxRequests) {
-      return false // Rate limit exceeded
-    }
-
-    // Add current timestamp
-    timestamps.push(now)
-    this.requests.set(key, timestamps)
-
-    return true // Allow request
-  }
-
-  reset(key: string) {
-    this.requests.delete(key)
-  }
-
-  cleanup() {
-    const now = Date.now()
-    const windowStart = now - this.windowMs
-
-    const entries = Array.from(this.requests.entries())
-    for (const [key, timestamps] of entries) {
-      const validTimestamps = timestamps.filter(t => t > windowStart)
-      if (validTimestamps.length === 0) {
-        this.requests.delete(key)
-      } else {
-        this.requests.set(key, validTimestamps)
-      }
-    }
-  }
 }
