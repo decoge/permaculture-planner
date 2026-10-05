@@ -1,6 +1,6 @@
 import { describe, expect, test } from '@jest/globals'
 import { summarizeDesignFacts } from '@/lib/garden/design-facts'
-import { estimatePlan, estimateWaterFor, estimateYieldFor, resolvePlant } from '@/lib/garden/plan-estimate'
+import { estimateBedSpacing, estimatePlan, estimateWaterFor, estimateYieldFor, resolvePlant } from '@/lib/garden/plan-estimate'
 import { PLANT_LIBRARY } from '@/lib/data/plant-library'
 import { PLANT_YIELD_DATABASE } from '@/lib/data/plant-yield-data'
 
@@ -173,6 +173,118 @@ describe('resolvePlant', () => {
   test('returns null for something not in the library', () => {
     expect(resolvePlant({ plantId: 'not-real' })).toBeNull()
     expect(resolvePlant({})).toBeNull()
+  })
+})
+
+describe('estimateBedSpacing', () => {
+  // A 4ft x 8ft bed is 48in x 96in = 4608 sq in.
+  const fourByEight = { length_ft: 8, width_ft: 4 }
+
+  test('computes capacity from the tightest spacing in the bed', () => {
+    const estimate = estimateBedSpacing(
+      { ...fourByEight, name: 'Mixed', plantings: [{ variety: 'tomato' }, { variety: 'radish' }] },
+      0
+    )
+    // The tomato needs the more room, so it governs the whole bed.
+    const tomatoSpacing = resolvePlant({ plantId: 'tomato' })!.size.spacing
+    const radishSpacing = resolvePlant({ plantId: 'radish' })!.size.spacing
+    expect(estimate.governingSpacingIn).toBe(Math.min(tomatoSpacing, radishSpacing))
+
+    const expected = Math.floor((96 * 48) / (estimate.governingSpacingIn! ** 2))
+    expect(estimate.capacity).toBe(expected)
+  })
+
+  test('flags an overfilled bed', () => {
+    const spacing = resolvePlant({ plantId: 'squash' })!.size.spacing
+    const capacity = Math.floor((96 * 48) / (spacing ** 2))
+    const planted = Array.from({ length: capacity + 5 }, () => ({ variety: 'squash' }))
+
+    const estimate = estimateBedSpacing({ ...fourByEight, name: 'Crowded', plantings: planted }, 0)
+    expect(estimate.fillRatio).toBeGreaterThan(1.2)
+    expect(estimate.note).toMatch(/overfilled/)
+  })
+
+  test('reports spare room in an underfilled bed', () => {
+    const estimate = estimateBedSpacing(
+      { ...fourByEight, name: 'Sparse', plantings: [{ variety: 'squash' }] },
+      0
+    )
+    expect(estimate.fillRatio).toBeLessThan(1)
+    expect(estimate.note).toMatch(/room for about/)
+  })
+
+  test('reads bed size from the canvas polygon when feet are not recorded', () => {
+    const estimate = estimateBedSpacing(
+      {
+        name: 'From points',
+        points: [
+          { x: 0, y: 0 },
+          { x: 96, y: 0 },
+          { x: 96, y: 48 },
+          { x: 0, y: 48 },
+        ],
+        plantings: [{ variety: 'tomato' }],
+      },
+      0
+    )
+    expect(estimate.capacity).not.toBeNull()
+    expect(estimate.capacity).toBeGreaterThan(0)
+  })
+
+  test('says so rather than guessing when the bed size is unknown', () => {
+    const estimate = estimateBedSpacing({ name: 'Unknown size', plantings: [{ variety: 'tomato' }] }, 0)
+    expect(estimate.capacity).toBeNull()
+    expect(estimate.fillRatio).toBeNull()
+    expect(estimate.note).toMatch(/size is not recorded/)
+  })
+
+  test('handles an empty bed', () => {
+    const estimate = estimateBedSpacing({ ...fourByEight, name: 'Empty', plantings: [] }, 3)
+    expect(estimate.planted).toBe(0)
+    expect(estimate.note).toMatch(/No plants are saved/)
+  })
+
+  test('never returns NaN when the geometry is nonsense', () => {
+    for (const bed of [
+      { length_ft: 0, width_ft: 0, plantings: [{ variety: 'tomato' }] },
+      { length_ft: -5, width_ft: 10, plantings: [{ variety: 'tomato' }] },
+      { length_ft: 'lots', width_ft: null, plantings: [{ variety: 'tomato' }] },
+      { plantings: [{ plantId: 'not-real' }] },
+      { length_ft: 8, width_ft: 4, plantings: [{ plantId: 'not-real' }] },
+    ]) {
+      const estimate = estimateBedSpacing(bed, 0)
+      expect(Number.isFinite(estimate.fillRatio ?? 0)).toBe(true)
+      expect(estimate.note.length).toBeGreaterThan(0)
+    }
+  })
+
+  test('counts plants outside the library but excludes them from capacity', () => {
+    const estimate = estimateBedSpacing(
+      {
+        ...fourByEight,
+        name: 'Mixed',
+        plantings: [{ variety: 'tomato' }, { plantId: 'mystery' }, { plantId: 'another-mystery' }],
+      },
+      0
+    )
+    expect(estimate.planted).toBe(3)
+    expect(estimate.note).toMatch(/not in the library/)
+  })
+
+  test('estimatePlan carries the per-bed spacing through', () => {
+    const estimate = estimatePlan(
+      [{ variety: 'squash' }],
+      undefined,
+      [{ ...fourByEight, name: 'Squash bed', plantings: Array.from({ length: 30 }, () => ({ variety: 'squash' })) }]
+    )
+    expect(estimate.spacing).toHaveLength(1)
+    expect(estimate.spacing[0].name).toBe('Squash bed')
+    // A badly overfilled bed becomes a caution on the plan.
+    expect(estimate.cautions.join(' ')).toMatch(/overfilled/)
+  })
+
+  test('spacing is optional and empty when no beds are supplied', () => {
+    expect(estimatePlan([{ variety: 'tomato' }]).spacing).toEqual([])
   })
 })
 

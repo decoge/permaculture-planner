@@ -69,7 +69,34 @@ export interface YieldEstimate {
   source: 'database' | 'category'
 }
 
+export interface BedSpacingInput {
+  /** Feet. Falls back to computing from the bed's polygon points. */
+  lengthFt?: unknown
+  widthFt?: unknown
+  length_ft?: unknown
+  width_ft?: unknown
+  /** Polygon points in inches, as the canvas stores them. */
+  points?: Array<{ x: number; y: number }>
+  plants?: PlantEstimateInput[]
+  plantings?: PlantEstimateInput[]
+  name?: unknown
+}
+
+export interface SpacingEstimate {
+  name: string
+  /** 0-1. Above 1 means the bed is planted tighter than the spacing allows. */
+  fillRatio: number | null
+  /** Plants the bed could hold at the recorded spacing. */
+  capacity: number | null
+  /** Plants actually saved. */
+  planted: number
+  /** The tightest spacing any plant in the bed wants, in inches. */
+  governingSpacingIn: number | null
+  note: string
+}
+
 export interface PlanEstimate {
+  spacing: SpacingEstimate[]
   water: {
     gallonsPerWeek: number
     /** Same figure expressed per day, which is how it is usually quoted. */
@@ -228,16 +255,120 @@ export function estimateYieldFor(
 const WATER_PRICE_PER_GALLON = 0.004
 
 /**
+ * How well a bed's plantings match the space available.
+ *
+ * Capacity is the area divided by the square of the tightest spacing any plant
+ * in the bed wants, so one squash in a bed sets the spacing for everything else.
+ * That is how square-foot gardening works and why a single space-hungry plant
+ * changes what else fits.
+ *
+ * The tightest spacing wins rather than an average: averaging would let a bed
+ * of radishes mask the fact that the tomato in it needs three times the room.
+ */
+export function estimateBedSpacing(bed: BedSpacingInput, index: number): SpacingEstimate {
+  const name = text(bed.name) || `Bed ${index + 1}`
+  const plants = (bed.plants && bed.plants.length > 0 ? bed.plants : bed.plantings) || []
+
+  // Dimensions in inches. Prefer the recorded feet; otherwise take the bounding
+  // box of the canvas polygon.
+  let lengthIn = number(bed.lengthFt ?? bed.length_ft)
+  let widthIn = number(bed.widthFt ?? bed.width_ft)
+  if (lengthIn !== null && widthIn !== null) {
+    lengthIn *= 12
+    widthIn *= 12
+  } else if (Array.isArray(bed.points) && bed.points.length >= 2) {
+    const xs = bed.points.map((point) => point.x).filter((x) => Number.isFinite(x))
+    const ys = bed.points.map((point) => point.y).filter((y) => Number.isFinite(y))
+    if (xs.length >= 2 && ys.length >= 2) {
+      lengthIn = Math.max(...xs) - Math.min(...xs)
+      widthIn = Math.max(...ys) - Math.min(...ys)
+    }
+  }
+
+  const planted = plants.length
+  if (planted === 0) {
+    return {
+      name,
+      fillRatio: null,
+      capacity: null,
+      planted: 0,
+      governingSpacingIn: null,
+      note: 'No plants are saved, so spacing cannot be checked.',
+    }
+  }
+
+  const spacings = plants
+    .map((plant) => resolvePlant(plant)?.size.spacing)
+    .filter((spacing): spacing is number => typeof spacing === 'number' && Number.isFinite(spacing) && spacing > 0)
+
+  if (spacings.length === 0) {
+    return {
+      name,
+      fillRatio: null,
+      capacity: null,
+      planted,
+      governingSpacingIn: null,
+      note: `${name} has ${formatCount(planted)} plants saved, but none is in the plant library, so spacing cannot be checked.`,
+    }
+  }
+
+  const governingSpacingIn = Math.min(...spacings)
+  const unknownCount = planted - spacings.length
+
+  if (lengthIn === null || widthIn === null || lengthIn <= 0 || widthIn <= 0) {
+    return {
+      name,
+      fillRatio: null,
+      capacity: null,
+      planted,
+      governingSpacingIn,
+      note: `${name} needs ${governingSpacingIn} in spacing, but its size is not recorded, so the fit cannot be checked.`,
+    }
+  }
+
+  // Square-foot convention: a plant of spacing s occupies an s-by-s square.
+  const capacity = Math.floor((lengthIn * widthIn) / (governingSpacingIn * governingSpacingIn))
+  const fillRatio = capacity > 0 ? planted / capacity : null
+
+  let note: string
+  if (capacity <= 0) {
+    note = `${name} is too small for ${formatCount(planted)} plants at ${governingSpacingIn} in spacing.`
+  } else if (fillRatio !== null && fillRatio > 1.2) {
+    note = `${name} is overfilled: ${formatCount(planted)} plants saved against a capacity of ${formatCount(capacity)} at ${governingSpacingIn} in spacing.`
+  } else if (fillRatio !== null && fillRatio > 1) {
+    note = `${name} is slightly over its ${formatCount(capacity)} plant capacity at ${governingSpacingIn} in spacing.`
+  } else if (fillRatio !== null && fillRatio > 0.85) {
+    note = `${name} is well filled at ${formatCount(planted)} of ${formatCount(capacity)} plants (${governingSpacingIn} in spacing).`
+  } else {
+    const spare = capacity - planted
+    note = `${name} has room for about ${formatCount(spare)} more plants at ${governingSpacingIn} in spacing.`
+  }
+  if (unknownCount > 0) {
+    note += ` ${formatCount(unknownCount)} of the plants are not in the library and were not counted.`
+  }
+
+  return { name, fillRatio, capacity, planted, governingSpacingIn, note }
+}
+
+function formatCount(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1)
+}
+
+/**
  * Estimate water, yield and return for a whole plan.
  *
  * `plants` is the flat list of every planting across every bed -- the caller
  * aggregates, so this stays independent of how beds are stored. `setupCostCents`
  * is the recorded build cost when one was saved, which is what makes an ROI
  * figure possible at all.
+ *
+ * `beds`, when given, adds a per-bed spacing check. Optional because some
+ * callers have the flat list but not the bed geometry.
  */
 export function estimatePlan(
   plants: PlantEstimateInput[],
-  setupCostCents?: unknown
+  setupCostCents?: unknown,
+  beds?: BedSpacingInput[]
 ): PlanEstimate {
   const list = Array.isArray(plants) ? plants : []
 
@@ -360,7 +491,15 @@ export function estimatePlan(
   if (byCategory.size >= 3) score += 5
   score = Math.max(0, Math.min(100, score))
 
+  const spacing = Array.isArray(beds) ? beds.map(estimateBedSpacing) : []
+  for (const bed of spacing) {
+    if (bed.fillRatio !== null && bed.fillRatio > 1.2) {
+      cautions.push(bed.note)
+    }
+  }
+
   return {
+    spacing,
     water: {
       gallonsPerWeek,
       gallonsPerDay,

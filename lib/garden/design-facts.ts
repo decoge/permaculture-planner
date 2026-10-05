@@ -293,7 +293,7 @@ function allPlants(beds: SiteBedInput[]): SitePlantInput[] {
 
 function critiqueLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
   const lines: string[] = []
-  const estimate = estimatePlan(allPlants(beds), input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents)
+  const estimate = estimatePlan(allPlants(beds), input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents, beds)
   lines.push(`Design score is ${estimate.score} out of 100 from the plants saved.`)
   for (const strength of estimate.strengths) lines.push(strength)
   for (const caution of estimate.cautions) lines.push(caution)
@@ -442,7 +442,7 @@ function analyticsLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
       : 'Harvest quantities are not recorded; the figures below are projected from the plant library.')
 
     // Projections from the plants actually saved, rather than a placeholder.
-    const estimate = estimatePlan(allPlants(beds), input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents)
+  const estimate = estimatePlan(allPlants(beds), input.materials?.costEstimateCents ?? input.materials?.cost_estimate_cents, beds)
     if (plants === 0) {
       lines.push('Water, yield and return cannot be estimated without plants.')
       lines.push('Performance score is not recorded.')
@@ -463,6 +463,9 @@ function analyticsLines(input: SiteFactsInput, beds: SiteBedInput[]): string[] {
     )
     lines.push(`That is about ${formatQuantity(estimate.yield.totalValue)} dollars of produce at retail.`)
     lines.push(`${formatQuantity(estimate.yield.varieties)} varieties are planted.`)
+
+    // Per-bed spacing fit, using the tightest spacing any plant in a bed wants.
+    for (const bed of estimate.spacing) lines.push(bed.note)
 
     if (estimate.roi.setupCost === null) {
       lines.push('Build cost is not recorded, so a return figure cannot be given.')
