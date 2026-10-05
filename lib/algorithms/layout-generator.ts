@@ -39,15 +39,42 @@ export class LayoutGenerator {
   private rules = horticultureRules
 
   generate(constraints: SiteConstraints): GeneratedLayout {
-    const usableArea = constraints.totalArea * constraints.usableFraction
+    // Guard the degenerate inputs before any division. `usableArea` is zero
+    // when either factor is zero, and both `areaLength` (usableArea / areaWidth)
+    // and `efficiency` (totalBedArea / usableArea) divide by it, so an unvalidated
+    // caller gets Infinity/NaN out of a generator that is otherwise total.
+    // /api/plans now validates the wizard payload first, but this class is
+    // exported and the guards cost nothing.
+    const totalArea = Number.isFinite(constraints.totalArea)
+      ? Math.max(0, constraints.totalArea)
+      : 0
+    const usableFraction = Number.isFinite(constraints.usableFraction)
+      ? Math.min(1, Math.max(0, constraints.usableFraction))
+      : 1
+    const usableArea = totalArea * usableFraction
+
     const warnings: string[] = []
     const suggestions: string[] = []
-    
+
     // Determine bed dimensions based on accessibility
     const bedWidth = constraints.accessibilityNeeds ? 3 : 4 // feet
     const pathWidth = constraints.accessibilityNeeds ? 36 : 24 // inches
     const bedHeight = constraints.surface === 'hard' ? 12 : 10 // inches
-    
+
+    if (usableArea <= 0) {
+      // Nothing can be laid out, and the warning is more use than a silent
+      // empty result.
+      warnings.push('No usable area: check the site area and usable fraction.')
+      return {
+        beds: [],
+        totalBedArea: 0,
+        totalPathArea: 0,
+        efficiency: 0,
+        warnings,
+        suggestions,
+      }
+    }
+
     // Calculate available space dimensions (assuming rectangular for now)
     const areaWidth = Math.sqrt(usableArea * 1.5) // Assume 1.5:1 ratio
     const areaLength = usableArea / areaWidth
