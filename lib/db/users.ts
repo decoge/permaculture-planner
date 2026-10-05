@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'crypto'
-import { query, queryOne } from '@/lib/db/pool'
+import { query, queryOne, withTransaction } from '@/lib/db/pool'
 import { hashPassword, verifyPassword } from '@/lib/auth/password'
 import { writeSession, clearSession, type SessionUser } from '@/lib/auth/session'
 
@@ -122,7 +122,12 @@ export async function createPasswordReset(email: string): Promise<string | null>
 
   const token = randomBytes(32).toString('base64url')
   const tokenHash = hashToken(token)
-  await query('DELETE FROM password_reset_tokens WHERE user_id = $1 AND used_at IS NULL', [user.id])
+  // Supersede any outstanding link so only the newest one works, and drop the
+  // used ones at the same time rather than accumulating them forever.
+  await query(
+    'DELETE FROM password_reset_tokens WHERE user_id = $1',
+    [user.id]
+  )
   await query(
     `INSERT INTO password_reset_tokens (user_id, token_hash, expires_at)
      VALUES ($1, $2, NOW() + INTERVAL '1 hour')`,
@@ -133,21 +138,28 @@ export async function createPasswordReset(email: string): Promise<string | null>
 
 export async function resetPasswordWithToken(token: string, password: string): Promise<boolean> {
   const tokenHash = hashToken(token)
-  const row = await queryOne<{ id: string; user_id: string }>(
-    `SELECT id, user_id
-     FROM password_reset_tokens
-     WHERE token_hash = $1 AND used_at IS NULL AND expires_at > NOW()`,
-    [tokenHash]
-  )
-  if (!row) return false
+  // Claim the token and change the password in one transaction. Selecting the
+  // token first and updating after it left a window where two concurrent
+  // requests could both pass the `used_at IS NULL` check and both succeed.
+  return withTransaction(async (client) => {
+    const claimed = await client.query<{ id: string; user_id: string }>(
+      `UPDATE password_reset_tokens
+       SET used_at = NOW()
+       WHERE token_hash = $1 AND used_at IS NULL AND expires_at > NOW()
+       RETURNING id, user_id`,
+      [tokenHash]
+    )
+    if (!claimed.rowCount) return false
 
-  const passwordHash = await hashPassword(password)
-  await query(
-    `UPDATE users
-     SET password_hash = $2, token_version = token_version + 1
-     WHERE id = $1`,
-    [row.user_id, passwordHash]
-  )
-  await query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [row.id])
-  return true
+    const passwordHash = await hashPassword(password)
+    // token_version + 1 invalidates every existing session, which is the point
+    // of a reset: a stolen cookie must not survive the password change.
+    await client.query(
+      `UPDATE users
+       SET password_hash = $2, token_version = token_version + 1
+       WHERE id = $1`,
+      [claimed.rows[0].user_id, passwordHash]
+    )
+    return true
+  })
 }
