@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server'
 import { createPasswordReset } from '@/lib/db/users'
 import { routeError } from '@/lib/api/route-error'
+import { validateEmail } from '@/lib/validation'
 
 export async function POST(request: Request) {
   try {
     const body = await request.json()
     const email = typeof body.email === 'string' ? body.email.trim() : ''
-    if (!email.includes('@')) {
-      return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
+    const emailCheck = validateEmail(email)
+    if (!emailCheck.success) {
+      return NextResponse.json({ error: emailCheck.error }, { status: 400 })
     }
 
     const token = await createPasswordReset(email)

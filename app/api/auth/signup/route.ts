@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createUser } from '@/lib/db/users'
 import { routeError } from '@/lib/api/route-error'
-import { validatePassword } from '@/lib/validation'
+import { validateEmail, validatePassword } from '@/lib/validation'
 
 export async function POST(request: Request) {
   try {
@@ -10,8 +10,9 @@ export async function POST(request: Request) {
     const password = typeof body.password === 'string' ? body.password : ''
     const name = typeof body.name === 'string' ? body.name : typeof body.fullName === 'string' ? body.fullName : null
 
-    if (!email.includes('@') || !email.includes('.')) {
-      return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
+    const emailCheck = validateEmail(email)
+    if (!emailCheck.success) {
+      return NextResponse.json({ error: emailCheck.error }, { status: 400 })
     }
     const passwordCheck = validatePassword(password)
     if (!passwordCheck.success) {

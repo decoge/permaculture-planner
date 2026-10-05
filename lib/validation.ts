@@ -24,6 +24,24 @@ export function validatePassword(password: string): { success: true } | { succes
   return { success: false, error: result.error.issues[0]?.message || 'Invalid password' }
 }
 
+/**
+ * Shared email check for the auth routes.
+ *
+ * These routes used to hand-roll `email.includes('@') && email.includes('.')`,
+ * which accepts "@example.com", "a b@c.com" and "a@b..com". Any of those could
+ * be hashed and stored, and a stored address that merely *looks* like someone
+ * else's is the part that actually matters -- it lets one account register a
+ * near-copy of another and receive its password reset link.
+ *
+ * Callers get the same message the schema already uses, so the 400 is
+ * consistent across signup, login and forgot-password.
+ */
+export function validateEmail(email: string): { success: true } | { success: false; error: string } {
+  const result = emailSchema.safeParse(email)
+  if (result.success) return { success: true }
+  return { success: false, error: result.error.issues[0]?.message || 'Invalid email address' }
+}
+
 // Location validation
 export const locationSchema = z.object({
   lat: z.number().min(-90).max(90).optional(),
