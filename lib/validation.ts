@@ -57,9 +57,27 @@ export const waterSchema = z.object({
 })
 
 // Crops validation
+//
+// `avoid_families` is validated against the real CropFamily names, not free
+// strings. The rotation engine compares these entries to `crop.family`, so a
+// display label like "Solanaceae (nightshades)" never matched any family and
+// the user's "avoid" choice was silently dropped.
+const cropFamilySchema = z.enum([
+  'Solanaceae',
+  'Brassicaceae',
+  'Cucurbitaceae',
+  'Fabaceae',
+  'Allium',
+  'Apiaceae',
+  'Asteraceae',
+  'Amaranthaceae',
+  'Poaceae',
+  'Other',
+])
+
 export const cropsSchema = z.object({
   focus: z.array(z.string()).min(1),
-  avoid_families: z.array(z.string()).optional(),
+  avoid_families: z.array(cropFamilySchema).optional(),
   time_weekly_minutes: z.number().min(15).max(1440)
 })
 

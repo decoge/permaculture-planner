@@ -5,13 +5,26 @@ import { LayoutGenerator } from '@/lib/algorithms/layout-generator'
 import { MaterialsCalculator } from '@/lib/algorithms/materials-calculator'
 import { CropRotationEngine } from '@/lib/algorithms/crop-rotation'
 import { routeError } from '@/lib/api/route-error'
+import { validateData, wizardDataSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const wizardData = await request.json()
+    // The wizard payload feeds the layout generator, the materials calculator and
+    // the rotation engine. Validated here rather than at each call site because
+    // every one of them indexes into nested fields: a missing or mistyped
+    // `area` threw a TypeError and surfaced as a 500 instead of a 400.
+    const parsed = validateData(wizardDataSchema, await request.json())
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Invalid wizard data', issues: parsed.errors.issues },
+        { status: 400 }
+      )
+    }
+    const wizardData = parsed.data
+
     const layoutGenerator = new LayoutGenerator()
     const layout = layoutGenerator.generate({
       totalArea: wizardData.area.total_sqft,
@@ -46,15 +59,31 @@ export async function POST(request: NextRequest) {
       firstFrostDate: wizardData.location.first_frost ? new Date(wizardData.location.first_frost) : undefined,
     })
 
-    const plantings = rotation.plantings.slice(0, 10).map((planting) => ({
-      bedName: `Bed ${Number(planting.bedId.split('-')[1]) + 1}`,
-      season: planting.season,
-      year: planting.year,
-      variety: planting.crops[0]?.name ?? null,
-      spacingIn: planting.spacing,
-      family: planting.family,
-      daysToMaturity: planting.crops[0]?.days_to_maturity ?? null,
-    }))
+    // The rotation engine emits one planting per bed per season, in bed order.
+    // Cap per bed rather than slicing the flat list, so a plan with many beds
+    // loses later seasons instead of silently losing whole beds -- every saved
+    // bed then carries the crops it was actually planned for.
+    const MAX_PLANTINGS_PER_BED = 3
+    const perBedCount = new Map<string, number>()
+    const plantings = rotation.plantings
+      .filter((planting) => {
+        const seen = perBedCount.get(planting.bedId) ?? 0
+        if (seen >= MAX_PLANTINGS_PER_BED) return false
+        perBedCount.set(planting.bedId, seen + 1)
+        return true
+      })
+      .map((planting) => ({
+        // Resolve the name from the layout that produced the bed id instead of
+        // re-deriving it from the id string: the two could disagree, and a
+        // non-numeric id produced a NaN name that then failed to match any bed.
+        bedName: layout.beds.find((bed) => bed.id === planting.bedId)?.name ?? planting.bedId,
+        season: planting.season,
+        year: planting.year,
+        variety: planting.crops[0]?.name ?? null,
+        spacingIn: planting.spacing,
+        family: planting.family,
+        daysToMaturity: planting.crops[0]?.days_to_maturity ?? null,
+      }))
 
     const created = await createWizardPlan({
       userId: user.id,

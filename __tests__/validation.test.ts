@@ -70,6 +70,43 @@ describe('Validation Schemas', () => {
     })
   })
 
+  describe('cropsSchema', () => {
+    test('rejects an unknown plant family in avoid_families', () => {
+      // The wizard used to store display labels ("Solanaceae (nightshades)"),
+      // which the rotation engine could never match against a crop family.
+      expect(() =>
+        cropsSchema.parse({
+          focus: ['tomato'],
+          avoid_families: ['Solanaceae (nightshades)'],
+          time_weekly_minutes: 120
+        })
+      ).toThrow()
+    })
+
+    test('accepts bare family names in avoid_families', () => {
+      const parsed = cropsSchema.parse({
+        focus: ['tomato'],
+        avoid_families: ['Solanaceae', 'Allium'],
+        time_weekly_minutes: 120
+      })
+      expect(parsed.avoid_families).toEqual(['Solanaceae', 'Allium'])
+    })
+  })
+
+  describe('wizardDataSchema', () => {
+    test('rejects a wizard payload with no area', () => {
+      expect(() =>
+        wizardDataSchema.parse({
+          location: {},
+          surface: { type: 'soil', sun_hours: 8, slope: 2, accessibility_needs: false },
+          water: { source: 'spigot', drip_allowed: true, sip_interest: false },
+          crops: { focus: ['tomato'], time_weekly_minutes: 120 },
+          materials: {}
+        })
+      ).toThrow()
+    })
+  })
+
   describe('areaSchema', () => {
     test('validates area configuration', () => {
       const valid = {

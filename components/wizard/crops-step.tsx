@@ -90,7 +90,15 @@ export function CropsStep({ data, updateData }: CropsStepProps) {
             Check any plant families to avoid (allergies, preferences, etc.):
           </p>
           <div className="grid grid-cols-2 gap-3">
-            {['Solanaceae (nightshades)', 'Brassicaceae (cabbage family)', 'Allium (onions)'].map(family => (
+            {/* Value sent is the bare family name, which is what the crop
+                database and the rotation engine match on; the label adds the
+                common name for the reader only. Sending the full "Family
+                (common)" string made the stored value match no crop at all. */}
+            {[
+              { value: 'Solanaceae', label: 'Solanaceae (nightshades)' },
+              { value: 'Brassicaceae', label: 'Brassicaceae (cabbage family)' },
+              { value: 'Allium', label: 'Allium (onions)' },
+            ].map(({ value: family, label }) => (
               <div key={family} className="flex items-center space-x-2">
                 <Checkbox
                   id={`avoid-${family}`}
@@ -107,7 +115,7 @@ export function CropsStep({ data, updateData }: CropsStepProps) {
                   htmlFor={`avoid-${family}`}
                   className="cursor-pointer text-sm font-normal"
                 >
-                  {family}
+                  {label}
                 </Label>
               </div>
             ))}
