@@ -117,22 +117,24 @@ free of React and DB imports so they stay unit-testable.
 These have **no importer** anywhere in `app/`, `lib/`, `components/`, `hooks/` or
 `e2e/`. Treat them as unbuilt features, not as live code to fix:
 
-- `lib/config/garden-shapes.ts` — demo garden layout + bed shape presets
-- `lib/permaculture-elements.ts` — 23 richly-described element instances. 14
-  duplicate concepts already live in the *live* `lib/canvas-elements.ts`; the
-  other 9 (orchard, food_forest, worm_farm, …) are unique to it.
-- `lib/zone-management.ts`
+| Module | Lines | Note |
+| --- | --- | --- |
+| `lib/permaculture/holistic-context.ts` | 852 | largest orphan |
+| `lib/permaculture-elements.ts` | 935 | 23 element instances; 14 duplicate the *live* `canvas-elements.ts`, 9 unique |
+| `lib/zone-management.ts` | 491 | **not** what `ZoneManagementPanel` uses — that imports `garden-tools.ts` |
+| `lib/simulation/growth-engine-enhanced.ts` | 1261 | the plain `growth-engine.ts` beside it *is* live (used by `growth-simulation-panel.tsx`) |
+| `lib/planning/seasonal-timeline.ts` | 366 | |
+| `lib/config/garden-shapes.ts` | 329 | demo layout + shape presets |
 
-Note `lib/zone-management.ts` is *not* what the `ZoneManagementPanel` uses —
-that panel imports `lib/garden/garden-tools.ts`. Same name, different module.
-
-`lib/canvas-elements.ts` **is** live — 8 components import `ELEMENT_STYLES` from
-it. `lib/garden/design-facts.ts` likewise (13 importers) and is the real
-implementation behind the critique panel.
+Live and easy to confuse with the above: `lib/data/plant-library.ts` (15
+importers), `lib/garden/garden-tools.ts` (12), `lib/garden/design-facts.ts` (13),
+`lib/canvas-elements.ts` (8), `lib/algorithms/layout-generator.ts`,
+`materials-calculator.ts` and `crop-rotation.ts` (all via `app/api/plans`),
+`lib/simulation/growth-engine.ts` (1).
 
 Removed as unreferenced, do not resurrect: `lib/analysis/` (design-critique,
-sun-shade-calculator) and `lib/calculations/` (garden-calculations). All four
-looked plausible and had real bugs; none was reachable.
+sun-shade-calculator) and `lib/calculations/` (garden-calculations). Three had
+real bugs and were fixed at length before anyone noticed none was reachable.
 
 ## Conventions
 
