@@ -17,12 +17,16 @@ interface PlantInfo {
 }
 
 // Constants for calculations
-const WATER_CONSTANTS = {
-  // Base water needs in gallons per square foot per week
+// Base water needs in gallons per square foot per week, keyed by the value of
+// PlantInfo.waterNeeds uppercased. Kept separate from WATER_CONSTANTS so the
+// lookup below is a plain number table.
+const WATER_BASE_RATES: Record<string, number> = {
   LOW: 0.25,      // Drought-tolerant plants
   MEDIUM: 0.62,   // Average plants
   HIGH: 1.0,      // Water-loving plants
+}
 
+const WATER_CONSTANTS = {
   // Climate modifiers
   CLIMATE_MODIFIERS: {
     arid: 1.5,
@@ -50,6 +54,14 @@ const WATER_CONSTANTS = {
   }
 }
 
+// Method efficiencies, keyed by `${method.toUpperCase()}_EFFICIENCY`. Separate
+// from SPACING_CONSTANTS so lookups stay on a plain number table.
+const SPACING_EFFICIENCIES: Record<string, number> = {
+  SQUARE_FOOT_EFFICIENCY: 0.75,
+  BIOINTENSIVE_EFFICIENCY: 0.6,
+  TRADITIONAL_EFFICIENCY: 1.0,
+}
+
 const SPACING_CONSTANTS = {
   // Minimum spacing multipliers based on growth habit
   GROWTH_MULTIPLIERS: {
@@ -65,9 +77,7 @@ const SPACING_CONSTANTS = {
   ANTAGONIST_PENALTY: 1.2, // Need 20% more space when antagonistic
 
   // Intensive gardening methods
-  SQUARE_FOOT_EFFICIENCY: 0.75,
-  BIOINTENSIVE_EFFICIENCY: 0.6,
-  TRADITIONAL_EFFICIENCY: 1.0
+  ...SPACING_EFFICIENCIES
 }
 
 const YIELD_CONSTANTS = {
@@ -129,6 +139,25 @@ export interface WaterCalculationResult {
 }
 
 /**
+ * Look up a modifier by name, falling back to a neutral default.
+ *
+ * These inputs are typed as closed unions but arrive from saved plans and JSON,
+ * so an unrecognised value is a runtime possibility. Indexing directly turned
+ * one unknown key into `undefined`, and the arithmetic below then produced
+ * NaN for every total -- which surfaces as "NaN gallons" in the UI rather than
+ * as an obvious failure.
+ */
+function modifier<T extends Record<string, number>>(
+  table: T,
+  key: string,
+  fallbackKey: keyof T
+): number {
+  const found = table[key]
+  if (typeof found === 'number' && Number.isFinite(found)) return found
+  return table[fallbackKey]
+}
+
+/**
  * Calculate comprehensive water requirements
  */
 export function calculateWaterRequirements(input: WaterCalculationInput): WaterCalculationResult {
@@ -143,19 +172,20 @@ export function calculateWaterRequirements(input: WaterCalculationInput): WaterC
   // Calculate for each plant type
   input.plants.forEach(plant => {
     // Base water need
-    const baseWater = WATER_CONSTANTS[plant.waterNeeds.toUpperCase() as keyof typeof WATER_CONSTANTS] as number
+    const baseWater = modifier(WATER_BASE_RATES, String(plant.waterNeeds).toUpperCase(), 'MEDIUM')
 
     // Apply modifiers
-    const climateModifier = WATER_CONSTANTS.CLIMATE_MODIFIERS[climate]
-    const seasonModifier = WATER_CONSTANTS.SEASON_MODIFIERS[season]
-    const soilModifier = WATER_CONSTANTS.SOIL_MODIFIERS[soilType]
+    const climateModifier = modifier(WATER_CONSTANTS.CLIMATE_MODIFIERS, climate, 'temperate')
+    const seasonModifier = modifier(WATER_CONSTANTS.SEASON_MODIFIERS, season, 'summer')
+    const soilModifier = modifier(WATER_CONSTANTS.SOIL_MODIFIERS, soilType, 'loamy')
 
     // Calculate actual water need per square foot
     const waterPerSqFt = baseWater * climateModifier * seasonModifier * soilModifier
 
     // Total for this plant type
-    const dailyWater = (waterPerSqFt * plant.squareFeet) / 7 // Convert weekly to daily
-    const weeklyWater = waterPerSqFt * plant.squareFeet
+    const squareFeet = Number.isFinite(plant.squareFeet) ? plant.squareFeet : 0
+    const dailyWater = (waterPerSqFt * squareFeet) / 7 // Convert weekly to daily
+    const weeklyWater = waterPerSqFt * squareFeet
 
     totalDailyGallons += dailyWater
     plantBreakdown.push({
@@ -259,7 +289,13 @@ export interface SpacingCalculationResult {
  */
 export function calculateOptimalSpacing(input: SpacingCalculationInput): SpacingCalculationResult {
   const bedArea = input.bedDimensions.width * input.bedDimensions.length
-  const methodEfficiency = SPACING_CONSTANTS[`${input.method.toUpperCase()}_EFFICIENCY` as keyof typeof SPACING_CONSTANTS] as number
+  // Same reasoning as the water calculation: an unrecognised method or growth
+  // habit used to index to undefined and multiply through to NaN spacing.
+  const methodEfficiency = modifier(
+    SPACING_EFFICIENCIES,
+    `${String(input.method).toUpperCase()}_EFFICIENCY`,
+    'TRADITIONAL_EFFICIENCY'
+  )
 
   const layout: SpacingCalculationResult['layout'] = []
   let totalSquareFeetNeeded = 0
@@ -272,7 +308,11 @@ export function calculateOptimalSpacing(input: SpacingCalculationInput): Spacing
     let spacing = plant.mature_width
 
     // Apply growth habit modifier
-    const growthModifier = SPACING_CONSTANTS.GROWTH_MULTIPLIERS[plant.growth_habit]
+    const growthModifier = modifier(
+      SPACING_CONSTANTS.GROWTH_MULTIPLIERS,
+      String(plant.growth_habit),
+      'standard'
+    )
     spacing *= growthModifier
 
     // Apply method efficiency
@@ -426,8 +466,16 @@ export function calculateExpectedYield(input: YieldCalculationInput): YieldCalcu
   }
 
   // Apply experience and method modifiers
-  const experienceModifier = YIELD_CONSTANTS.EXPERIENCE_MULTIPLIERS[input.experience]
-  const methodModifier = YIELD_CONSTANTS.METHOD_MULTIPLIERS[input.method]
+  const experienceModifier = modifier(
+    YIELD_CONSTANTS.EXPERIENCE_MULTIPLIERS,
+    String(input.experience),
+    'beginner'
+  )
+  const methodModifier = modifier(
+    YIELD_CONSTANTS.METHOD_MULTIPLIERS,
+    String(input.method),
+    'traditional'
+  )
 
   // Calculate yield for each plant
   input.plants.forEach(plant => {
