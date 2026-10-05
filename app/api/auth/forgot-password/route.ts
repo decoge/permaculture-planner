@@ -13,17 +13,26 @@ export async function POST(request: Request) {
     }
 
     const token = await createPasswordReset(email)
+    const isDevelopment = process.env.NODE_ENV !== 'production'
     const origin = request.headers.get('origin') || new URL(request.url).origin
     const resetUrl = token ? `${origin}/auth/reset-password?token=${encodeURIComponent(token)}` : null
 
-    if (resetUrl) {
+    // There is no mail provider wired up, so the link cannot be sent and
+    // returning it in the response is the only way the flow works today. That is
+    // already development-only, but the *log line* was not: it ran in production
+    // too, writing a live reset token to stdout on every request. Anything that
+    // aggregates logs -- hosting platform, error tracker, ship-it-to-your-team
+    // setup -- now holds working credentials.
+    if (resetUrl && isDevelopment) {
       console.info(`Password reset link for ${email}: ${resetUrl}`)
     }
 
     return NextResponse.json({
+      // Identical whether or not the account exists, so this cannot be used to
+      // enumerate registered addresses.
       ok: true,
       message: 'If an account exists for that email, a reset link is ready.',
-      ...(process.env.NODE_ENV !== 'production' && resetUrl ? { resetUrl } : {}),
+      ...(isDevelopment && resetUrl ? { resetUrl } : {}),
     })
   } catch (error) {
     return routeError(error, 'Failed to start password reset')
