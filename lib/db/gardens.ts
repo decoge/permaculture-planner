@@ -4,7 +4,6 @@ import {
   asUuid,
   clampHeight,
   currentSeason,
-  familyOrOther,
   positiveFeet,
   surfaceOrSoil,
   waterOrSpigot,
@@ -106,56 +105,92 @@ function bedRow(bed: CanvasBedInput, planId: string, index: number) {
 async function replaceBeds(client: PoolClient, planId: string, beds: CanvasBedInput[]) {
   await client.query('DELETE FROM beds WHERE plan_id = $1', [planId])
 
-  for (let index = 0; index < beds.length; index += 1) {
-    const bed = beds[index]
-    const row = bedRow(bed, planId, index)
-    await client.query(
-      `INSERT INTO beds (
-        id, plan_id, name, shape, length_ft, width_ft, height_in, orientation,
-        surface, wicking, trellis, path_clearance_in, notes, order_index, position_json
-      ) VALUES (
-        $1, $2, $3, 'rect', $4, $5, $6, $7,
-        'soil', false, false, 24, $8, $9, $10::jsonb
-      )`,
-      [
-        row.id,
-        row.planId,
-        row.name,
-        row.lengthFt,
-        row.widthFt,
-        row.heightIn,
-        row.orientation,
-        row.notes,
-        row.orderIndex,
-        JSON.stringify(row.position),
-      ]
-    )
+  if (beds.length === 0) return
 
+  // Build every row up front so the whole canvas becomes two statements instead
+  // of one per bed plus one per plant. This runs on every autosave, so a busy
+  // garden was a few hundred serialised round trips per keystroke-debounce.
+  const rows = beds.map((bed, index) => bedRow(bed, planId, index))
+
+  // uuid[] rather than text[] so the ids below are typed as uuid without a cast
+  // per row, and the plantings array lines up with the beds array by index.
+  await client.query(
+    `INSERT INTO beds (
+      id, plan_id, name, shape, length_ft, width_ft, height_in, orientation,
+      surface, wicking, trellis, path_clearance_in, notes, order_index, position_json
+    )
+    SELECT
+      t.id, $1, t.name, 'rect'::bed_shape, t.length_ft, t.width_ft, t.height_in,
+      t.orientation::orientation, 'soil'::surface_type, false, false, 24,
+      t.notes, t.order_index, t.position::jsonb
+    FROM unnest(
+      $2::uuid[], $3::text[], $4::numeric[], $5::numeric[], $6::numeric[],
+      $7::text[], $8::text[], $9::int[], $10::text[]
+    ) AS t(id, name, length_ft, width_ft, height_in, orientation, notes, order_index, position)
+    `,
+    [
+      planId,
+      rows.map((row) => row.id),
+      rows.map((row) => row.name),
+      rows.map((row) => row.lengthFt),
+      rows.map((row) => row.widthFt),
+      rows.map((row) => row.heightIn),
+      rows.map((row) => row.orientation),
+      rows.map((row) => row.notes),
+      rows.map((row) => row.orderIndex),
+      rows.map((row) => JSON.stringify(row.position)),
+    ]
+  )
+
+  // Flatten the per-bed plant lists, carrying each plant's bed id along. Seeded
+  // from the beds above so that both inserts agree on the same ids.
+  const plantings: {
+    id: string
+    bedId: string
+    variety: string | null
+    sowDate: string | null
+    successions: string
+  }[] = []
+  for (const row of rows) {
     for (const plant of row.plants) {
       const planted = plant.plantedDate ? new Date(plant.plantedDate) : null
-      const sowDate = planted && !Number.isNaN(planted.getTime()) ? planted.toISOString().slice(0, 10) : null
-      await client.query(
-        `INSERT INTO plantings (
-          id, bed_id, season, year, crop_id, variety, spacing_in, family,
-          target_days_to_maturity, sowing_method, sow_date, notes, successions_json
-        ) VALUES (
-          $1, $2, $3, $4, NULL, $5, 12, $6,
-          70, 'direct', $7, $8, $9::jsonb
-        )`,
-        [
-          asUuid(plant.id),
-          row.id,
-          currentSeason(),
-          new Date().getFullYear(),
-          plant.plantId || null,
-          familyOrOther('Other'),
-          sowDate,
-          'Planted via canvas editor',
-          JSON.stringify({ position: { x: plant.x ?? 24, y: plant.y ?? 24 } }),
-        ]
-      )
+      plantings.push({
+        id: asUuid(plant.id),
+        bedId: row.id,
+        variety: plant.plantId || null,
+        sowDate:
+          planted && !Number.isNaN(planted.getTime()) ? planted.toISOString().slice(0, 10) : null,
+        successions: JSON.stringify({ position: { x: plant.x ?? 24, y: plant.y ?? 24 } }),
+      })
     }
   }
+
+  if (plantings.length === 0) return
+
+  const season = currentSeason()
+  const year = new Date().getFullYear()
+  await client.query(
+    `INSERT INTO plantings (
+      id, bed_id, season, year, crop_id, variety, spacing_in, family,
+      target_days_to_maturity, sowing_method, sow_date, notes, successions_json
+    )
+    SELECT
+      t.id, t.bed_id, $2::season, $3, NULL, t.variety, 12, 'Other'::plant_family,
+      70, 'direct'::sowing_method, t.sow_date::date, 'Planted via canvas editor', t.successions::jsonb
+    FROM unnest(
+      $1::uuid[], $4::uuid[], $5::text[], $6::text[], $7::text[]
+    ) AS t(id, bed_id, variety, sow_date, successions)
+    `,
+    [
+      plantings.map((row) => row.id),
+      season,
+      year,
+      plantings.map((row) => row.bedId),
+      plantings.map((row) => row.variety),
+      plantings.map((row) => row.sowDate),
+      plantings.map((row) => row.successions),
+    ]
+  )
 }
 
 async function ownedPlan(userId: string, planId: string): Promise<OwnedPlan | null> {
