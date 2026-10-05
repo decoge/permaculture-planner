@@ -16,7 +16,7 @@ npm run dev                # dev server on :3000
 npm run lint               # tsc --noEmit (this IS the typecheck gate)
 npm run test               # jest unit tests (__tests__/)
 npm run test:e2e           # playwright (needs a running dev server)
-npm run build              # next build — slow (~7+ min), run it in the background
+npm run build              # next build — ~16s cold, ~6s warm. Just run it.
 npm run db:migrate         # apply db/migrations/*.sql (needs .env.local)
 ```
 
@@ -112,6 +112,21 @@ rather than ad-hoc try/catch so status codes and messages stay consistent.
 `lib/climate/`. Specs in `docs/algorithms.md`. These are pure functions — keep them
 free of React and DB imports so they stay unit-testable.
 
+### Known-unreferenced modules
+
+These have **no importer** anywhere in `app/`, `lib/`, `components/`, `hooks/` or
+`e2e/`. Treat them as unbuilt features, not as live code to fix:
+
+- `lib/config/garden-shapes.ts` — demo garden layout + bed shape presets
+- `lib/permaculture-elements.ts` — 23 richly-described element instances. 14
+  duplicate concepts already live in the *live* `lib/canvas-elements.ts`; the
+  other 9 (orchard, food_forest, worm_farm, …) are unique to it.
+- `lib/zone-management.ts`
+
+`lib/canvas-elements.ts` **is** live — 8 components import `ELEMENT_STYLES` from
+it. `lib/garden/design-facts.ts` is likewise the live implementation behind the
+critique panel.
+
 ## Conventions
 
 - TypeScript strict, `@/*` → repo root. No default exports in lib/ modules.
@@ -179,6 +194,31 @@ New domain logic needs a unit test. Bug fixes need a test that fails without the
   `process.env.OPENAI_API_KEY === 'sk-placeholder'` displays as `'***'` even
   when unchanged. Before assuming an edit changed a secret-adjacent line, diff
   the bytes (`git show HEAD:file | grep -n ...`) instead of trusting the diff.
+- **Importing any `tldraw` module needs the jsdom shims now in `jest.setup.js`.**
+  The navigator stub replaces the whole object, so it must keep `userAgent` —
+  tldraw reads it at module scope for browser detection and throws without it.
+  Also required: `CSS.supports` (absent from jsdom), `TextDecoder`, and pointer
+  capture / `ResizeObserver` on `window`. `ShapeUtil`'s constructor also demands
+  an `Editor` even for methods that never touch it; cast the constructor in tests
+  rather than standing up an editor. See `__tests__/plant-shape-data.test.ts`.
+- **Never revert with `git checkout --` while a stash is open.** It discards the
+  stashed copy too, so the edits are gone rather than merely unstashed. Use
+  `git stash pop`.
+- **`process.env.NODE_ENV` is readonly per `@types/node`.** Tests that need to
+  flip it must assign through a cast (`(process.env as Record<string, string>).NODE_ENV`).
+
+## Before calling a fix a bug fix
+
+**Confirm the code has a real caller.** Several modules here have zero importers
+and were fixed at length before that was noticed: `lib/analysis/design-critique.ts`
+matched plant ids that do not exist, but nothing imports it — the UI panel reads
+`lib/garden/design-facts.ts` instead. A grep hit is not a caller. Check that
+something actually invokes the symbol, and be wary of a match on the *module
+name* appearing in an unrelated file's path or export name.
+
+A fix to dead code is worse than no fix: the new tests make it look like coverage
+for something no user can execute. If a module has no importer, deleting it is
+usually the honest change — say so plainly rather than reporting the bug as fixed.
 
 ## Commit conventions
 
@@ -201,8 +241,8 @@ your own initiative instead of stopping after each change to check in.
 - **Don't stop early.** A finished task means the work is committed and pushed,
   not just edited. If you run out of obvious improvements, say so plainly in
   your report rather than inventing busywork.
-- **Batch the `build`.** It takes ~7 min; run it in the background and keep
-  working while it finishes.
+- **Batch the `build`.** It is fast enough to run inline; only background it if
+  you have other work to do meanwhile.
 
 Authorization does not extend past the guardrails above: no secrets, no build
 output, no editing applied migrations, no rewrites of history others have already
