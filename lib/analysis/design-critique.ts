@@ -13,7 +13,7 @@
  */
 
 import { GardenBed } from '@/lib/garden/garden-types'
-import { PLANT_LIBRARY } from '@/lib/data/plant-library'
+import { PLANT_LIBRARY, type PlantInfo } from '@/lib/data/plant-library'
 
 export interface DesignIssue {
   severity: 'critical' | 'warning' | 'suggestion'
@@ -62,9 +62,12 @@ export function analyzeDesign(beds: GardenBed[]): DesignCritique {
   }
 
   // Check 2: Nitrogen Fixers
-  const nitrogenFixers = allPlants.filter(p =>
-    ['beans', 'peas', 'clover', 'alfalfa'].includes(p.plantId)
-  ).length
+  //
+  // The old list included 'alfalfa', which is not in the plant library, so it
+  // could never match. Keeping the list but dropping the phantom entry means
+  // the count now reflects plants actually planted.
+  const NITROGEN_FIXERS = new Set(['beans', 'peas', 'clover'])
+  const nitrogenFixers = allPlants.filter(p => NITROGEN_FIXERS.has(p.plantId)).length
 
   if (nitrogenFixers === 0 && totalPlants > 5) {
     issues.push({
@@ -80,9 +83,19 @@ export function analyzeDesign(beds: GardenBed[]): DesignCritique {
   }
 
   // Check 3: Perennial vs Annual Balance
-  const perennials = allPlants.filter(p =>
-    ['berries', 'fruit_trees', 'nut_trees', 'asparagus', 'rhubarb'].includes(p.plantId)
-  ).length
+  //
+  // Derived from the library's `category` rather than a hardcoded id list. The
+  // old list was ['berries', 'fruit_trees', 'nut_trees', 'asparagus',
+  // 'rhubarb'] and not one of those is a plant id -- the library has
+  // 'strawberry', 'apple', 'walnut' and so on -- so perennialRatio was always 0
+  // and the perennial branch could never report a strength.
+  //
+  // tree, shrub and fruit are perennial; everything else here is an annual.
+  const PERENNIAL_CATEGORIES = new Set<PlantInfo['category']>(['tree', 'shrub', 'fruit'])
+  const perennials = allPlants.filter(p => {
+    const info = PLANT_LIBRARY.find(lib => lib.id === p.plantId)
+    return info ? PERENNIAL_CATEGORIES.has(info.category) : false
+  }).length
   const perennialRatio = totalPlants > 0 ? perennials / totalPlants : 0
 
   if (perennialRatio === 0 && totalPlants > 10) {
@@ -99,26 +112,30 @@ export function analyzeDesign(beds: GardenBed[]): DesignCritique {
   }
 
   // Check 4: Plant Spacing (detect overcrowding)
-  let overcrowdedBeds = 0
+  // Track which beds are overcrowded by name, not just how many. The old code
+  // counted them and then reported the first N beds by index, so a single
+  // crowded bed at the end of the list was reported as several beds at the
+  // start -- naming beds the user never overfilled.
+  const overcrowdedBedNames: string[] = []
   beds.forEach(bed => {
     if (bed.plants && bed.plants.length > 0) {
       const bedArea = (bed.width || 48) * (bed.height || 96) // square inches
       const plantsPerSqFt = (bed.plants.length / bedArea) * 144
 
       if (plantsPerSqFt > 4) { // More than 4 plants per square foot
-        overcrowdedBeds++
+        overcrowdedBedNames.push(bed.name)
       }
     }
   })
 
-  if (overcrowdedBeds > 0) {
+  if (overcrowdedBedNames.length > 0) {
     issues.push({
       severity: 'warning',
       category: 'spacing',
       title: 'Overcrowding Detected',
-      description: `${overcrowdedBeds} bed(s) appear overcrowded. Plants need space for roots and airflow.`,
+      description: `${overcrowdedBedNames.length} bed(s) appear overcrowded. Plants need space for roots and airflow.`,
       recommendation: 'Follow spacing guidelines: small plants 6-12", medium 12-18", large 24-36" apart.',
-      affectedElements: beds.filter((bed, idx) => idx < overcrowdedBeds).map(b => b.name),
+      affectedElements: overcrowdedBedNames,
     })
   }
 
