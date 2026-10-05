@@ -123,9 +123,16 @@ These have **no importer** anywhere in `app/`, `lib/`, `components/`, `hooks/` o
   other 9 (orchard, food_forest, worm_farm, …) are unique to it.
 - `lib/zone-management.ts`
 
+Note `lib/zone-management.ts` is *not* what the `ZoneManagementPanel` uses —
+that panel imports `lib/garden/garden-tools.ts`. Same name, different module.
+
 `lib/canvas-elements.ts` **is** live — 8 components import `ELEMENT_STYLES` from
-it. `lib/garden/design-facts.ts` is likewise the live implementation behind the
-critique panel.
+it. `lib/garden/design-facts.ts` likewise (13 importers) and is the real
+implementation behind the critique panel.
+
+Removed as unreferenced, do not resurrect: `lib/analysis/` (design-critique,
+sun-shade-calculator) and `lib/calculations/` (garden-calculations). All four
+looked plausible and had real bugs; none was reachable.
 
 ## Conventions
 
@@ -212,13 +219,20 @@ New domain logic needs a unit test. Bug fixes need a test that fails without the
 **Confirm the code has a real caller.** Several modules here have zero importers
 and were fixed at length before that was noticed: `lib/analysis/design-critique.ts`
 matched plant ids that do not exist, but nothing imports it — the UI panel reads
-`lib/garden/design-facts.ts` instead. A grep hit is not a caller. Check that
-something actually invokes the symbol, and be wary of a match on the *module
-name* appearing in an unrelated file's path or export name.
+`lib/garden/design-facts.ts` instead. `lib/calculations/garden-calculations.ts`
+produced `NaN` from unrecognised lookup keys, also with no importer. A grep hit is
+not a caller. Check that something actually invokes the symbol, and be wary of a
+match on the *module name* appearing in an unrelated file's path or export name —
+`ZoneManagementPanel` does not use `lib/zone-management.ts`, and the barrel
+`components/tldraw/index.ts` is itself unconsumed even though the modules it
+re-exports are used directly.
 
 A fix to dead code is worse than no fix: the new tests make it look like coverage
 for something no user can execute. If a module has no importer, deleting it is
 usually the honest change — say so plainly rather than reporting the bug as fixed.
+
+**One command, not a guess.** `grep -rn "@/lib/<module>" --include=*.ts --include=*.tsx app lib components hooks e2e`
+answers it in one step. Do that before writing a fix, not after.
 
 ## Commit conventions
 
