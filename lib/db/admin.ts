@@ -24,21 +24,34 @@ export async function adminContentStats() {
 }
 
 export async function adminRecentActivity() {
+  // Each branch is limited to 50 before the union, not after. `ORDER BY
+  // timestamp DESC LIMIT 50` on the combined set still makes Postgres build
+  // the union of every row in users, sites and plans before discarding all but
+  // 50 -- three full scans materialised in memory on an admin page load.
+  // Limiting inside each branch is correct here because the output is
+  // chronological: a row outside the newest 50 of its own table cannot be in the
+  // newest 50 overall.
   return query(
     `SELECT activity_type, user_id, email, timestamp, entity_id
      FROM (
-       SELECT 'user_signup' AS activity_type, id AS user_id, email,
-              created_at AS timestamp, NULL::uuid AS entity_id
-       FROM users
+       SELECT * FROM (
+         SELECT 'user_signup' AS activity_type, id AS user_id, email,
+                created_at AS timestamp, NULL::uuid AS entity_id
+         FROM users
+       ) a ORDER BY timestamp DESC LIMIT 50
        UNION ALL
-       SELECT 'site_created', s.user_id, u.email, s.created_at, s.id
-       FROM sites s
-       JOIN users u ON u.id = s.user_id
+       SELECT * FROM (
+         SELECT 'site_created', s.user_id, u.email, s.created_at, s.id
+         FROM sites s
+         JOIN users u ON u.id = s.user_id
+       ) b ORDER BY timestamp DESC LIMIT 50
        UNION ALL
-       SELECT 'plan_created', s.user_id, u.email, p.created_at, p.id
-       FROM plans p
-       JOIN sites s ON s.id = p.site_id
-       JOIN users u ON u.id = s.user_id
+       SELECT * FROM (
+         SELECT 'plan_created', s.user_id, u.email, p.created_at, p.id
+         FROM plans p
+         JOIN sites s ON s.id = p.site_id
+         JOIN users u ON u.id = s.user_id
+       ) c ORDER BY timestamp DESC LIMIT 50
      ) activity
      ORDER BY timestamp DESC
      LIMIT 50`
@@ -60,14 +73,17 @@ export async function adminUserGrowth() {
 }
 
 export async function adminTopUsers() {
+  // Counted per user in separate subqueries rather than by joining users to
+  // sites and plans together. The old single query fanned out to
+  // users x sites x plans and relied on COUNT(DISTINCT ...) to undo it, so the
+  // database still materialised every combination before collapsing them.
   return query(
     `SELECT u.id, u.email, u.full_name,
-            COUNT(DISTINCT s.id)::int AS sites,
-            COUNT(DISTINCT p.id)::int AS plans
+            (SELECT COUNT(*)::int FROM sites s WHERE s.user_id = u.id) AS sites,
+            (SELECT COUNT(*)::int FROM plans p
+               JOIN sites s ON s.id = p.site_id
+              WHERE s.user_id = u.id) AS plans
      FROM users u
-     LEFT JOIN sites s ON s.user_id = u.id
-     LEFT JOIN plans p ON p.site_id = s.id
-     GROUP BY u.id
      ORDER BY plans DESC, sites DESC
      LIMIT 10`
   )
