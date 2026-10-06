@@ -112,6 +112,31 @@ rather than ad-hoc try/catch so status codes and messages stay consistent.
 `lib/climate/`. Specs in `docs/algorithms.md`. These are pure functions — keep them
 free of React and DB imports so they stay unit-testable.
 
+### Estimation lives beside the facts engine
+
+`lib/garden/plan-estimate.ts` computes water, yield, value, return, per-bed
+spacing fit, and sun fit from the plants a user actually saved.
+`lib/garden/design-facts.ts` imports it, so every facts panel reports these
+numbers.
+
+Two data sources drive it, both live:
+
+- `lib/data/plant-yield-data.ts` — USDA / university-extension figures for 30
+  plants: yield with a min/max band, market price, gallons per week.
+- `lib/data/plant-library.ts` — all 50 plants: spacing, sun, water, soil, zone.
+
+**Rule the panels follow: report what was recorded, derive what can be derived,
+and say "not recorded" for the rest.** A plan with no plants says estimation is
+not possible rather than reporting a score of zero, and a bed with no recorded
+size says so instead of assuming one. `__tests__/design-facts.test.ts` asserts
+no `sq ft` figure appears when no area was saved — keep that assertion true when
+extending the estimator.
+
+Two data facts worth knowing before touching the sun-fit check: the library
+classifies 43 plants `full` and 8 `partial`, and **no plant uses the `shade`
+band** — it is currently dead data. Reclassifying plants to suit a test is
+inventing horticulture; add genuinely shade-tolerant plants instead.
+
 ### Known-unreferenced modules
 
 These have **no importer** anywhere in `app/`, `lib/`, `components/`, `hooks/` or
@@ -132,9 +157,15 @@ importers), `lib/garden/garden-tools.ts` (12), `lib/garden/design-facts.ts` (13)
 `materials-calculator.ts` and `crop-rotation.ts` (all via `app/api/plans`),
 `lib/simulation/growth-engine.ts` (1).
 
-Removed as unreferenced, do not resurrect: `lib/analysis/` (design-critique,
-sun-shade-calculator) and `lib/calculations/` (garden-calculations). Three had
-real bugs and were fixed at length before anyone noticed none was reachable.
+Removed as unreferenced, do not resurrect: `lib/analysis/design-critique.ts` and
+`lib/calculations/` (garden-calculations). They had real bugs and were fixed at
+length before anyone noticed none was reachable. The capabilities they covered
+were later rebuilt where they belong: design critique logic in
+`lib/garden/design-facts.ts`, water/yield/return/spacing/sun estimation in
+`lib/garden/plan-estimate.ts`. The old `lib/analysis/sun-shade-calculator.ts`
+(NOAA solar-position maths) was deliberately *not* rebuilt — it needed a
+geolocated observer to mean anything; the live sun-fit check compares recorded
+site hours against each plant's requirement band instead.
 
 ## Conventions
 
