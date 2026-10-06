@@ -137,35 +137,32 @@ classifies 43 plants `full` and 8 `partial`, and **no plant uses the `shade`
 band** — it is currently dead data. Reclassifying plants to suit a test is
 inventing horticulture; add genuinely shade-tolerant plants instead.
 
-### Known-unreferenced modules
+### Dead code
 
-These have **no importer** anywhere in `app/`, `lib/`, `components/`, `hooks/` or
-`e2e/`. Treat them as unbuilt features, not as live code to fix:
+A 2026-10 sweep removed every module that had no importer — the table that used
+to list them here is empty. The live modules they were easy to confuse with:
+`lib/data/plant-library.ts` (15+ importers), `lib/garden/garden-tools.ts` (12),
+`lib/garden/design-facts.ts` (13), `lib/canvas-elements.ts` (8),
+`lib/algorithms/layout-generator.ts`, `materials-calculator.ts` and
+`crop-rotation.ts` (all via `app/api/plans`), `lib/simulation/growth-engine.ts`
+(1).
 
-| Module | Lines | Note |
-| --- | --- | --- |
-| `lib/permaculture/holistic-context.ts` | 852 | largest orphan |
-| `lib/permaculture-elements.ts` | 935 | 23 element instances; 14 duplicate the *live* `canvas-elements.ts`, 9 unique |
-| `lib/zone-management.ts` | 491 | **not** what `ZoneManagementPanel` uses — that imports `garden-tools.ts` |
-| `lib/simulation/growth-engine-enhanced.ts` | 1261 | the plain `growth-engine.ts` beside it *is* live (used by `growth-simulation-panel.tsx`) |
-| `lib/planning/seasonal-timeline.ts` | 366 | |
-| `lib/config/garden-shapes.ts` | 329 | demo layout + shape presets |
-
-Live and easy to confuse with the above: `lib/data/plant-library.ts` (15
-importers), `lib/garden/garden-tools.ts` (12), `lib/garden/design-facts.ts` (13),
-`lib/canvas-elements.ts` (8), `lib/algorithms/layout-generator.ts`,
-`materials-calculator.ts` and `crop-rotation.ts` (all via `app/api/plans`),
-`lib/simulation/growth-engine.ts` (1).
-
-Removed as unreferenced, do not resurrect: `lib/analysis/design-critique.ts` and
-`lib/calculations/` (garden-calculations). They had real bugs and were fixed at
-length before anyone noticed none was reachable. The capabilities they covered
-were later rebuilt where they belong: design critique logic in
-`lib/garden/design-facts.ts`, water/yield/return/spacing/sun estimation in
-`lib/garden/plan-estimate.ts`. The old `lib/analysis/sun-shade-calculator.ts`
-(NOAA solar-position maths) was deliberately *not* rebuilt — it needed a
+Removed and do not resurrect: `lib/analysis/` (design-critique,
+sun-shade-calculator), `lib/calculations/` (garden-calculations),
+`lib/data/plant-database.ts` + `components/plant-library.tsx` (a dead third
+plant list), `lib/planning/`, `lib/permaculture/`,
+`lib/simulation/growth-engine-enhanced.ts`, `lib/permaculture-elements.ts`,
+`lib/config/garden-shapes.ts`, `lib/zone-management.ts`. Where a capability was
+worth keeping it was rebuilt in `lib/garden/plan-estimate.ts` and
+`lib/garden/design-facts.ts` — see *Estimation lives beside the facts engine*.
+The NOAA solar-position calculator was deliberately *not* rebuilt: it needed a
 geolocated observer to mean anything; the live sun-fit check compares recorded
 site hours against each plant's requirement band instead.
+
+**Before deleting or fixing, run the one command:**
+`grep -rn "@/lib/<module>" --include=*.ts --include=*.tsx app lib components hooks e2e`
+A grep hit on a module *name* is not a caller — `ZoneManagementPanel` did not
+use `lib/zone-management.ts`.
 
 ## Conventions
 
