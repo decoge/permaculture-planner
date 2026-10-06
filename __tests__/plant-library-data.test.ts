@@ -1,5 +1,6 @@
 import { describe, expect, test } from '@jest/globals'
 import { PLANT_LIBRARY } from '@/lib/data/plant-library'
+import { PLANT_YIELD_DATABASE } from '@/lib/data/plant-yield-data'
 
 describe('the plant library sun bands', () => {
   test('the shade band is populated', () => {
@@ -30,5 +31,20 @@ describe('the plant library sun bands', () => {
       expect(plant.requirements.zone.length).toBeGreaterThan(0)
       expect(plant.harvest_time.length).toBeGreaterThan(0)
     }
+  })
+
+  test('edible plants have yield-database coverage', () => {
+    // The yield/value estimator falls back to a category average when a plant
+    // is absent from PLANT_YIELD_DATABASE, which is a much weaker claim than a
+    // real figure. Ornamentals are legitimately absent -- the panels skip them
+    // when scoring -- but every edible plant should have real numbers. This
+    // test is what was missing when coverage was first measured (24 of 54
+    // plants): if you add an edible plant, add its yield entry in the same
+    // commit.
+    const edible = new Set(['vegetable', 'fruit', 'herb'])
+    const missing = PLANT_LIBRARY.filter(
+      (plant) => edible.has(plant.category) && !(plant.id in PLANT_YIELD_DATABASE)
+    )
+    expect(missing.map((plant) => plant.id)).toEqual([])
   })
 })

@@ -396,6 +396,239 @@ export const PLANT_YIELD_DATABASE: Record<string, PlantYieldData> = {
   },
 
   // GROUNDCOVERS
+  potato: {
+    yieldPerPlant: { min: 2, max: 5, average: 3 }, // ~3-6 lb per plant typical
+    marketPrice: 1.20,
+    waterPerWeek: {
+      base: 1.0,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 4,
+    daysToMaturity: 90,
+  },
+  eggplant: {
+    yieldPerPlant: { min: 4, max: 10, average: 6 }, // 4-6 fruits per plant
+    marketPrice: 2.50,
+    waterPerWeek: {
+      base: 1.0,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 10,
+    daysToMaturity: 75,
+  },
+  turnip: {
+    yieldPerPlant: { min: 0.3, max: 0.8, average: 0.5 }, // root plus greens
+    marketPrice: 1.50,
+    waterPerWeek: {
+      base: 0.5,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 4,
+    daysToMaturity: 50,
+  },
+  mache: {
+    yieldPerPlant: { min: 0.05, max: 0.15, average: 0.1 }, // small rosettes; premium market green
+    marketPrice: 6.00,
+    waterPerWeek: {
+      base: 0.2,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 4,
+    daysToMaturity: 50,
+  },
+  sorrel: {
+    yieldPerPlant: { min: 0.3, max: 0.8, average: 0.5 }, // cut-and-come-again
+    marketPrice: 4.00,
+    waterPerWeek: {
+      base: 0.3,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 12,
+    daysToMaturity: 60,
+  },
+  chives: {
+    yieldPerPlant: { min: 0.2, max: 0.5, average: 0.3 }, // perennial, cut repeatedly
+    marketPrice: 6.00,
+    waterPerWeek: {
+      base: 0.25,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 12,
+    daysToMaturity: 80,
+  },
+  sage: {
+    yieldPerPlant: { min: 0.3, max: 0.8, average: 0.5 }, // perennial woody herb
+    marketPrice: 6.00,
+    waterPerWeek: {
+      base: 0.25,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 12,
+    daysToMaturity: 100,
+  },
+  parsley: {
+    yieldPerPlant: { min: 0.3, max: 0.7, average: 0.5 }, // cut-and-come-again
+    marketPrice: 5.00,
+    waterPerWeek: {
+      base: 0.3,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 12,
+    daysToMaturity: 75,
+  },
+  dill: {
+    yieldPerPlant: { min: 0.2, max: 0.5, average: 0.3 }, // leaves and seed
+    marketPrice: 6.00,
+    waterPerWeek: {
+      base: 0.3,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 6,
+    daysToMaturity: 55,
+  },
+  fennel: {
+    yieldPerPlant: { min: 0.5, max: 1.5, average: 1.0 }, // bulb and fronds
+    marketPrice: 3.00,
+    waterPerWeek: {
+      base: 0.5,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 4,
+    daysToMaturity: 65,
+  },
+  blackberry: {
+    yieldPerPlant: { min: 8, max: 20, average: 12 }, // second year, per cane
+    marketPrice: 4.00,
+    waterPerWeek: {
+      base: 1.5,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 8,
+    daysToMaturity: 365,
+  },
+  currant: {
+    yieldPerPlant: { min: 6, max: 12, average: 8 }, // per bush, from year 2-3
+    marketPrice: 5.00,
+    waterPerWeek: {
+      base: 1.0,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 4,
+    daysToMaturity: 730,
+  },
+  peach: {
+    yieldPerPlant: { min: 60, max: 120, average: 90 }, // per mature tree
+    marketPrice: 1.80,
+    waterPerWeek: {
+      base: 3.0,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 6,
+    daysToMaturity: 1095,
+  },
+  plum: {
+    yieldPerPlant: { min: 40, max: 100, average: 60 }, // per mature tree
+    marketPrice: 2.00,
+    waterPerWeek: {
+      base: 3.0,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 5,
+    daysToMaturity: 1095,
+  },
+  walnut: {
+    yieldPerPlant: { min: 50, max: 120, average: 80 }, // per mature tree, from year 5-7
+    marketPrice: 6.00,
+    waterPerWeek: {
+      base: 3.5,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 6,
+    daysToMaturity: 2555,
+  },
+  nasturtium: {
+    yieldPerPlant: { min: 0.2, max: 0.5, average: 0.3 }, // leaves, flowers and seed pods all edible
+    marketPrice: 8.00,
+    waterPerWeek: {
+      base: 0.3,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 10,
+    daysToMaturity: 55,
+  },
+  hyssop: {
+    yieldPerPlant: { min: 0.2, max: 0.5, average: 0.3 }, // perennial tea herb
+    marketPrice: 6.00,
+    waterPerWeek: {
+      base: 0.25,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 10,
+    daysToMaturity: 90,
+  },
+  hosta: {
+    yieldPerPlant: { min: 0.3, max: 0.8, average: 0.5 }, // edible shoots in spring
+    marketPrice: 5.00,
+    waterPerWeek: {
+      base: 0.5,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 4,
+    daysToMaturity: 365,
+  },
+  'ostrich fern': {
+    yieldPerPlant: { min: 0.2, max: 0.6, average: 0.4 }, // fiddleheads, 3-week season
+    marketPrice: 8.00,
+    waterPerWeek: {
+      base: 0.5,
+      dryClimateMultiplier: 1.4,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 3,
+    daysToMaturity: 365,
+  },
+  rue: {
+    yieldPerPlant: { min: 0.2, max: 0.5, average: 0.3 }, // leaves used sparingly
+    marketPrice: 6.00,
+    waterPerWeek: {
+      base: 0.2,
+      dryClimateMultiplier: 1.3,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 10,
+    daysToMaturity: 90,
+  },
+
+  'aromatic herbs': {
+    yieldPerPlant: { min: 0.3, max: 0.8, average: 0.5 }, // mixed pest-deterrent herbs
+    marketPrice: 5.00,
+    waterPerWeek: {
+      base: 0.25,
+      dryClimateMultiplier: 1.3,
+      humidClimateMultiplier: 0.85,
+    },
+    harvestDuration: 10,
+    daysToMaturity: 80,
+  },
+
   clover: {
     yieldPerPlant: { min: 0, max: 0, average: 0 }, // Nitrogen fixer, not harvested
     marketPrice: 0,
