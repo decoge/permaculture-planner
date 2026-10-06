@@ -1,4 +1,4 @@
-export type CropFamily = 
+export type CropFamily =
   | 'Solanaceae'
   | 'Brassicaceae'
   | 'Cucurbitaceae'
@@ -7,6 +7,7 @@ export type CropFamily =
   | 'Apiaceae'
   | 'Asteraceae'
   | 'Amaranthaceae'
+  | 'Polygonaceae'
   | 'Poaceae'
   | 'Other'
 
@@ -44,7 +45,7 @@ export const crops: Crop[] = [
     row_cover_suitable: false,
     needs_pollination: true,
     companion_plants: ['basil', 'carrot', 'marigold'],
-    antagonistic_plants: ['brassicas', 'fennel'],
+    antagonistic_plants: ['broccoli', 'cabbage', 'kale'],
     water_needs: 'high',
     notes: 'Needs consistent watering, prone to blossom end rot with calcium deficiency'
   },
@@ -356,6 +357,50 @@ export const crops: Crop[] = [
     needs_pollination: false,
     water_needs: 'low',
     notes: 'Pest deterrent, attracts beneficial insects'
+  },
+
+  // Shade-tolerant crops. The list previously had no `shade` entries, so
+  // filterCropsBySun('shade') returned nothing and every bed at a sub-3-hour
+  // site produced "No suitable crops". These match the plant library's shade
+  // entries so both databases recommend the same crops.
+  {
+    id: 'mache',
+    name: 'Mâche',
+    family: 'Asteraceae',
+    sun: 'shade',
+    spacing_in: 4,
+    days_to_maturity: 50,
+    seasons: ['spring', 'fall', 'winter'],
+    row_cover_suitable: true,
+    needs_pollination: false,
+    water_needs: 'medium',
+    notes: 'Cold-hardy salad green for under 3 hours of sun'
+  },
+  {
+    id: 'sorrel',
+    name: 'Sorrel',
+    family: 'Polygonaceae',
+    sun: 'shade',
+    spacing_in: 12,
+    days_to_maturity: 60,
+    seasons: ['spring', 'summer', 'fall'],
+    row_cover_suitable: false,
+    needs_pollination: false,
+    water_needs: 'medium',
+    notes: 'Perennial cut-and-come-again green'
+  },
+  {
+    id: 'swiss_chard_shade',
+    name: 'Swiss Chard (shade)',
+    family: 'Amaranthaceae',
+    sun: 'shade',
+    spacing_in: 10,
+    days_to_maturity: 55,
+    seasons: ['spring', 'summer', 'fall'],
+    row_cover_suitable: true,
+    needs_pollination: false,
+    water_needs: 'medium',
+    notes: 'Chard tolerates shade though leaves are smaller; separate entry so shade sites can rotate it'
   }
 ]
 

@@ -4,6 +4,18 @@ import { createWizardPlan } from '@/lib/db/wizard-plan'
 import { LayoutGenerator } from '@/lib/algorithms/layout-generator'
 import { MaterialsCalculator } from '@/lib/algorithms/materials-calculator'
 import { CropRotationEngine } from '@/lib/algorithms/crop-rotation'
+
+/**
+ * The wizard's sun hours as a band, on the same thresholds the rest of the app
+ * uses: 6+ hours is full sun, 3-5 partial, under 3 shade. The old mapping had
+ * only two bands, so a one-hour courtyard was classed "partial" and the
+ * rotation engine recommended full-sun crops for it.
+ */
+function sunBand(hours: number): 'full' | 'partial' | 'shade' {
+  if (hours >= 6) return 'full'
+  if (hours >= 3) return 'partial'
+  return 'shade'
+}
 import { routeError } from '@/lib/api/route-error'
 import { validateData, wizardDataSchema } from '@/lib/validation'
 
@@ -32,7 +44,7 @@ export async function POST(request: NextRequest) {
       shape: wizardData.area.shape,
       surface: wizardData.surface.type,
       waterAccess: wizardData.water.source,
-      sunExposure: wizardData.surface.sun_hours >= 6 ? 'full' : 'partial',
+      sunExposure: (wizardData.surface.sun_hours >= 6 ? 'full' : 'partial'),
       slope: wizardData.surface.slope,
       accessibilityNeeds: wizardData.surface.accessibility_needs,
     })
@@ -54,7 +66,7 @@ export async function POST(request: NextRequest) {
       seasonsToplan: 3,
       preferredCrops: wizardData.crops.focus,
       avoidFamilies: wizardData.crops.avoid_families,
-      sunExposure: wizardData.surface.sun_hours >= 6 ? 'full' : 'partial',
+      sunExposure: sunBand(wizardData.surface.sun_hours),
       lastFrostDate: wizardData.location.last_frost ? new Date(wizardData.location.last_frost) : undefined,
       firstFrostDate: wizardData.location.first_frost ? new Date(wizardData.location.first_frost) : undefined,
     })

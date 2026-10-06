@@ -2,6 +2,7 @@
  * @jest-environment node
  */
 import { beforeEach, describe, expect, jest, test } from '@jest/globals'
+import { crops } from '@/lib/data/crops'
 
 const requireUser = jest.fn<() => Promise<{ id: string } | null>>()
 
@@ -69,6 +70,32 @@ describe('POST /api/plans input handling', () => {
 
     expect(response.status).toBe(400)
     expect(createWizardPlan).not.toHaveBeenCalled()
+  })
+
+  test('a sub-3-hour site no longer gets full-sun crops recommended', async () => {
+    // The route used to map every under-6-hour site to 'partial', and the
+    // rotation engine's partial filter includes full-sun crops -- so a one-hour
+    // courtyard was handed tomatoes. The shade band must reach the engine, and
+    // the saved plantings must be shade-plausible crops.
+    const { POST } = await import('@/app/api/plans/route')
+
+    const response = await POST(
+      post({ ...VALID, surface: { ...VALID.surface, sun_hours: 1 } }) as never
+    )
+    expect(response.status).toBe(200)
+
+    const input = createWizardPlan.mock.calls[0][0] as {
+      plantings: Array<{ variety: string | null; family: string }>
+    }
+    expect(input.plantings.length).toBeGreaterThan(0)
+    const shadeTolerant = new Set(
+      crops.filter((crop) => crop.sun === 'shade' || crop.sun === 'partial').map((crop) => crop.name)
+    )
+    for (const planting of input.plantings) {
+      // The engine's shade filter admits shade and partial crops only. A
+      // full-sun crop here (tomato, squash, corn) means the band was lost.
+      expect(shadeTolerant).toContain(planting.variety)
+    }
   })
 
   test('every saved bed carries its own plantings, with a name that matches a real bed', async () => {
