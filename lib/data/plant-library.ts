@@ -701,6 +701,62 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     antagonists: ['fennel'],
     harvest_time: 'Summer',
     planting_time: 'Spring'
+  },
+  // Shade-tolerant plants. The library previously had no `shade` entries, so a
+  // shady site had nothing the sun-fit check could recommend. These four are
+  // woodland or understory crops that genuinely produce in 0-3 hours of sun;
+  // everything above needs at least partial sun.
+  {
+    id: 'mache',
+    name: 'Mâche',
+    category: 'vegetable',
+    icon: '🥬',
+    color: '#a3e635',
+    size: { mature_width: 4, mature_height: 4, spacing: 4 },
+    requirements: { sun: 'shade', water: 'medium', soil: 'loamy', zone: ['3', '4', '5', '6', '7', '8', '9'] },
+    companions: ['lettuce', 'radish'],
+    antagonists: [],
+    harvest_time: 'Spring-Fall',
+    planting_time: 'Early Spring'
+  },
+  {
+    id: 'sorrel',
+    name: 'Sorrel',
+    category: 'vegetable',
+    icon: '🍃',
+    color: '#65a30d',
+    size: { mature_width: 12, mature_height: 12, spacing: 12 },
+    requirements: { sun: 'shade', water: 'medium', soil: 'loamy', zone: ['3', '4', '5', '6', '7', '8', '9'] },
+    companions: ['lettuce', 'spinach'],
+    antagonists: [],
+    harvest_time: 'Spring-Fall',
+    planting_time: 'Early Spring'
+  },
+  {
+    id: 'hosta',
+    name: 'Hosta',
+    category: 'shrub',
+    icon: '🪴',
+    color: '#22c55e',
+    size: { mature_width: 24, mature_height: 18, spacing: 24 },
+    requirements: { sun: 'shade', water: 'high', soil: 'loamy', zone: ['3', '4', '5', '6', '7', '8', '9'] },
+    companions: ['rhododendron', 'azalea'],
+    antagonists: [],
+    harvest_time: 'Spring',
+    planting_time: 'Spring'
+  },
+  {
+    id: 'ostrich fern',
+    name: 'Ostrich Fern',
+    category: 'shrub',
+    icon: '🌿',
+    color: '#4d7c0f',
+    size: { mature_width: 36, mature_height: 48, spacing: 36 },
+    requirements: { sun: 'shade', water: 'high', soil: 'loamy', zone: ['3', '4', '5', '6', '7', '8', '9'] },
+    companions: ['hosta', 'rhododendron'],
+    antagonists: [],
+    harvest_time: 'Spring',
+    planting_time: 'Spring'
   }
 ]
 

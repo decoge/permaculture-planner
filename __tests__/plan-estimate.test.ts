@@ -361,6 +361,16 @@ describe('estimateSunFit', () => {
     expect(estimate.cautions.join(' ')).toMatch(/needs full sun/)
   })
 
+  test('can recommend plants for a site with no shade-band plants', () => {
+    // Regression guard for the dead `shade` band: before mache/sorrel/hosta/
+    // ostrich fern were added, every plant in the library needed at least
+    // partial sun, so this check had nothing good to say about a shady site.
+    const fit = estimateSunFit([{ variety: 'mache' }, { variety: 'sorrel' }], { sunHours: 2 })
+    expect(fit.exposure).toBe('shade')
+    expect(fit.mismatched).toEqual([])
+    expect(fit.note).toMatch(/Every plant saved suits that/)
+  })
+
   test('is optional and inert when no sun data is supplied', () => {
     const estimate = estimatePlan([{ variety: 'tomato' }])
     expect(estimate.sun.hours).toBeNull()
