@@ -21,6 +21,10 @@ const CROP_OPTIONS = [
   { id: 'alliums', label: 'Onions & Garlic', family: 'Allium' },
 ]
 
+// Exported for the crop-focus-map integrity test: the mapping in
+// lib/data/crop-focus-map.ts must cover every id these checkboxes can send.
+export { CROP_OPTIONS }
+
 export function CropsStep({ data, updateData }: CropsStepProps) {
   const handleCropToggle = (cropId: string) => {
     const current = data.crops.focus || []
