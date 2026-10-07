@@ -18,6 +18,7 @@ import { SiteConditionPanels } from '@/components/garden/site-condition-panels'
 import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
 import { GardenToolPanels } from '@/components/garden/garden-tool-panels'
 import { DesignFactPanels } from '@/components/garden/design-fact-panels'
+import { TaskChecklist } from '@/components/garden/task-checklist'
 import { formatDesignFacts, summarizeDesignFacts } from '@/lib/garden/design-facts'
 import { formatGardenTools, summarizeGardenTools } from '@/lib/garden/garden-tools'
 import { formatSiteFacts, JournalInput, RecordedTaskInput, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
@@ -67,7 +68,7 @@ interface Plan {
     mulch_cuft?: number | string | null
     drip_line_ft?: number | string | null
   } | null
-  tasks?: RecordedTaskInput[] | null
+  tasks?: Array<RecordedTaskInput & { id?: unknown; due_on?: unknown; category?: unknown; completed?: unknown }> | null
   journal?: JournalInput[] | null
   meta?: { template?: unknown } | null
 }
@@ -351,6 +352,21 @@ export default function PlanViewPage() {
         </Card>
         </div>
         <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-4">
+          {plan.tasks && plan.tasks.length > 0 && (
+            <TaskChecklist
+              planId={plan.id}
+              initialTasks={plan.tasks
+                .filter((task) => typeof task.id === 'string')
+                .map((task) => ({
+                  id: task.id as string,
+                  title: String(task.title ?? ''),
+                  due_on: String(task.due_on ?? '').slice(0, 10),
+                  category: String(task.category ?? 'maint'),
+                  completed: Boolean(task.completed),
+                  description: null,
+                }))}
+            />
+          )}
           <PlanInsights summary={summary} />
           <SiteConditionPanels facts={siteFacts} />
           <GardenToolPanels tools={gardenTools} />
