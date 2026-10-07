@@ -87,6 +87,25 @@ describe('rate limiting cannot be bypassed by rotating a spoofed header', () => 
     expect(responses.every((response) => response === null)).toBe(true)
     limiter.destroy()
   })
+
+  test('the auth cap spans all auth paths, not one bucket per endpoint', async () => {
+    // The auth preset keys on IP alone: rotating across /api/auth/login,
+    // /api/auth/signup and /api/auth/forgot-password must still hit the cap,
+    // since each is a way to test credentials against an account.
+    const limiter = createRateLimiter('test-auth-paths', rateLimitPresets.auth)
+
+    let limited = false
+    for (let attempt = 0; attempt < 10 && !limited; attempt += 1) {
+      const path = ['/api/auth/login', '/api/auth/signup', '/api/auth/forgot-password'][attempt % 3]
+      const response = await limiter.check(
+        req({ 'x-forwarded-for': '203.0.113.9' }, path)
+      )
+      if (response) limited = true
+    }
+
+    expect(limited).toBe(true)
+    limiter.destroy()
+  })
 })
 
 describe('the cleanup timer does not hold the process open', () => {

@@ -138,11 +138,18 @@ export function createRateLimiter(
 
 // Middleware factory for common rate limiting scenarios
 export const rateLimitPresets = {
-  // Strict rate limiting for authentication endpoints
+  // Strict rate limiting for authentication endpoints.
+  //
+  // Keyed on the client IP alone, not IP + pathname: login, signup and the
+  // password-reset routes are all ways to test credentials against an
+  // account, so a per-path bucket would let a caller multiply the cap by the
+  // number of auth endpoints. The presets say "5 attempts per 15 minutes"
+  // for authentication as a whole.
   auth: {
     windowMs: 15 * 60 * 1000, // 15 minutes
     maxRequests: 5, // 5 attempts per 15 minutes
-    message: 'Too many authentication attempts, please try again later'
+    message: 'Too many authentication attempts, please try again later',
+    keyGenerator: (req: NextRequest) => clientIp(req)
   },
 
   // Standard rate limiting for API endpoints
