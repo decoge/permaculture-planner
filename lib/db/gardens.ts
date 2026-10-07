@@ -1,5 +1,7 @@
 import type { PoolClient } from 'pg'
 import { query, queryOne, withTransaction } from '@/lib/db/pool'
+import { MaterialsCalculator } from '@/lib/algorithms/materials-calculator'
+import { GardenBed } from '@/lib/garden/garden-types'
 import {
   asUuid,
   clampHeight,
@@ -217,6 +219,69 @@ function numberField(source: Record<string, unknown> | undefined, key: string): 
   return typeof value === 'number' && Number.isFinite(value) ? value : null
 }
 
+/**
+ * Insert a materials estimate computed from the saved beds, when the site's
+ * constraints identify the water source.
+ *
+ * A wizard-created plan never got a materials_estimates row (that logic lives
+ * in the uncalled POST /api/plans route), so the ROI panel reported "Build
+ * cost is not recorded" for every real plan. Computing it here -- on the same
+ * beds that were just saved -- closes that gap without adding a new endpoint.
+ * Best-effort: a calculator failure must not fail the save.
+ */
+async function insertMaterialsEstimate(
+  client: PoolClient,
+  planId: string,
+  beds: CanvasBedInput[],
+  waterSource: unknown
+): Promise<void> {
+  try {
+    const gardenBeds: GardenBed[] = beds.map((bed, index) => ({
+      id: bed.id || `bed-${index}`,
+      name: bed.name || `Bed ${index + 1}`,
+      points: bed.points || [],
+      fill: '',
+      stroke: '',
+      plants: [],
+      width: bed.width,
+      height: bed.height,
+      rotation: bed.rotation || 0,
+    }))
+    if (gardenBeds.length === 0) return
+
+    const enableDrip = waterSource !== 'none'
+    const estimate = new MaterialsCalculator().calculateFromGardenBeds(
+      gardenBeds,
+      12,
+      'soil',
+      enableDrip
+    )
+
+    await client.query(
+      `INSERT INTO materials_estimates (
+        plan_id, soil_cuft, compost_cuft, mulch_cuft, lumber_boardfeet, screws_count,
+        drip_line_ft, emitters_count, row_cover_sqft, cost_estimate_cents
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+      [
+        planId,
+        estimate.soil.cubicFeet,
+        estimate.compost.cubicFeet,
+        estimate.mulch.cubicFeet,
+        estimate.lumber.boards2x10x8 * 8 +
+          estimate.lumber.boards2x10x10 * 10 +
+          estimate.lumber.boards2x10x12 * 12,
+        estimate.lumber.screws,
+        estimate.irrigation.dripLineFt,
+        estimate.irrigation.emitters,
+        estimate.rowCover.coverSqFt,
+        estimate.estimated_cost.low * 100,
+      ]
+    )
+  } catch {
+    // Estimation is a convenience, not a write the save depends on.
+  }
+}
+
 export async function saveGarden(
   userId: string,
   input: {
@@ -337,6 +402,10 @@ export async function saveGarden(
       throw new Error('Failed to save garden')
     }
     await replaceBeds(client, planId, input.beds || [])
+    // Only on first creation: later saves would stack duplicate estimate rows.
+    if (!input.planData?.id) {
+      await insertMaterialsEstimate(client, planId, input.beds || [], siteData.water_source)
+    }
     return { siteId, planId }
   })
 }
