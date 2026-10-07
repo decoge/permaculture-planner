@@ -174,4 +174,46 @@ describe('ai-assistant authentication', () => {
       expect(createCompletion).not.toHaveBeenCalled()
     }
   })
+
+  test('PUT returns 400, not 500, when data is missing fields the prompt reads', async () => {
+    requireUser.mockResolvedValue({ id: 'user-1' })
+    const { PUT } = await import('@/app/api/ai-assistant/route')
+
+    // site-analysis reads data.location, data.zone, data.size, data.slope,
+    // data.sunExposure and data.waterSource. This body has only two of them;
+    // it used to throw a TypeError inside the template literal and 500.
+    const response = await PUT(
+      put({ type: 'site-analysis', data: { location: 'x', zone: '6' } }) as never
+    )
+
+    expect(response.status).toBe(400)
+    const body = await response.json()
+    expect(body.missing).toEqual(expect.arrayContaining(['size', 'slope', 'sunExposure', 'waterSource']))
+    expect(createCompletion).not.toHaveBeenCalled()
+  })
+
+  test('PUT returns 400 when data is absent entirely', async () => {
+    requireUser.mockResolvedValue({ id: 'user-1' })
+    const { PUT } = await import('@/app/api/ai-assistant/route')
+
+    const response = await PUT(put({ type: 'water-design' }) as never)
+
+    expect(response.status).toBe(400)
+    expect(createCompletion).not.toHaveBeenCalled()
+  })
+
+  test('PUT still accepts a complete payload', async () => {
+    requireUser.mockResolvedValue({ id: 'user-1' })
+    const { PUT } = await import('@/app/api/ai-assistant/route')
+
+    const response = await PUT(
+      put({
+        type: 'plant-guild',
+        data: { mainCrop: 'apple', zone: '6', space: 200 },
+      }) as never
+    )
+
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ analysis: 'ok', type: 'plant-guild' })
+  })
 })

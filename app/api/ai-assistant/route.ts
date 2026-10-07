@@ -147,12 +147,50 @@ export async function POST(request: NextRequest) {
 }
 
 // Permaculture-specific analysis endpoint
+
+/**
+ * Required fields per analysis type. The prompt templates index into `data`
+ * directly, so a missing or non-object `data` used to throw a TypeError and
+ * surface as a 500. Validating here turns that into a 400 naming the missing
+ * fields, before any model call is attempted.
+ */
+const REQUIRED_FIELDS: Record<string, string[]> = {
+  'site-analysis': ['location', 'zone', 'size', 'slope', 'sunExposure', 'waterSource'],
+  'plant-guild': ['mainCrop', 'zone', 'space'],
+  'water-design': ['rainfall', 'size', 'slope', 'soilType'],
+  'yield-prediction': ['plants', 'area', 'zone', 'waterSystem'],
+}
+
+function missingFields(type: unknown, data: unknown): string[] | null {
+  const required = typeof type === 'string' ? REQUIRED_FIELDS[type] : undefined
+  // An unknown type is rejected by the switch below, not here.
+  if (!required) return null
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return [...required]
+  const record = data as Record<string, unknown>
+  return required.filter((field) => {
+    const value = record[field]
+    if (value === undefined || value === null) return true
+    if (typeof value === 'string' && value.trim() === '') return true
+    return false
+  })
+}
+
 export async function PUT(request: NextRequest) {
   try {
     const user = await requireUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { type, data } = await request.json()
+
+    // The prompt templates read data.location, data.zone etc. directly; a body
+    // without them is a client error and must not reach the model or the 500.
+    const missing = missingFields(type, data)
+    if (missing && missing.length > 0) {
+      return NextResponse.json(
+        { error: `Analysis type "${String(type)}" is missing required fields`, missing },
+        { status: 400 }
+      )
+    }
 
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-placeholder') {
       return NextResponse.json(
