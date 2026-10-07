@@ -79,6 +79,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
+import { downloadSvg, downloadPdf } from '@/lib/export/plan-exporter'
 
 interface PermacultureEditorIntegratedProps {
   initialData?: GardenBed[]
@@ -237,8 +238,19 @@ export function PermacultureEditorIntegrated({
 
         img.src = 'data:image/svg+xml;base64,' + btoa(svg)
       })
-    } else {
-      toast.info(`${format.toUpperCase()} export coming soon`)
+    } else if (format === 'svg') {
+      downloadSvg(editor, 'garden-plan')
+        .then(() => toast.success('Exported as SVG'))
+        .catch((error: unknown) => {
+          toast.error(error instanceof Error ? error.message : 'Failed to export SVG')
+        })
+    } else if (format === 'pdf') {
+      toast.info('Rendering PDF...')
+      downloadPdf(editor, 'garden-plan')
+        .then(() => toast.success('Exported as PDF'))
+        .catch((error: unknown) => {
+          toast.error(error instanceof Error ? error.message : 'Failed to export PDF')
+        })
     }
   }, [editor, gardenData])
 
