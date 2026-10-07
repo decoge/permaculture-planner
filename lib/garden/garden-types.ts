@@ -187,6 +187,7 @@ export class GardenDataTransformer {
    * Create a site from wizard data
    */
   static wizardDataToSite(wizardData: any, userId: string): SiteInsert {
+    const sunHours = wizardData.surface?.sun_hours
     return {
       user_id: userId,
       name: wizardData.name || `Garden Site - ${new Date().toLocaleDateString()}`,
@@ -198,10 +199,23 @@ export class GardenDataTransformer {
       first_frost: wizardData.location?.first_frost,
       surface_type: wizardData.surface?.type || 'soil',
       slope_pct: wizardData.surface?.slope,
-      shade_notes: null,
+      // The sun-fit check reads this note ("7 hours sun"), so record the hours
+      // the wizard collected instead of hardcoding null.
+      shade_notes: typeof sunHours === 'number' ? `${sunHours} hours sun` : null,
       water_source: wizardData.water?.source || 'spigot',
       constraints_json: {
+        // The facts panels read `surface.sun_hours` from here; omitting the
+        // surface section made every wizard-created plan report "Sun exposure
+        // is not recorded" no matter what the user answered.
+        location: {
+          lat: wizardData.location?.lat,
+          lng: wizardData.location?.lng,
+          usda_zone: wizardData.location?.usda_zone,
+          last_frost: wizardData.location?.last_frost,
+          first_frost: wizardData.location?.first_frost,
+        },
         area: wizardData.area,
+        surface: wizardData.surface,
         water: wizardData.water,
         crops: wizardData.crops,
         materials: wizardData.materials
