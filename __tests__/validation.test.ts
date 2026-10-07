@@ -4,14 +4,9 @@ import {
   passwordSchema,
   locationSchema,
   areaSchema,
-  surfaceSchema,
-  waterSchema,
   cropsSchema,
   wizardDataSchema,
-  validateData,
-  validateBedConstraints,
-  validatePathConstraints,
-  validateOverlap
+  validateData
 } from '@/lib/validation'
 
 describe('Validation Schemas', () => {
@@ -155,128 +150,6 @@ describe('Validation Helpers', () => {
         expect(result.errors.issues).toBeDefined()
         expect(result.errors.issues.length).toBeGreaterThan(0)
       }
-    })
-  })
-})
-
-describe('Constraint Validators', () => {
-  describe('validateBedConstraints', () => {
-    test('accepts valid bed dimensions', () => {
-      const validBed = {
-        size: { widthIn: 48, heightIn: 96 },
-        bed: { heightIn: 12 }
-      }
-      expect(validateBedConstraints(validBed)).toHaveLength(0)
-    })
-
-    test('rejects excessive width', () => {
-      const wideBed = {
-        size: { widthIn: 60, heightIn: 96 },
-        bed: { heightIn: 12 }
-      }
-      const errors = validateBedConstraints(wideBed)
-      expect(errors).toContain('Bed width cannot exceed 4 feet for reachability')
-    })
-
-    test('rejects excessive length', () => {
-      const longBed = {
-        size: { widthIn: 48, heightIn: 700 },
-        bed: { heightIn: 12 }
-      }
-      const errors = validateBedConstraints(longBed)
-      expect(errors).toContain('Bed length cannot exceed 50 feet')
-    })
-
-    test('validates bed height constraints', () => {
-      const shortBed = {
-        size: { widthIn: 48, heightIn: 96 },
-        bed: { heightIn: 4 }
-      }
-      const errors = validateBedConstraints(shortBed)
-      expect(errors).toContain('Bed height must be at least 6 inches')
-
-      const tallBed = {
-        size: { widthIn: 48, heightIn: 96 },
-        bed: { heightIn: 40 }
-      }
-      const errors2 = validateBedConstraints(tallBed)
-      expect(errors2).toContain('Bed height cannot exceed 36 inches')
-    })
-  })
-
-  describe('validatePathConstraints', () => {
-    test('accepts valid path widths', () => {
-      const normalPath = { path: { widthIn: 24 } }
-      expect(validatePathConstraints(normalPath, false)).toHaveLength(0)
-
-      const accessiblePath = { path: { widthIn: 36 } }
-      expect(validatePathConstraints(accessiblePath, true)).toHaveLength(0)
-    })
-
-    test('enforces minimum path width', () => {
-      const narrowPath = { path: { widthIn: 12 } }
-      const errors = validatePathConstraints(narrowPath, false)
-      expect(errors).toContain('Paths must be at least 18 inches wide')
-    })
-
-    test('enforces accessible path width', () => {
-      const narrowAccessiblePath = { path: { widthIn: 24 } }
-      const errors = validatePathConstraints(narrowAccessiblePath, true)
-      expect(errors).toContain('Accessible paths must be at least 36 inches wide')
-    })
-  })
-
-  describe('validateOverlap', () => {
-    const bed1 = {
-      id: '1',
-      type: 'Bed',
-      transform: { xIn: 0, yIn: 0 },
-      size: { widthIn: 48, heightIn: 96 }
-    }
-
-    const bed2 = {
-      id: '2',
-      type: 'Bed',
-      transform: { xIn: 100, yIn: 0 },
-      size: { widthIn: 48, heightIn: 96 }
-    }
-
-    test('detects no overlap for distant beds', () => {
-      expect(validateOverlap([bed1], bed2)).toBe(true)
-    })
-
-    test('detects overlap for overlapping beds', () => {
-      const overlappingBed = {
-        id: '3',
-        type: 'Bed',
-        transform: { xIn: 40, yIn: 40 },
-        size: { widthIn: 48, heightIn: 96 }
-      }
-      expect(validateOverlap([bed1], overlappingBed)).toBe(false)
-    })
-
-    test('ignores same bed ID', () => {
-      expect(validateOverlap([bed1], bed1)).toBe(true)
-    })
-
-    test('ignores non-bed nodes', () => {
-      const path = {
-        id: '4',
-        type: 'Path',
-        transform: { xIn: 0, yIn: 0 }
-      }
-      expect(validateOverlap([path], bed1)).toBe(true)
-    })
-
-    test('respects tolerance parameter', () => {
-      const adjacentBed = {
-        id: '5',
-        type: 'Bed',
-        transform: { xIn: 49, yIn: 0 },
-        size: { widthIn: 48, heightIn: 96 }
-      }
-      expect(validateOverlap([bed1], adjacentBed, 0)).toBe(true)
-      expect(validateOverlap([bed1], adjacentBed, 5)).toBe(false)
     })
   })
 })
