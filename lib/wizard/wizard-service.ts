@@ -2,6 +2,7 @@
 
 import { authService } from '@/lib/auth/auth-service'
 import { gardenService } from '@/lib/garden/garden-service'
+import { api } from '@/lib/api/http'
 import { showError, showSuccess, showLoading } from '@/components/ui/action-feedback'
 import {
   GardenDataTransformer,
@@ -106,6 +107,15 @@ export class WizardService {
       )
 
       if (result.success) {
+        // The plan is created with plantings from the generated beds, but no
+        // tasks or materials estimate: that logic lives in the uncalled
+        // POST /api/plans route. Seed the build checklist here so a fresh
+        // wizard plan has one; a task-sync failure must not fail the save.
+        if (result.planId) {
+          await this.seedInitialTasks(result.planId).catch((error) => {
+            console.warn('Could not create initial tasks:', error)
+          })
+        }
         showSuccess('Garden plan created successfully!')
         return {
           success: true,
@@ -123,6 +133,29 @@ export class WizardService {
       showError(errorMessage)
       return { success: false, error: errorMessage }
     }
+  }
+
+  /**
+   * Create the standard build checklist for a brand-new plan.
+   *
+   * syncGeneratedTasks dedupes on title+date, so re-running the wizard or a
+   * retry after a network failure cannot duplicate them.
+   */
+  private async seedInitialTasks(planId: string): Promise<void> {
+    const today = Date.now()
+    const due = (days: number) => new Date(today + days * 86_400_000).toISOString().slice(0, 10)
+    await api<{ success: boolean }>(`/api/plans/${planId}/tasks`, {
+      method: 'POST',
+      body: JSON.stringify({
+        tasks: [
+          { title: 'Purchase lumber and hardware', due_on: due(3), category: 'build' },
+          { title: 'Assemble raised beds', due_on: due(7), category: 'build' },
+          { title: 'Fill beds with soil mix', due_on: due(10), category: 'build' },
+          { title: 'Install drip irrigation', due_on: due(14), category: 'build' },
+          { title: 'Plant first crops', due_on: due(21), category: 'plant' },
+        ],
+      }),
+    })
   }
 
   /**
