@@ -80,6 +80,7 @@ import {
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { downloadSvg, downloadPdf } from '@/lib/export/plan-exporter'
+import { OnboardingTour, RestartTourButton } from '@/components/onboarding/onboarding-tour'
 
 interface PermacultureEditorIntegratedProps {
   initialData?: GardenBed[]
@@ -119,6 +120,7 @@ export function PermacultureEditorIntegrated({
   const [rightPanelTab, setRightPanelTab] = useState<string>('holistic') // Start with holistic dashboard
   const [recentPanels, setRecentPanels] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [tourOpen, setTourOpen] = useState(false)
   const siteFacts = useRecordedSiteFacts(planId)
   const { tools: gardenTools, design: designFacts } = useRecordedPlanTools(planId)
 
@@ -261,6 +263,10 @@ export function PermacultureEditorIntegrated({
         e.preventDefault()
         handleSave()
       }
+      if (e.key === '?' && e.shiftKey) {
+        e.preventDefault()
+        setTourOpen(true)
+      }
       if (e.key === '[' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
         setLeftPanelOpen(prev => !prev)
@@ -309,6 +315,15 @@ export function PermacultureEditorIntegrated({
             </div>
 
             <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setTourOpen(true)}
+                title="Product tour (Shift+?)"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                Tour
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"
@@ -610,6 +625,11 @@ export function PermacultureEditorIntegrated({
           </div>
         </div>
       </div>
+
+      {/* Product tour: auto-opens once on first visit; Shift+? or the header
+          Tour button forces it open again. The floating Tour restart button is
+          rendered by OnboardingTour itself once the tour has been seen. */}
+      <OnboardingTour autoStart forceOpen={tourOpen} onComplete={() => setTourOpen(false)} onSkip={() => setTourOpen(false)} />
     </div>
   )
 }
