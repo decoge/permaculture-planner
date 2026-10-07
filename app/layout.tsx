@@ -5,6 +5,7 @@ import { Providers } from '@/components/providers'
 import { Navigation } from '@/components/navigation'
 import { Footer } from '@/components/footer'
 import { Toaster } from '@/components/ui/toaster'
+import { Toaster as SonnerToaster } from 'sonner'
 import { ScrollToTop } from '@/components/scroll-to-top'
 import { ActionFeedback } from '@/components/ui/action-feedback'
 import { ErrorBoundary } from '@/components/error-boundary'
@@ -54,6 +55,9 @@ export default function RootLayout({
               <Footer />
             </div>
             <Toaster />
+            {/* The editor, demo and pricing pages call toast() from 'sonner';
+                without this mounted those messages never render anywhere. */}
+            <SonnerToaster position="bottom-right" />
             <ActionFeedback />
           </Providers>
         </ErrorBoundary>
