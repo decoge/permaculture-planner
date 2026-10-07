@@ -22,20 +22,34 @@ export default function SettingsPage() {
   const router = useRouter()
 
   useEffect(() => {
+    let cancelled = false
     async function loadUser() {
-      const data = await api<{ user: { email: string; name?: string | null } | null }>('/api/auth/me')
-      if (!data.user) {
-        router.push('/auth/login')
-        return
-      }
+      try {
+        const data = await api<{ user: { email: string; name?: string | null } | null }>('/api/auth/me')
+        if (cancelled) return
+        if (!data.user) {
+          router.push('/auth/login')
+          return
+        }
 
-      setUser(data.user)
-      setEmail(data.user.email || '')
-      setName(data.user.name || '')
-      setLoading(false)
+        setUser(data.user)
+        setEmail(data.user.email || '')
+        setName(data.user.name || '')
+        setLoading(false)
+      } catch {
+        // Without this the rejected load left `loading` true forever: an
+        // unexplained infinite spinner instead of an error the user can retry.
+        if (!cancelled) {
+          setLoading(false)
+          setMessage({ type: 'error', text: 'Could not load your account. Try refreshing the page.' })
+        }
+      }
     }
 
     loadUser()
+    return () => {
+      cancelled = true
+    }
   }, [router])
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
