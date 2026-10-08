@@ -26,9 +26,11 @@ interface AIAssistantProps {
   context?: any
   onSuggestion?: (suggestion: string) => void
   className?: string
+  /** Start collapsed to a launcher button (for pages where an expanded card would crowd the layout). */
+  defaultMinimized?: boolean
 }
 
-export function AIAssistant({ context, onSuggestion, className }: AIAssistantProps) {
+export function AIAssistant({ context, onSuggestion, className, defaultMinimized = false }: AIAssistantProps) {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
@@ -39,7 +41,7 @@ export function AIAssistant({ context, onSuggestion, className }: AIAssistantPro
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [isMinimized, setIsMinimized] = useState(false)
+  const [isMinimized, setIsMinimized] = useState(defaultMinimized)
   const [isExpanded, setIsExpanded] = useState(false)
   const [activeTab, setActiveTab] = useState('chat')
   const scrollRef = useRef<HTMLDivElement>(null)

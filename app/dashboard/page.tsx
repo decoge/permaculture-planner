@@ -16,6 +16,8 @@ import {
 } from 'lucide-react'
 import { api } from '@/lib/api/http'
 import { BedLayout } from '@/components/garden/bed-layout'
+import { PlanImport } from '@/components/garden/plan-import'
+import { AIAssistant } from '@/components/ai-assistant'
 import { Database } from '@/types/database.types'
 
 type Plan = Database['public']['Tables']['plans']['Row']
@@ -191,12 +193,15 @@ export default function DashboardPage() {
                 </Badge>
               </div>
             </div>
-            <Button className="bg-green-600 hover:bg-green-700" asChild>
-              <Link href="/wizard">
-                <Plus className="h-4 w-4 mr-2" />
-                New Design
-              </Link>
-            </Button>
+            <div className="flex items-center gap-2">
+              <PlanImport />
+              <Button className="bg-green-600 hover:bg-green-700" asChild>
+                <Link href="/wizard">
+                  <Plus className="h-4 w-4 mr-2" />
+                  New Design
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -402,6 +407,23 @@ export default function DashboardPage() {
           </TabsContent>
         </Tabs>
       </section>
+
+      {/* Floating design assistant: talks to /api/ai-assistant with the user's
+          plan summary as context. Starts minimized so it never crowds the page. */}
+      <AIAssistant
+        defaultMinimized
+        context={{
+          planCount: plans.length,
+          totalArea: userStats.totalArea,
+          plants: plans.flatMap((plan) =>
+            plan.beds.flatMap((bed) =>
+              ((bed as { plantings?: Array<{ variety?: string | null }> }).plantings || [])
+                .map((planting) => planting.variety)
+                .filter((variety): variety is string => Boolean(variety))
+            )
+          ),
+        }}
+      />
     </div>
   )
 }
