@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { Editor } from 'tldraw'
 import { PermacultureCanvasIntegrated, PermacultureCanvasHandle } from './permaculture-canvas-integrated'
 import { PlantLibraryPanel } from './panels/plant-library-panel'
@@ -80,7 +80,12 @@ import {
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { downloadSvg, downloadPdf } from '@/lib/export/plan-exporter'
-import { OnboardingTour, RestartTourButton } from '@/components/onboarding/onboarding-tour'
+import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
+import { CommandPalette, type EditorCommand } from '@/components/command-palette'
+import {
+  FileImage, FileText, FileCode,
+  Undo2, Redo2, PanelLeft, PanelRight, ZoomIn, ZoomOut,
+} from 'lucide-react'
 
 interface PermacultureEditorIntegratedProps {
   initialData?: GardenBed[]
@@ -121,6 +126,7 @@ export function PermacultureEditorIntegrated({
   const [recentPanels, setRecentPanels] = useState<string[]>([])
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
   const [tourOpen, setTourOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const siteFacts = useRecordedSiteFacts(planId)
   const { tools: gardenTools, design: designFacts } = useRecordedPlanTools(planId)
 
@@ -256,6 +262,23 @@ export function PermacultureEditorIntegrated({
     }
   }, [editor, gardenData])
 
+  // Commands offered by the palette. Built after the handlers they call, so the
+  // list can never offer something the editor cannot do.
+  const paletteCommands: EditorCommand[] = useMemo(() => [
+    { id: 'save', label: 'Save design', shortcut: '⌘S', icon: Save, run: () => { void handleSave() }, group: 'File' },
+    { id: 'export-json', label: 'Export as JSON', icon: FileCode, run: () => handleExport('json'), group: 'File' },
+    { id: 'export-png', label: 'Export as PNG', icon: FileImage, run: () => handleExport('png'), group: 'File' },
+    { id: 'export-svg', label: 'Export as SVG', icon: FileText, run: () => handleExport('svg'), group: 'File' },
+    { id: 'export-pdf', label: 'Export as PDF', icon: Download, run: () => handleExport('pdf'), group: 'File' },
+    { id: 'undo', label: 'Undo', shortcut: '⌘Z', icon: Undo2, run: () => editor?.undo(), group: 'Edit' },
+    { id: 'redo', label: 'Redo', shortcut: '⌘⇧Z', icon: Redo2, run: () => editor?.redo(), group: 'Edit' },
+    { id: 'zoom-in', label: 'Zoom in', icon: ZoomIn, run: () => editor?.zoomIn(), group: 'View' },
+    { id: 'zoom-out', label: 'Zoom out', icon: ZoomOut, run: () => editor?.zoomOut(), group: 'View' },
+    { id: 'toggle-left', label: 'Toggle left panel', shortcut: '⌘[', icon: PanelLeft, run: () => setLeftPanelOpen((prev) => !prev), group: 'View' },
+    { id: 'toggle-right', label: 'Toggle right panel', shortcut: '⌘]', icon: PanelRight, run: () => setRightPanelOpen((prev) => !prev), group: 'View' },
+    { id: 'tour', label: 'Start the product tour', shortcut: '⇧?', icon: Sparkles, run: () => setTourOpen(true), group: 'Help' },
+  ], [handleSave, handleExport, editor])
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -266,6 +289,10 @@ export function PermacultureEditorIntegrated({
       if (e.key === '?' && e.shiftKey) {
         e.preventDefault()
         setTourOpen(true)
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setPaletteOpen((prev) => !prev)
       }
       if (e.key === '[' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault()
@@ -630,6 +657,9 @@ export function PermacultureEditorIntegrated({
           Tour button forces it open again. The floating Tour restart button is
           rendered by OnboardingTour itself once the tour has been seen. */}
       <OnboardingTour autoStart forceOpen={tourOpen} onComplete={() => setTourOpen(false)} onSkip={() => setTourOpen(false)} />
+
+      {/* ⌘K command palette over everything the editor can do */}
+      <CommandPalette commands={paletteCommands} open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   )
 }
