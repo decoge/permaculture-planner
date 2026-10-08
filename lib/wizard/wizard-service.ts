@@ -12,6 +12,20 @@ import {
   PlanInsert
 } from '@/lib/garden/garden-types'
 
+/**
+ * Plant ids offered per wizard crop category. Exported so the integrity test
+ * checks the list this code actually uses, not a copy of it.
+ */
+export const CROP_CATEGORY_PLANT_IDS: Record<string, string[]> = {
+  vegetables: ['lettuce', 'tomato', 'carrot', 'beans', 'cabbage', 'spinach'],
+  herbs: ['basil', 'thyme', 'rosemary', 'parsley', 'mint', 'oregano'],
+  fruits: ['strawberry', 'blueberry', 'raspberry', 'grape', 'apple', 'pear'],
+  flowers: ['marigold', 'sunflower', 'nasturtium', 'lavender'],
+  // No small grains exist in the plant library; clover and peas are the
+  // agronomically honest cover-crop companions for a grain plot.
+  grains: ['corn', 'clover', 'peas', 'radish'],
+}
+
 export interface WizardData {
   location: {
     lat?: number
@@ -334,17 +348,15 @@ export class WizardService {
 
   /**
    * Get plant options for a crop category
+   *
+   * Every id here must exist in PLANT_LIBRARY -- the earlier list included
+   * broccoli, zinnias, cosmos and five small grains that were never in the
+   * library, so wizard-created plants rendered as "unknown" in the soil
+   * panels and fell back to default water/yield estimates. Integrity-tested
+   * in __tests__/wizard-plant-ids.test.ts.
    */
   private getPlantOptionsForCrop(cropType: string): string[] {
-    const plantsByType = {
-      'vegetables': ['lettuce', 'tomato', 'carrot', 'beans', 'broccoli', 'spinach'],
-      'herbs': ['basil', 'thyme', 'rosemary', 'parsley', 'mint', 'oregano'],
-      'fruits': ['strawberry', 'blueberry', 'raspberry', 'grape', 'apple', 'pear'],
-      'flowers': ['marigold', 'sunflower', 'zinnias', 'cosmos', 'nasturtium', 'lavender'],
-      'grains': ['corn', 'wheat', 'quinoa', 'amaranth', 'buckwheat', 'barley']
-    }
-
-    return plantsByType[cropType as keyof typeof plantsByType] || plantsByType.vegetables
+    return CROP_CATEGORY_PLANT_IDS[cropType] || CROP_CATEGORY_PLANT_IDS.vegetables
   }
 
   /**
