@@ -60,6 +60,37 @@ interface OwnedPlan {
   water_source: string | null
 }
 
+// Caps on client-supplied canvas data. The beds PUT takes the canvas wholesale
+// on every autosave, so each of these bounds a different way a caller could
+// make the server do unbounded work: too many beds, too many plants per bed,
+// a polygon with absurd point counts, or a metadata blob of arbitrary size.
+// The caps are far above anything the real editor produces.
+const MAX_BEDS_PER_PLAN = 500
+const MAX_PLANTS_PER_BED = 1000
+const MAX_POINTS_PER_BED = 2000
+const MAX_BED_NAME_LENGTH = 200
+const MAX_METADATA_JSON_LENGTH = 64 * 1024
+
+function sanitizePoints(points: { x: number; y: number }[] | undefined) {
+  if (!Array.isArray(points)) return []
+  // Filter before slicing so the cap counts *valid* points: a polygon with
+  // scattered corrupt entries keeps its first 2000 good ones.
+  return points
+    .filter((point) => Number.isFinite(point?.x) && Number.isFinite(point?.y))
+    .slice(0, MAX_POINTS_PER_BED)
+}
+
+function sanitizeMetadata(metadata: Record<string, unknown> | undefined) {
+  if (!metadata || typeof metadata !== 'object') return undefined
+  try {
+    const json = JSON.stringify(metadata)
+    // Store it or drop it whole: truncating JSON produces invalid JSON.
+    return json.length <= MAX_METADATA_JSON_LENGTH ? metadata : undefined
+  } catch {
+    return undefined
+  }
+}
+
 function bounds(points: { x: number; y: number }[] | undefined) {
   if (!points || points.length === 0) return { width: 48, height: 48, x: 0, y: 0 }
   const xs = points.map((point) => point.x)
@@ -72,47 +103,51 @@ function bounds(points: { x: number; y: number }[] | undefined) {
 }
 
 function bedRow(bed: CanvasBedInput, planId: string, index: number) {
-  const box = bounds(bed.points)
+  const points = sanitizePoints(bed.points)
+  const box = bounds(points)
   const lengthFt = positiveFeet((bed.width || box.width || 48) / 12)
   const widthFt = positiveFeet((bed.height || box.height || 48) / 12)
   const rotation = bed.rotation || 0
   const orientation = rotation === 90 || rotation === 270 ? 'EW' : 'NS'
-  const origin = bed.points && bed.points.length > 0 ? bed.points[0] : { x: box.x, y: box.y }
+  const origin = points.length > 0 ? points[0] : { x: box.x, y: box.y }
+  const rawName = typeof bed.name === 'string' ? bed.name.trim() : ''
+  const name = (rawName || `Bed ${index + 1}`).slice(0, MAX_BED_NAME_LENGTH)
+  const plants = Array.isArray(bed.plants) ? bed.plants.slice(0, MAX_PLANTS_PER_BED) : []
 
   return {
     id: asUuid(bed.id),
     planId,
-    name: bed.name || `Bed ${index + 1}`,
+    name,
     lengthFt,
     widthFt,
     heightIn: clampHeight(12),
     orientation,
     notes: JSON.stringify({
-      points: bed.points || [],
+      points,
       fill: bed.fill || '#e0f2e0',
       stroke: bed.stroke || '#22c55e',
       elementType: bed.elementType,
       elementCategory: bed.elementCategory,
       zone: bed.zone,
-      metadata: bed.metadata,
+      metadata: sanitizeMetadata(bed.metadata),
       width: bed.width,
       height: bed.height,
     }),
     orderIndex: index,
     position: { x: origin.x || 0, y: origin.y || 0, rotation },
-    plants: bed.plants || [],
+    plants,
   }
 }
 
 async function replaceBeds(client: PoolClient, planId: string, beds: CanvasBedInput[]) {
   await client.query('DELETE FROM beds WHERE plan_id = $1', [planId])
 
-  if (beds.length === 0) return
+  if (!Array.isArray(beds) || beds.length === 0) return
 
   // Build every row up front so the whole canvas becomes two statements instead
   // of one per bed plus one per plant. This runs on every autosave, so a busy
   // garden was a few hundred serialised round trips per keystroke-debounce.
-  const rows = beds.map((bed, index) => bedRow(bed, planId, index))
+  const rows = beds.slice(0, MAX_BEDS_PER_PLAN).map((bed, index) => bedRow(bed, planId, index))
 
   // uuid[] rather than text[] so the ids below are typed as uuid without a cast
   // per row, and the plantings array lines up with the beds array by index.
