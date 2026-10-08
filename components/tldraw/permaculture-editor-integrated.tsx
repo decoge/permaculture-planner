@@ -82,6 +82,7 @@ import { toast } from 'sonner'
 import { downloadSvg, downloadPdf } from '@/lib/export/plan-exporter'
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
 import { CommandPalette, type EditorCommand } from '@/components/command-palette'
+import { StatusBar } from '@/components/tldraw/status-bar'
 import {
   FileImage, FileText, FileCode,
   Undo2, Redo2, PanelLeft, PanelRight, ZoomIn, ZoomOut,
@@ -657,6 +658,15 @@ export function PermacultureEditorIntegrated({
           Tour button forces it open again. The floating Tour restart button is
           rendered by OnboardingTour itself once the tour has been seen. */}
       <OnboardingTour autoStart forceOpen={tourOpen} onComplete={() => setTourOpen(false)} onSkip={() => setTourOpen(false)} />
+
+      {/* Live zoom / counts / save-state footer */}
+      <StatusBar
+        editor={editor}
+        beds={stats.beds}
+        plants={stats.plants}
+        elements={stats.elements}
+        hasUnsavedChanges={hasUnsavedChanges}
+      />
 
       {/* ⌘K command palette over everything the editor can do */}
       <CommandPalette commands={paletteCommands} open={paletteOpen} onOpenChange={setPaletteOpen} />
