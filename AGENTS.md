@@ -105,6 +105,12 @@ saved plans break.
 `ApiError`), `rate-limiter.ts`, `cache.ts`, `route-error.ts`. Use `route-error.ts`
 rather than ad-hoc try/catch so status codes and messages stay consistent.
 
+Recording writes (harvests, journal entries, task create/edit/delete/recurrence)
+live in `lib/db/recordings.ts` and `lib/db/tasks.ts` (`updateTask`); every
+statement proves plan ownership through the plan/site join. Completing a task
+whose `recurring_pattern` is one of the known intervals creates the next
+occurrence in the same transaction.
+
 ### Domain logic
 
 `lib/algorithms/` (layout, materials, rotation, companion planting),
