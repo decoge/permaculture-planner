@@ -619,7 +619,7 @@ export async function getPlanDetail(userId: string, planId: string) {
       [planId]
     ),
     query(
-      `SELECT h.quantity, h.unit, h.notes, pl.variety
+      `SELECT h.id, h.planting_id, h.quantity, h.unit, h.notes, pl.variety, h.harvested_on
        FROM harvests h
        JOIN plantings pl ON pl.id = h.planting_id
        JOIN beds b ON b.id = pl.bed_id
@@ -635,7 +635,7 @@ export async function getPlanDetail(userId: string, planId: string) {
       [planId]
     ),
     query(
-      `SELECT title, content, created_at, images
+      `SELECT id, title, content, created_at, images
        FROM journal_entries
        WHERE plan_id = $1
        ORDER BY created_at ASC`,

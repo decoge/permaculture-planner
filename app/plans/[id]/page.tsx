@@ -19,6 +19,8 @@ import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
 import { GardenToolPanels } from '@/components/garden/garden-tool-panels'
 import { DesignFactPanels } from '@/components/garden/design-fact-panels'
 import { TaskChecklist } from '@/components/garden/task-checklist'
+import { HarvestRecorder } from '@/components/garden/harvest-recorder'
+import { JournalRecorder } from '@/components/garden/journal-recorder'
 import { formatDesignFacts, summarizeDesignFacts } from '@/lib/garden/design-facts'
 import { formatGardenTools, summarizeGardenTools } from '@/lib/garden/garden-tools'
 import { formatSiteFacts, JournalInput, RecordedTaskInput, siteFactsFromPlan, summarizeSiteFacts } from '@/lib/garden/site-facts'
@@ -70,6 +72,14 @@ interface Plan {
   } | null
   tasks?: Array<RecordedTaskInput & { id?: unknown; due_on?: unknown; category?: unknown; completed?: unknown }> | null
   journal?: JournalInput[] | null
+  harvests?: Array<{
+    quantity?: number | string | null
+    unit?: string | null
+    variety?: string | null
+    harvested_on?: string | null
+    planting_id?: string | null
+    id?: string | null
+  }> | null
   meta?: { template?: unknown } | null
 }
 
@@ -191,6 +201,36 @@ export default function PlanViewPage() {
   const siteFacts = summarizeSiteFacts(siteFactsFromPlan(plan))
   const gardenTools = summarizeGardenTools(siteFactsFromPlan(plan))
 
+  const [renaming, setRenaming] = useState(false)
+  const [nameDraft, setNameDraft] = useState('')
+  const [renameSaving, setRenameSaving] = useState(false)
+
+  const startRename = () => {
+    setNameDraft(plan.name)
+    setRenaming(true)
+  }
+
+  const saveRename = async () => {
+    const next = nameDraft.trim()
+    if (!next || next === plan.name) {
+      setRenaming(false)
+      return
+    }
+    setRenameSaving(true)
+    try {
+      await api(`/api/plans/${plan.id}/rename`, {
+        method: 'PATCH',
+        body: JSON.stringify({ name: next }),
+      })
+      setPlan({ ...plan, name: next })
+      setRenaming(false)
+    } catch {
+      alert('Failed to rename the plan')
+    } finally {
+      setRenameSaving(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
       {/* Header */}
@@ -205,7 +245,35 @@ export default function PlanViewPage() {
                 </Link>
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{plan.name}</h1>
+                {renaming ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      value={nameDraft}
+                      onChange={(e) => setNameDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveRename()
+                        if (e.key === 'Escape') setRenaming(false)
+                      }}
+                      autoFocus
+                      className="text-2xl font-bold text-gray-900 border rounded px-2 py-0.5 w-80"
+                      aria-label="Plan name"
+                    />
+                    <Button size="sm" onClick={saveRename} disabled={renameSaving} className="bg-green-600 hover:bg-green-700">
+                      {renameSaving ? 'Saving…' : 'Save'}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setRenaming(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <h1
+                    className="text-2xl font-bold text-gray-900 cursor-pointer hover:underline decoration-dotted"
+                    onClick={startRename}
+                    title="Click to rename"
+                  >
+                    {plan.name}
+                  </h1>
+                )}
                 <p className="text-sm text-gray-600">
                   {plan.site.name} • Created {new Date(plan.created_at).toLocaleDateString()}
                 </p>
@@ -367,6 +435,36 @@ export default function PlanViewPage() {
                 }))}
             />
           )}
+          <HarvestRecorder
+            planId={plan.id}
+            plantings={plan.beds.flatMap((bed) =>
+              (bed.plantings || [])
+                .filter((planting) => planting.variety)
+                .map((planting) => ({ id: planting.id, variety: planting.variety }))
+            )}
+            harvests={(plan.harvests || [])
+              .filter((harvest) => typeof harvest.id === 'string')
+              .map((harvest) => ({
+                id: harvest.id as string,
+                plantingId: String(harvest.planting_id ?? ''),
+                quantity:
+                  harvest.quantity === null || harvest.quantity === undefined
+                    ? null
+                    : Number(harvest.quantity),
+                unit: harvest.unit ?? null,
+                harvestedOn: String(harvest.harvested_on ?? '').slice(0, 10),
+                variety: harvest.variety ?? null,
+              }))}
+          />
+          <JournalRecorder
+            planId={plan.id}
+            entries={(plan.journal || []).map((entry, index) => ({
+              id: String((entry as { id?: unknown }).id ?? `entry-${index}`),
+              title: (entry.title as string | null) ?? null,
+              content: String(entry.content ?? ''),
+              createdAt: String(entry.createdAt ?? entry.created_at ?? ''),
+            }))}
+          />
           <PlanInsights summary={summary} />
           <SiteConditionPanels facts={siteFacts} />
           <GardenToolPanels tools={gardenTools} />
