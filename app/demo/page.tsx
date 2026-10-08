@@ -42,7 +42,7 @@ const STARTER_GARDEN: GardenBed[] = [
     plants: [
       { id: 'p4', plantId: 'tomato', x: 450, y: 140 },
       { id: 'p5', plantId: 'lettuce', x: 520, y: 140 },
-      { id: 'p6', plantId: 'peppers', x: 580, y: 140 }
+      { id: 'p6', plantId: 'pepper', x: 580, y: 140 }
     ]
   }
 ]
