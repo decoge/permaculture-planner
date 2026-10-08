@@ -15,6 +15,7 @@ interface TaskItem {
   due_on: string
   category: string
   completed: boolean
+  recurring_pattern?: string | null
   description?: string | null
 }
 
@@ -24,9 +25,20 @@ interface TaskChecklistProps {
 }
 
 /**
- * The plan's task list: toggle completion, add tasks, delete tasks.
- * Toggles are optimistic and roll back on failure.
+ * The plan's task list: toggle completion, edit due dates, add and delete
+ * tasks, and mark tasks as recurring. Toggles are optimistic and roll back on
+ * failure. Completing a recurring task asks the server to generate the next
+ * occurrence, which arrives on the next load.
  */
+
+const RECURRENCE_CHOICES = [
+  { value: 'none', label: 'Does not repeat' },
+  { value: 'daily', label: 'Daily' },
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Every 2 weeks' },
+  { value: 'monthly', label: 'Monthly' },
+]
+
 export function TaskChecklist({ planId, initialTasks }: TaskChecklistProps) {
   const [tasks, setTasks] = useState<TaskItem[]>(initialTasks)
   const [pendingId, setPendingId] = useState<string | null>(null)
@@ -34,8 +46,11 @@ export function TaskChecklist({ planId, initialTasks }: TaskChecklistProps) {
   const [adding, setAdding] = useState(false)
   const [newTitle, setNewTitle] = useState('')
   const [newDue, setNewDue] = useState('')
+  const [newPattern, setNewPattern] = useState('none')
   const [creating, setCreating] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [editingDueId, setEditingDueId] = useState<string | null>(null)
+  const [dueDraft, setDueDraft] = useState('')
 
   const toggle = async (task: TaskItem) => {
     const next = !task.completed
@@ -52,6 +67,47 @@ export function TaskChecklist({ planId, initialTasks }: TaskChecklistProps) {
       })
     } catch {
       setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, completed: !next } : t)))
+      setFailedId(task.id)
+    } finally {
+      setPendingId(null)
+    }
+  }
+
+  const saveDueDate = async (task: TaskItem) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDraft) || dueDraft === task.due_on) {
+      setEditingDueId(null)
+      return
+    }
+    setPendingId(task.id)
+    setFailedId(null)
+    const previous = task.due_on
+    setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, due_on: dueDraft } : t)))
+    try {
+      await api(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ dueOn: dueDraft }),
+      })
+      setEditingDueId(null)
+    } catch {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? { ...t, due_on: previous } : t)))
+      setFailedId(task.id)
+    } finally {
+      setPendingId(null)
+    }
+  }
+
+  const setPattern = async (task: TaskItem, pattern: string) => {
+    setPendingId(task.id)
+    setFailedId(null)
+    try {
+      await api(`/api/tasks/${task.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ recurringPattern: pattern === 'none' ? null : pattern }),
+      })
+      setTasks((prev) =>
+        prev.map((t) => (t.id === task.id ? { ...t, recurring_pattern: pattern === 'none' ? null : pattern } : t))
+      )
+    } catch {
       setFailedId(task.id)
     } finally {
       setPendingId(null)
@@ -120,16 +176,58 @@ export function TaskChecklist({ planId, initialTasks }: TaskChecklistProps) {
                   onCheckedChange={() => toggle(task)}
                   className="mt-0.5"
                 />
-                <Label
-                  htmlFor={`task-${task.id}`}
-                  className={`cursor-pointer text-sm font-normal flex-1 ${task.completed ? 'line-through text-gray-400' : ''}`}
-                >
-                  {task.title}
-                  <span className="block text-xs text-gray-500">
-                    {task.category} · due {task.due_on}
-                    {failedId === task.id ? ' · save failed, try again' : ''}
-                  </span>
-                </Label>
+                <div className="flex-1">
+                  <Label
+                    htmlFor={`task-${task.id}`}
+                    className={`cursor-pointer text-sm font-normal ${task.completed ? 'line-through text-gray-400' : ''}`}
+                  >
+                    {task.title}
+                  </Label>
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    {editingDueId === task.id ? (
+                      <input
+                        type="date"
+                        value={dueDraft}
+                        onChange={(e) => setDueDraft(e.target.value)}
+                        onBlur={() => saveDueDate(task)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveDueDate(task)
+                          if (e.key === 'Escape') setEditingDueId(null)
+                        }}
+                        autoFocus
+                        className="h-5 text-xs border rounded px-1"
+                        aria-label={`Due date for ${task.title}`}
+                      />
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setDueDraft(task.due_on)
+                          setEditingDueId(task.id)
+                        }}
+                        className="hover:underline"
+                        title="Click to change the due date"
+                      >
+                        due {task.due_on}
+                      </button>
+                    )}
+                    <span>· {task.category}</span>
+                    {task.recurring_pattern && <span>· repeats {task.recurring_pattern}</span>}
+                    {failedId === task.id && <span className="text-red-600">· save failed, try again</span>}
+                  </div>
+                  <select
+                    value={task.recurring_pattern || 'none'}
+                    onChange={(e) => setPattern(task, e.target.value)}
+                    disabled={pendingId === task.id}
+                    className="mt-1 text-xs border rounded px-1 py-0.5 bg-white"
+                    aria-label={`Repeat schedule for ${task.title}`}
+                  >
+                    {RECURRENCE_CHOICES.map((choice) => (
+                      <option key={choice.value} value={choice.value}>
+                        {choice.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <Button
                   variant="ghost"
                   size="sm"

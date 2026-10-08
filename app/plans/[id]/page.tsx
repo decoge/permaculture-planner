@@ -431,6 +431,10 @@ export default function PlanViewPage() {
                   due_on: String(task.due_on ?? '').slice(0, 10),
                   category: String(task.category ?? 'maint'),
                   completed: Boolean(task.completed),
+                  recurring_pattern:
+                    (task as { recurring_pattern?: unknown }).recurring_pattern != null
+                      ? String((task as { recurring_pattern?: unknown }).recurring_pattern)
+                      : null,
                   description: null,
                 }))}
             />

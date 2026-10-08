@@ -161,3 +161,26 @@ export async function deleteTask(userId: string, taskId: string): Promise<boolea
   )
   return deleted.length > 0
 }
+
+/**
+ * Set (or clear, with null) a task's recurrence pattern.
+ *
+ * The pattern is stored verbatim for display, but only the known values in
+ * tasks.ts's RECURRENCE_DAYS generate a next occurrence on completion.
+ */
+export async function setTaskPattern(
+  userId: string,
+  taskId: string,
+  pattern: string | null
+): Promise<boolean> {
+  const value = typeof pattern === 'string' && pattern.trim() ? pattern.trim().slice(0, 50) : null
+  const updated = await query(
+    `UPDATE tasks t
+     SET recurring_pattern = $3
+     FROM plans p, sites s
+     WHERE t.id = $1 AND t.plan_id = p.id AND p.site_id = s.id AND s.user_id = $2
+     RETURNING t.id`,
+    [taskId, userId, value]
+  )
+  return updated.length > 0
+}
