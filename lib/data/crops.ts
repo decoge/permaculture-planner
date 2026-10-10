@@ -5,14 +5,16 @@
  *
  * Maintained by AI agents. When editing, the integrity tests in
  * __tests__/crops-data.test.ts are the contract:
- *  - ids must be unique and kebab-case strings
+ *  - ids must be unique, lowercase, and word-separated (snake_case or
+ *    kebab-case -- both occur in the data; do not introduce other formats)
  *  - every companion_plants / antagonistic_plants reference must resolve to an
  *    id in this file (the rotation engine filters on it; a dangling reference
  *    silently narrows recommendations)
- *  - the shade sun-band must stay populated, and shade entries need seasons,
- *    spacing_in and days_to_maturity
- * Keep entries sorted by family grouping as below, and prefer updating an
- * existing entry over adding a near-duplicate.
+ *  - every entry needs valid family/sun/seasons/water_needs enums, a
+ *    non-empty name, positive spacing_in and days_to_maturity
+ *  - the shade sun-band must stay populated
+ * Keep entries grouped by family as below, and prefer updating an existing
+ * entry over adding a near-duplicate.
  */
 export type CropFamily =
   | 'Solanaceae'
