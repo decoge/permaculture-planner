@@ -19,6 +19,7 @@ import { formatPlanSummary, summarizePlan } from '@/lib/garden/plan-summary'
 import { GardenToolPanels } from '@/components/garden/garden-tool-panels'
 import { DesignFactPanels } from '@/components/garden/design-fact-panels'
 import { TaskChecklist } from '@/components/garden/task-checklist'
+import { PlanCalendarPanel } from '@/components/garden/plan-calendar-panel'
 import { HarvestRecorder } from '@/components/garden/harvest-recorder'
 import { JournalRecorder } from '@/components/garden/journal-recorder'
 import { formatDesignFacts, summarizeDesignFacts } from '@/lib/garden/design-facts'
@@ -61,6 +62,8 @@ interface Plan {
     plantings?: Array<{
       id: string
       variety: string | null
+      sow_date?: string | null
+      target_days_to_maturity?: number | string | null
       successions_json?: { position?: { x: number; y: number } } | null
     }>
   }>
@@ -68,7 +71,11 @@ interface Plan {
     soil_cuft?: number | string | null
     compost_cuft?: number | string | null
     mulch_cuft?: number | string | null
+    lumber_boardfeet?: number | string | null
+    screws_count?: number | string | null
     drip_line_ft?: number | string | null
+    emitters_count?: number | string | null
+    row_cover_sqft?: number | string | null
   } | null
   tasks?: Array<RecordedTaskInput & { id?: unknown; due_on?: unknown; category?: unknown; completed?: unknown }> | null
   journal?: JournalInput[] | null
@@ -420,6 +427,37 @@ export default function PlanViewPage() {
         </Card>
         </div>
         <aside className="space-y-4 lg:sticky lg:top-20 lg:max-h-[calc(100vh-6rem)] lg:overflow-y-auto lg:pb-4">
+          <PlanCalendarPanel
+            plantings={plan.beds.flatMap((bed) =>
+              (bed.plantings || []).map((planting) => ({
+                id: planting.id,
+                variety: planting.variety,
+                bedName: bed.name,
+                sow_date:
+                  planting.sow_date != null ? String(planting.sow_date).slice(0, 10) : null,
+                target_days_to_maturity:
+                  planting.target_days_to_maturity != null
+                    ? Number(planting.target_days_to_maturity)
+                    : null,
+              }))
+            )}
+            firstFrost={plan.site?.first_frost ?? null}
+            lastFrost={plan.site?.last_frost ?? null}
+            materialsEstimate={
+              plan.materials_estimates
+                ? {
+                    soil_cuft: plan.materials_estimates.soil_cuft == null ? null : Number(plan.materials_estimates.soil_cuft),
+                    compost_cuft: plan.materials_estimates.compost_cuft == null ? null : Number(plan.materials_estimates.compost_cuft),
+                    mulch_cuft: plan.materials_estimates.mulch_cuft == null ? null : Number(plan.materials_estimates.mulch_cuft),
+                    lumber_boardfeet: plan.materials_estimates.lumber_boardfeet == null ? null : Number(plan.materials_estimates.lumber_boardfeet),
+                    screws_count: plan.materials_estimates.screws_count == null ? null : Number(plan.materials_estimates.screws_count),
+                    drip_line_ft: plan.materials_estimates.drip_line_ft == null ? null : Number(plan.materials_estimates.drip_line_ft),
+                    emitters_count: plan.materials_estimates.emitters_count == null ? null : Number(plan.materials_estimates.emitters_count),
+                    row_cover_sqft: plan.materials_estimates.row_cover_sqft == null ? null : Number(plan.materials_estimates.row_cover_sqft),
+                  }
+                : null
+            }
+          />
           {plan.tasks && plan.tasks.length > 0 && (
             <TaskChecklist
               planId={plan.id}

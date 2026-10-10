@@ -19,6 +19,9 @@ export interface PlantInfo {
   antagonists: string[] // plants to avoid nearby
   harvest_time: string
   planting_time: string
+  /** Days from sowing (or transplanting, for starts) to first harvest.
+    * Absent for ornamentals/long-lived woodies with no meaningful figure. */
+  days_to_maturity?: number
   yield?: {
     amount: number // annual yield in pounds per plant
     price?: number // market price per pound
@@ -38,7 +41,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['basil', 'carrot', 'marigold', 'nasturtium'],
     antagonists: ['cabbage', 'fennel'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 80,
   },
   {
     id: 'lettuce',
@@ -51,7 +55,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['carrot', 'radish', 'strawberry', 'cucumber'],
     antagonists: [],
     harvest_time: 'Spring-Fall',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 45,
   },
   {
     id: 'carrot',
@@ -64,7 +69,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['tomato', 'lettuce', 'onion', 'rosemary'],
     antagonists: ['dill'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 70,
   },
   {
     id: 'pepper',
@@ -77,7 +83,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['basil', 'tomato', 'carrot', 'onion'],
     antagonists: ['fennel', 'beans'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 75,
   },
   {
     id: 'squash',
@@ -90,7 +97,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['corn', 'beans', 'nasturtium', 'radish'],
     antagonists: ['potato'],
     harvest_time: 'Fall',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 55,
   },
   {
     id: 'beans',
@@ -103,7 +111,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['corn', 'squash', 'carrot', 'cucumber'],
     antagonists: ['onion', 'garlic', 'pepper'],
     harvest_time: 'Summer',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 55,
   },
   {
     id: 'corn',
@@ -116,7 +125,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['beans', 'squash', 'cucumber', 'peas'],
     antagonists: ['tomato'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 80,
   },
 
   // Herbs
@@ -131,7 +141,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['tomato', 'pepper', 'oregano'],
     antagonists: ['rue'],
     harvest_time: 'Summer',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 65,
   },
   {
     id: 'rosemary',
@@ -144,7 +155,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['cabbage', 'beans', 'carrot', 'sage'],
     antagonists: [],
     harvest_time: 'Year-round',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 90,
   },
   {
     id: 'mint',
@@ -157,7 +169,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['cabbage', 'tomato'],
     antagonists: ['parsley'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 70,
   },
   {
     id: 'thyme',
@@ -170,7 +183,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['cabbage', 'strawberry', 'tomato', 'eggplant'],
     antagonists: [],
     harvest_time: 'Summer',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 85,
   },
 
   // Fruits
@@ -185,7 +199,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['lettuce', 'spinach', 'thyme', 'beans'],
     antagonists: ['cabbage'],
     harvest_time: 'Early Summer',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 120,
   },
   {
     id: 'blueberry',
@@ -198,7 +213,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['strawberry', 'rhododendron', 'azalea'],
     antagonists: [],
     harvest_time: 'Summer',
-    planting_time: 'Spring or Fall'
+    planting_time: 'Spring or Fall',
+    days_to_maturity: 730,
   },
   {
     id: 'raspberry',
@@ -211,7 +227,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['garlic', 'tansy', 'turnip'],
     antagonists: ['blackberry', 'potato'],
     harvest_time: 'Summer',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 730,
   },
 
   // Trees
@@ -226,7 +243,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['nasturtium', 'chives', 'garlic'],
     antagonists: ['walnut'],
     harvest_time: 'Fall',
-    planting_time: 'Spring or Fall'
+    planting_time: 'Spring or Fall',
+    days_to_maturity: 1095,
   },
   {
     id: 'pear',
@@ -239,7 +257,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['currant', 'apple'],
     antagonists: ['walnut'],
     harvest_time: 'Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 1460,
   },
   {
     id: 'cherry',
@@ -252,7 +271,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['peach', 'plum'],
     antagonists: ['potato'],
     harvest_time: 'Early Summer',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 1460,
   },
 
   // Flowers
@@ -267,7 +287,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['tomato', 'pepper', 'cucumber'],
     antagonists: [],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 50,
   },
   {
     id: 'sunflower',
@@ -280,7 +301,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['cucumber', 'corn'],
     antagonists: ['potato'],
     harvest_time: 'Fall',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 80,
   },
   {
     id: 'lavender',
@@ -293,7 +315,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['rosemary', 'thyme', 'sage'],
     antagonists: [],
     harvest_time: 'Summer',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 110,
   },
 
   // Groundcovers
@@ -308,7 +331,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['cabbage', 'strawberry'],
     antagonists: [],
     harvest_time: 'N/A',
-    planting_time: 'Spring or Fall'
+    planting_time: 'Spring or Fall',
+    days_to_maturity: 70,
   },
 
   // Vines
@@ -323,7 +347,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['hyssop', 'blackberry', 'clover'],
     antagonists: ['cabbage', 'radish'],
     harvest_time: 'Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 1095,
   },
   {
     id: 'cucumber',
@@ -336,7 +361,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['beans', 'peas', 'radish', 'sunflower'],
     antagonists: ['aromatic herbs', 'potato'],
     harvest_time: 'Summer',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 60,
   },
 
   // Additional plants
@@ -351,7 +377,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['tomato', 'pepper', 'basil'],
     antagonists: [],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 80,
   },
   {
     id: 'onion',
@@ -364,7 +391,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['carrot', 'lettuce', 'tomato', 'cabbage'],
     antagonists: ['beans', 'peas'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 100,
   },
   {
     id: 'radish',
@@ -377,7 +405,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['carrot', 'lettuce', 'peas', 'spinach'],
     antagonists: ['hyssop'],
     harvest_time: 'Spring-Fall',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 30,
   },
   {
     id: 'spinach',
@@ -390,7 +419,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['strawberry', 'radish', 'cabbage'],
     antagonists: [],
     harvest_time: 'Spring-Fall',
-    planting_time: 'Early Spring or Fall'
+    planting_time: 'Early Spring or Fall',
+    days_to_maturity: 45,
   },
   {
     id: 'cabbage',
@@ -403,7 +433,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['onion', 'mint', 'rosemary', 'thyme'],
     antagonists: ['strawberry', 'tomato', 'beans'],
     harvest_time: 'Fall',
-    planting_time: 'Spring or Late Summer'
+    planting_time: 'Spring or Late Summer',
+    days_to_maturity: 75,
   },
   {
     id: 'peas',
@@ -416,7 +447,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['carrot', 'cucumber', 'radish', 'corn'],
     antagonists: ['onion', 'garlic'],
     harvest_time: 'Spring-Summer',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 60,
   },
   {
     id: 'garlic',
@@ -429,7 +461,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['tomato', 'pepper', 'carrot', 'cabbage'],
     antagonists: ['beans', 'peas'],
     harvest_time: 'Summer',
-    planting_time: 'Fall'
+    planting_time: 'Fall',
+    days_to_maturity: 240,
   },
 
   // Plants referenced by companions/antagonists above. These were listed in
@@ -447,7 +480,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['tomato', 'squash', 'apple', 'cucumber'],
     antagonists: [],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 55,
   },
   {
     id: 'fennel',
@@ -461,7 +495,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: [],
     antagonists: ['tomato', 'pepper', 'beans', 'peas'],
     harvest_time: 'Fall',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 65,
   },
   {
     id: 'dill',
@@ -476,7 +511,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['carrot', 'cucumber', 'lettuce', 'onion'],
     antagonists: [],
     harvest_time: 'Summer',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 45,
   },
   {
     id: 'potato',
@@ -489,7 +525,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['beans', 'corn', 'cabbage'],
     antagonists: ['squash', 'cucumber', 'sunflower', 'raspberry', 'cherry'],
     harvest_time: 'Summer',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 90,
   },
   {
     id: 'rue',
@@ -503,7 +540,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: [],
     antagonists: ['basil', 'sage'],
     harvest_time: 'Summer',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 90,
   },
   {
     id: 'sage',
@@ -516,7 +554,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['rosemary', 'lavender', 'carrot', 'cabbage'],
     antagonists: ['rue', 'cucumber'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 80,
   },
   {
     id: 'parsley',
@@ -529,7 +568,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['mint', 'tomato', 'carrot', 'marigold'],
     antagonists: ['lettuce'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 70,
   },
   {
     id: 'eggplant',
@@ -542,7 +582,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['beans', 'pepper', 'thyme'],
     antagonists: ['fennel', 'potato'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Late Spring'
+    planting_time: 'Late Spring',
+    days_to_maturity: 75,
   },
   {
     id: 'rhododendron',
@@ -582,7 +623,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['apple'],
     antagonists: ['raspberry', 'turnip'],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 90,
   },
   {
     id: 'turnip',
@@ -595,7 +637,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['peas', 'rosemary', 'thyme'],
     antagonists: ['tansy'],
     harvest_time: 'Fall-Winter',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 50,
   },
   {
     id: 'blackberry',
@@ -608,7 +651,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['raspberry', 'apple', 'grape'],
     antagonists: ['potato', 'tomato'],
     harvest_time: 'Summer',
-    planting_time: 'Fall'
+    planting_time: 'Fall',
+    days_to_maturity: 730,
   },
   {
     id: 'chives',
@@ -621,7 +665,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['carrot', 'apple', 'tomato'],
     antagonists: ['beans', 'peas', 'cabbage'],
     harvest_time: 'Spring-Fall',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 80,
   },
   {
     id: 'walnut',
@@ -661,7 +706,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['cherry', 'plum', 'garlic'],
     antagonists: ['walnut', 'currant'],
     harvest_time: 'Summer',
-    planting_time: 'Winter'
+    planting_time: 'Winter',
+    days_to_maturity: 1095,
   },
   {
     id: 'plum',
@@ -674,7 +720,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['cherry', 'peach'],
     antagonists: ['walnut'],
     harvest_time: 'Summer',
-    planting_time: 'Winter'
+    planting_time: 'Winter',
+    days_to_maturity: 1095,
   },
   {
     id: 'hyssop',
@@ -687,7 +734,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['grape', 'radish'],
     antagonists: [],
     harvest_time: 'Summer-Fall',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 85,
   },
   {
     id: 'aromatic herbs',
@@ -700,7 +748,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['cucumber', 'tomato', 'grape'],
     antagonists: ['fennel'],
     harvest_time: 'Summer',
-    planting_time: 'Spring'
+    planting_time: 'Spring',
+    days_to_maturity: 70,
   },
   // Shade-tolerant plants. The library previously had no `shade` entries, so a
   // shady site had nothing the sun-fit check could recommend. These four are
@@ -717,7 +766,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['lettuce', 'radish'],
     antagonists: [],
     harvest_time: 'Spring-Fall',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 50,
   },
   {
     id: 'sorrel',
@@ -730,7 +780,8 @@ export const PLANT_LIBRARY: PlantInfo[] = [
     companions: ['lettuce', 'spinach'],
     antagonists: [],
     harvest_time: 'Spring-Fall',
-    planting_time: 'Early Spring'
+    planting_time: 'Early Spring',
+    days_to_maturity: 60,
   },
   {
     id: 'hosta',

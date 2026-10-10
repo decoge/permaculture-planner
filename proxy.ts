@@ -13,6 +13,16 @@ const userCache = createCache(cachePresets.user)
 
 const protectedPages = ['/dashboard', '/plans', '/editor', '/settings', '/admin']
 
+// Local dev and the E2E suite hammer the API far past any sane cap (112+ page
+// loads in two minutes from one browser), and the limiter's per-IP buckets can't
+// tell a test run from an attacker. Production never sees a localhost Host
+// header, so the exemption is gated on both.
+function rateLimitingExempt(request: NextRequest): boolean {
+  if (process.env.NODE_ENV === 'production') return false
+  const host = request.headers.get('host') ?? ''
+  return host.startsWith('localhost') || host.startsWith('127.0.0.1')
+}
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
@@ -22,7 +32,8 @@ export async function proxy(request: NextRequest) {
     },
   })
 
-  const ipLimitResponse = await ipRateLimiter.check(request)
+  const exempt = rateLimitingExempt(request)
+  const ipLimitResponse = exempt ? null : await ipRateLimiter.check(request)
   if (ipLimitResponse) return ipLimitResponse
 
   if (
@@ -30,17 +41,17 @@ export async function proxy(request: NextRequest) {
     pathname !== '/api/auth/me' &&
     pathname !== '/api/auth/logout'
   ) {
-    const authLimitResponse = await authRateLimiter.check(request)
+    const authLimitResponse = exempt ? null : await authRateLimiter.check(request)
     if (authLimitResponse) return authLimitResponse
   }
 
   if (pathname.startsWith('/api/generate') || pathname.startsWith('/api/ai')) {
-    const aiLimitResponse = await aiRateLimiter.check(request)
+    const aiLimitResponse = exempt ? null : await aiRateLimiter.check(request)
     if (aiLimitResponse) return aiLimitResponse
   }
 
   if (pathname.startsWith('/api')) {
-    const apiLimitResponse = await apiRateLimiter.check(request)
+    const apiLimitResponse = exempt ? null : await apiRateLimiter.check(request)
     if (apiLimitResponse) return apiLimitResponse
 
     if (request.method === 'GET') {

@@ -2,6 +2,7 @@ import type { PoolClient } from 'pg'
 import { query, queryOne, withTransaction } from '@/lib/db/pool'
 import { MaterialsCalculator } from '@/lib/algorithms/materials-calculator'
 import { GardenBed } from '@/lib/garden/garden-types'
+import { PLANT_LIBRARY } from '@/lib/data/plant-library'
 import {
   asUuid,
   clampHeight,
@@ -186,17 +187,24 @@ async function replaceBeds(client: PoolClient, planId: string, beds: CanvasBedIn
     bedId: string
     variety: string | null
     sowDate: string | null
+    maturityDays: number
     successions: string
   }[] = []
   for (const row of rows) {
     for (const plant of row.plants) {
       const planted = plant.plantedDate ? new Date(plant.plantedDate) : null
+      // Real maturity days from the plant library; 70 stays as the fallback for
+      // plants without a figure (the harvest-readiness panel treats those rows
+      // as estimates either way).
+      const maturityDays =
+        PLANT_LIBRARY.find((entry) => entry.id === plant.plantId)?.days_to_maturity ?? 70
       plantings.push({
         id: asUuid(plant.id),
         bedId: row.id,
         variety: plant.plantId || null,
         sowDate:
           planted && !Number.isNaN(planted.getTime()) ? planted.toISOString().slice(0, 10) : null,
+        maturityDays,
         successions: JSON.stringify({ position: { x: plant.x ?? 24, y: plant.y ?? 24 } }),
       })
     }
@@ -213,10 +221,10 @@ async function replaceBeds(client: PoolClient, planId: string, beds: CanvasBedIn
     )
     SELECT
       t.id, t.bed_id, $2::season, $3, NULL, t.variety, 12, 'Other'::plant_family,
-      70, 'direct'::sowing_method, t.sow_date::date, 'Planted via canvas editor', t.successions::jsonb
+      t.maturity_days, 'direct'::sowing_method, t.sow_date::date, 'Planted via canvas editor', t.successions::jsonb
     FROM unnest(
-      $1::uuid[], $4::uuid[], $5::text[], $6::text[], $7::text[]
-    ) AS t(id, bed_id, variety, sow_date, successions)
+      $1::uuid[], $4::uuid[], $5::text[], $6::int[], $7::text[], $8::text[]
+    ) AS t(id, bed_id, variety, maturity_days, sow_date, successions)
     `,
     [
       plantings.map((row) => row.id),
@@ -224,6 +232,7 @@ async function replaceBeds(client: PoolClient, planId: string, beds: CanvasBedIn
       year,
       plantings.map((row) => row.bedId),
       plantings.map((row) => row.variety),
+      plantings.map((row) => row.maturityDays),
       plantings.map((row) => row.sowDate),
       plantings.map((row) => row.successions),
     ]
