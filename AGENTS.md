@@ -111,6 +111,14 @@ statement proves plan ownership through the plan/site join. Completing a task
 whose `recurring_pattern` is one of the known intervals creates the next
 occurrence in the same transaction.
 
+### Crop data source of truth
+
+`lib/data/crops.ts` is authoritative for crop data; the `crops` table in the
+database is deliberately unused — nothing reads it, so don't write a reader for
+it without revisiting this decision. The file header carries the editing
+contract, and `__tests__/crops-data.test.ts` enforces it (unique ids, resolvable
+companion/antagonist references, populated shade band).
+
 ### Domain logic
 
 `lib/algorithms/` (layout, materials, rotation, companion planting),

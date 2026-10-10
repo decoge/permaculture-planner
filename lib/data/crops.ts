@@ -1,3 +1,19 @@
+/**
+ * THE source of truth for crop data. The `crops` table in the database is not
+ * authoritative and nothing reads it -- edit this file to change what the
+ * rotation engine offers.
+ *
+ * Maintained by AI agents. When editing, the integrity tests in
+ * __tests__/crops-data.test.ts are the contract:
+ *  - ids must be unique and kebab-case strings
+ *  - every companion_plants / antagonistic_plants reference must resolve to an
+ *    id in this file (the rotation engine filters on it; a dangling reference
+ *    silently narrows recommendations)
+ *  - the shade sun-band must stay populated, and shade entries need seasons,
+ *    spacing_in and days_to_maturity
+ * Keep entries sorted by family grouping as below, and prefer updating an
+ * existing entry over adding a near-duplicate.
+ */
 export type CropFamily =
   | 'Solanaceae'
   | 'Brassicaceae'
