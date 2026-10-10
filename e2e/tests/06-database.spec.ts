@@ -35,13 +35,23 @@ test.describe('Database Connectivity', () => {
     }
   });
 
-  test.skip('should load crops from database', async ({ page }) => {
-    // This would require auth and accessing crops page
-    // Mock auth here
-    await page.goto('/crops');
+  test('wizard crops step serves the static crop catalog without a database', async ({ page }) => {
+    // Crop data is static (lib/data/crops.ts + the crop-focus categories);
+    // the crops step must render its options with no DB round-trip, which is
+    // what lets the wizard work on any machine regardless of database state.
+    await page.goto('/wizard');
 
-    // Check crops are loaded
-    await expect(page.locator('text=Tomato')).toBeVisible();
-    await expect(page.locator('text=Carrot')).toBeVisible();
+    // Step 1 → Step 5 (Crops). The wizard animates 300ms per transition, so
+    // wait for each step indicator before clicking again.
+    for (let step = 2; step <= 5; step++) {
+      await page.click('[data-testid="wizard-next-button"]');
+      await expect(
+        page.locator(`[data-testid="wizard-step-indicator"]:has-text("Step ${step} of 7")`)
+      ).toBeVisible();
+    }
+
+    await expect(page.locator('text=What do you want to grow?')).toBeVisible();
+    await expect(page.locator('text=Tomatoes & Peppers')).toBeVisible();
+    await expect(page.locator('text=Salad Greens')).toBeVisible();
   });
 });
