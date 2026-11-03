@@ -10,6 +10,7 @@ import { ZoneManagementPanel } from './panels/zone-management-panel'
 import { CompanionPlantingPanel } from './panels/companion-planting-panel'
 import { AnalyticsPanel } from './panels/analytics-panel'
 import { SiteData } from '@/lib/types/site-context'
+import { countGardenItems } from '@/lib/garden/garden-stats'
 import { SeasonalTimelinePanel } from './panels/seasonal-timeline-panel'
 import { MaterialsPanel } from './panels/materials-panel'
 import { TasksPanel } from './panels/tasks-panel'
@@ -319,11 +320,7 @@ export function PermacultureEditorIntegrated({
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [handleSave])
 
-  const stats = {
-    beds: gardenData.length,
-    plants: gardenData.reduce((sum, bed) => sum + (bed.plants?.length || 0), 0),
-    elements: gardenData.filter(bed => bed.elementCategory !== 'bed').length,
-  }
+  const stats = countGardenItems(gardenData)
 
   return (
     <div className="flex h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-background">
