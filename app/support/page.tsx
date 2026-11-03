@@ -70,7 +70,7 @@ export default function SupportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50/30">
+    <div className="min-h-screen bg-linear-to-br from-green-50 via-white to-emerald-50/30">
       {/* Header */}
       <section className="py-12 px-4 text-center">
         <div className="container mx-auto max-w-6xl">
@@ -126,7 +126,7 @@ export default function SupportPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 {FEATURES.map((feature, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    <CheckCircle className="h-5 w-5 text-green-500 shrink-0" />
                     <span>{feature.text}</span>
                   </div>
                 ))}
@@ -269,7 +269,7 @@ export default function SupportPage() {
       {/* Get Involved */}
       <section className="py-12 px-4">
         <div className="container mx-auto max-w-6xl">
-          <Card className="bg-gradient-to-r from-green-50 to-emerald-50">
+          <Card className="bg-linear-to-r from-green-50 to-emerald-50">
             <CardHeader className="text-center">
               <Rocket className="h-12 w-12 text-green-600 mx-auto mb-4" />
               <CardTitle className="text-2xl">Join the Movement</CardTitle>
@@ -302,7 +302,7 @@ export default function SupportPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 px-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+      <section className="py-16 px-4 bg-linear-to-r from-green-600 to-emerald-600 text-white">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-4">
             Join the Garden Revolution

@@ -116,7 +116,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center">
         <div className="text-center">
           <Leaf className="h-12 w-12 text-green-600 animate-pulse mx-auto mb-4" />
           <p className="text-gray-600">Loading your dashboard...</p>
@@ -127,7 +127,7 @@ export default function DashboardPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center">
         <div className="text-center max-w-md">
           <Alert variant="destructive" className="mb-4">
             <AlertDescription>{error}</AlertDescription>
@@ -141,9 +141,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
+    <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50/30 to-white">
       {/* Header */}
-      <header className="bg-white/80 backdrop-blur border-b">
+      <header className="bg-white/80 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -172,7 +172,7 @@ export default function DashboardPage() {
       <section className="container mx-auto px-4 py-8">
         <div className="mb-8 opacity-0 animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
           <div className="flex items-center gap-6">
-            <div className="h-20 w-20 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center">
+            <div className="h-20 w-20 bg-linear-to-br from-green-400 to-emerald-600 rounded-full flex items-center justify-center">
               <User className="h-10 w-10 text-white" />
             </div>
             <div className="flex-1">

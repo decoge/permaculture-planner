@@ -104,7 +104,7 @@ export function PanelSelector({
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-96 border bg-card p-0 text-card-foreground shadow-md data-[state=open]:animate-none data-[state=closed]:animate-none data-[state=closed]:!hidden data-[state=open]:bg-card"
+        className="w-96 border bg-card p-0 text-card-foreground shadow-md data-[state=open]:animate-none data-[state=closed]:animate-none data-[state=closed]:hidden! data-[state=open]:bg-card"
         align="start"
         sideOffset={0}
       >
@@ -154,7 +154,7 @@ export function PanelSelector({
                           currentPanel === panel.id && "bg-accent"
                         )}
                       >
-                        <Icon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Icon className="h-4 w-4 text-muted-foreground shrink-0" />
                         <div className="flex-1 text-left">
                           <div className="font-medium">{panel.name}</div>
                         </div>
@@ -185,7 +185,7 @@ export function PanelSelector({
                           currentPanel === panel.id && "bg-accent"
                         )}
                       >
-                        <Icon className="h-4 w-4 flex-shrink-0" style={{ color: category.color.replace('text-', '#') }} />
+                        <Icon className="h-4 w-4 shrink-0" style={{ color: category.color.replace('text-', '#') }} />
                         <div className="flex-1 text-left min-w-0">
                           <div className="font-medium truncate">{panel.name}</div>
                           <div className="text-xs text-muted-foreground truncate">{panel.description}</div>
@@ -235,7 +235,7 @@ export function PanelSelector({
                                 currentPanel === panel.id && "bg-accent"
                               )}
                             >
-                              <Icon className={cn("h-4 w-4 flex-shrink-0", category.color)} />
+                              <Icon className={cn("h-4 w-4 shrink-0", category.color)} />
                               <div className="flex-1 text-left min-w-0">
                                 <div className="font-medium truncate">{panel.name}</div>
                                 <div className="text-xs text-muted-foreground truncate">

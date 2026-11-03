@@ -130,7 +130,7 @@ function DemoPageContent() {
   // saved plan is not replaced by an empty canvas.
   if (!ready || isLoading) {
     return (
-      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
+      <div className="w-full h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4" />
           <p className="text-gray-600">
@@ -180,7 +180,7 @@ function DemoPageContent() {
 export default function DemoPage() {
   return (
     <Suspense fallback={
-      <div className="w-full h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
+      <div className="w-full h-screen flex items-center justify-center bg-linear-to-br from-green-50 to-emerald-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading demo...</p>

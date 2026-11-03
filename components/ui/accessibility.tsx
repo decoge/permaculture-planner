@@ -165,7 +165,7 @@ export function AccessibleButton({
       <button
         id={buttonId}
         className={cn(
-          'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+          'inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
           variant === 'primary' && 'bg-blue-600 text-white hover:bg-blue-700',
           variant === 'secondary' && 'bg-gray-200 text-gray-900 hover:bg-gray-300',
           variant === 'ghost' && 'hover:bg-gray-100',

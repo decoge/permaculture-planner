@@ -35,7 +35,7 @@ export const SuccessMessage: React.FC<{
 
   return (
     <Alert className={cn(
-      "border-green-300 bg-gradient-to-r from-green-50 to-emerald-50",
+      "border-green-300 bg-linear-to-r from-green-50 to-emerald-50",
       "animate-slide-in-left shadow-md border-organic",
       className
     )}>
@@ -56,7 +56,7 @@ export const ErrorMessage: React.FC<{
 }> = ({ title, message, className }) => {
   return (
     <Alert className={cn(
-      "border-red-300 bg-gradient-to-r from-red-50 to-pink-50",
+      "border-red-300 bg-linear-to-r from-red-50 to-pink-50",
       "animate-shake shadow-md",
       className
     )}>
@@ -77,7 +77,7 @@ export const WarningMessage: React.FC<{
 }> = ({ title, message, className }) => {
   return (
     <Alert className={cn(
-      "border-amber-300 bg-gradient-to-r from-amber-50 to-yellow-50",
+      "border-amber-300 bg-linear-to-r from-amber-50 to-yellow-50",
       "animate-fade-in shadow-md",
       className
     )}>
@@ -99,7 +99,7 @@ export const InfoMessage: React.FC<{
 }> = ({ title, message, tip, className }) => {
   return (
     <Alert className={cn(
-      "border-blue-300 bg-gradient-to-r from-blue-50 to-cyan-50",
+      "border-blue-300 bg-linear-to-r from-blue-50 to-cyan-50",
       "animate-fade-in shadow-md border-organic",
       className
     )}>
@@ -126,8 +126,8 @@ export const PermacultureTip: React.FC<{
 }> = ({ principle, tip, className }) => {
   return (
     <div className={cn(
-      "p-4 bg-gradient-to-br from-green-50 to-emerald-50",
-      "border border-green-300 border-organic shadow-sm",
+      "p-4 bg-linear-to-br from-green-50 to-emerald-50",
+      "border border-green-300 border-organic shadow-xs",
       "hover:shadow-md transition-shadow animate-fade-in",
       className
     )}>
@@ -165,7 +165,7 @@ export const HelpTooltip: React.FC<{
         </TooltipTrigger>
         <TooltipContent
           side={side}
-          className="max-w-xs bg-white/95 backdrop-blur border-green-200 shadow-lg"
+          className="max-w-xs bg-white/95 backdrop-blur-sm border-green-200 shadow-lg"
         >
           <p className="text-sm">{content}</p>
         </TooltipContent>
@@ -189,7 +189,7 @@ export const PlantTooltip: React.FC<{
         <TooltipTrigger asChild>
           {children}
         </TooltipTrigger>
-        <TooltipContent className="bg-white/95 backdrop-blur border-green-200 shadow-xl p-3">
+        <TooltipContent className="bg-white/95 backdrop-blur-sm border-green-200 shadow-xl p-3">
           <div className="space-y-2">
             <div>
               <h4 className="font-semibold text-green-800">{name}</h4>
@@ -250,7 +250,7 @@ export const ProgressFeedback: React.FC<{
 }> = ({ stage, progress, className }) => {
   return (
     <div className={cn(
-      "p-4 bg-white border border-green-200 rounded-lg shadow-sm",
+      "p-4 bg-white border border-green-200 rounded-lg shadow-xs",
       className
     )}>
       <div className="flex items-center justify-between mb-2">
@@ -259,7 +259,7 @@ export const ProgressFeedback: React.FC<{
       </div>
       <div className="h-2 bg-green-100 rounded-full overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all duration-500"
+          className="h-full bg-linear-to-r from-green-400 to-emerald-500 transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>
@@ -289,7 +289,7 @@ export const EmptyState: React.FC<{
       "text-center",
       className
     )}>
-      <div className="p-4 bg-gradient-to-br from-green-100 to-emerald-100 rounded-full mb-4 animate-bounce-in">
+      <div className="p-4 bg-linear-to-br from-green-100 to-emerald-100 rounded-full mb-4 animate-bounce-in">
         <Icon className="h-12 w-12 text-green-600" />
       </div>
       <h3 className="text-xl font-semibold text-gray-900 mb-2">{title}</h3>

@@ -278,7 +278,7 @@ export function InlineHelp({ tip, className }: InlineHelpProps) {
       getTypeStyles(),
       className
     )}>
-      <div className="flex-shrink-0 mt-0.5">
+      <div className="shrink-0 mt-0.5">
         <HelpIcon tip={tip} variant="subtle" size="sm" />
       </div>
       <div className="flex-1 min-w-0">

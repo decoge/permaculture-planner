@@ -184,7 +184,7 @@ use `lib/zone-management.ts`.
 - Server components by default; `'use client'` only where interactivity demands it.
 - shadcn/ui primitives in `components/ui/` — use them, don't hand-roll new ones.
   Compose with `cn()` from `lib/utils/cn.ts`.
-- Tailwind for styling; theme tokens live in `tailwind.config.ts` and
+- Tailwind 4 for styling; theme tokens live in `app/globals.css` (`@theme`) and
   `lib/design-system/`.
 - Icons: `lucide-react`.
 - Comments explain *why*, not *what*. Existing JSDoc blocks on exported functions

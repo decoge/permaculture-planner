@@ -123,7 +123,7 @@ export default function CommunityPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 opacity-0 animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
-            <span className="bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
               Growing Together
             </span>
           </h1>
@@ -275,7 +275,7 @@ export default function CommunityPage() {
 
         {/* Local Groups */}
         <section className="mb-12">
-          <Card className="bg-gradient-to-br from-green-50 to-green-100">
+          <Card className="bg-linear-to-br from-green-50 to-green-100">
             <CardHeader>
               <CardTitle className="text-2xl flex items-center gap-2">
                 <MapPin className="h-6 w-6 text-green-700" />
@@ -335,7 +335,7 @@ export default function CommunityPage() {
         </section>
 
         {/* Contribution CTA */}
-        <section className="text-center py-12 px-6 bg-gradient-to-r from-green-600 to-green-700 rounded-2xl text-white">
+        <section className="text-center py-12 px-6 bg-linear-to-r from-green-600 to-green-700 rounded-2xl text-white">
           <h2 className="text-3xl font-bold mb-4">Help Us Grow</h2>
           <p className="text-lg mb-8 text-green-50 max-w-2xl mx-auto">
             This is an open-source project built by the community, for the community.

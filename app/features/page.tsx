@@ -646,11 +646,11 @@ export default function FeaturesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
+    <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50/30 to-white">
       <SkipToMain />
 
       {/* Header */}
-      <section id="main-content" className="py-12 px-4 border-b bg-white/80 backdrop-blur">
+      <section id="main-content" className="py-12 px-4 border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto max-w-7xl">
           <div className="text-center">
             <Badge className="mb-4 opacity-0 animate-fade-in bg-green-100 text-green-800" variant="secondary"
@@ -761,7 +761,7 @@ export default function FeaturesPage() {
       {/* Main Content */}
       <section className="py-8 px-4">
         <div className="container mx-auto max-w-7xl">
-          <div className="grid lg:grid-cols-[300px,1fr] gap-6">
+          <div className="grid lg:grid-cols-[300px_1fr] gap-6">
             {/* Category Sidebar */}
             <div className="space-y-2">
               {FEATURE_CATEGORIES.map((category, index) => {
@@ -836,7 +836,7 @@ export default function FeaturesPage() {
                                 <ul className="space-y-1">
                                   {feature.details.map((detail, i) => (
                                     <li key={i} className="flex items-start gap-2 text-sm text-gray-600">
-                                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
+                                      <CheckCircle className="h-4 w-4 text-green-500 mt-0.5 shrink-0" />
                                       {detail}
                                     </li>
                                   ))}
@@ -895,7 +895,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-16 px-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+      <section className="py-16 px-4 bg-linear-to-r from-green-600 to-emerald-600 text-white">
         <div className="container mx-auto max-w-4xl text-center">
           <h2 className="text-3xl font-bold mb-4">
             Start Your Permaculture Journey Today

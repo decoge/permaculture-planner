@@ -288,7 +288,7 @@ function ElementCard({ subtype, info, isSelected, onClick }: ElementCardProps) {
         <div className="flex items-start gap-3">
           {/* Element Icon */}
           <div
-            className="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
+            className="shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
             style={{
               backgroundColor: `${style.defaultFill}80`,
               border: `2px solid ${style.defaultStroke}`

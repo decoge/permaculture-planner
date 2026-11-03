@@ -156,7 +156,7 @@ export function AIAssistant({ context, onSuggestion, className, defaultMinimized
       <div className={cn("fixed bottom-4 right-4 z-50", className)}>
         <Button
           onClick={() => setIsMinimized(false)}
-          className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
+          className="bg-linear-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg"
           size="lg"
         >
           <Bot className="h-5 w-5 mr-2" />
@@ -173,7 +173,7 @@ export function AIAssistant({ context, onSuggestion, className, defaultMinimized
       isExpanded ? "fixed inset-4 z-50" : "w-full max-w-2xl",
       className
     )}>
-      <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
+      <CardHeader className="bg-linear-to-r from-green-600 to-emerald-600 text-white">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <div className="p-2 bg-white/20 rounded-lg">
@@ -238,7 +238,7 @@ export function AIAssistant({ context, onSuggestion, className, defaultMinimized
                     )}
                   >
                     {message.role !== 'user' && (
-                      <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center shrink-0">
                         <Bot className="h-5 w-5 text-green-600" />
                       </div>
                     )}
@@ -258,7 +258,7 @@ export function AIAssistant({ context, onSuggestion, className, defaultMinimized
                       </span>
                     </div>
                     {message.role === 'user' && (
-                      <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                         <Leaf className="h-5 w-5 text-blue-600" />
                       </div>
                     )}

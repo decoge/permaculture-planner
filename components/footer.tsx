@@ -6,7 +6,7 @@ export function Footer() {
   const currentYear = new Date().getFullYear()
 
   return (
-    <footer className="bg-gradient-to-br from-green-50 to-emerald-50 border-t border-green-200/50 mt-auto">
+    <footer className="bg-linear-to-br from-green-50 to-emerald-50 border-t border-green-200/50 mt-auto">
       {/* Main Footer Content */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -30,14 +30,14 @@ export function Footer() {
                 href="https://github.com/decoge/permaculture-planner"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:scale-110"
+                className="p-2 rounded-lg bg-white/80 hover:bg-white shadow-xs hover:shadow-md transition-all duration-300 hover:scale-110"
                 aria-label="GitHub"
               >
                 <Github className="h-5 w-5 text-gray-700" />
               </a>
               <a
                 href="mailto:contact@permaculture-planner.com"
-                className="p-2 rounded-lg bg-white/80 hover:bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:scale-110"
+                className="p-2 rounded-lg bg-white/80 hover:bg-white shadow-xs hover:shadow-md transition-all duration-300 hover:scale-110"
                 aria-label="Email"
               >
                 <Mail className="h-5 w-5 text-gray-700" />

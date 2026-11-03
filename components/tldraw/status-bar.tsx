@@ -54,7 +54,7 @@ export function StatusBar({ editor, beds, plants, elements, hasUnsavedChanges }:
   }, [editor])
 
   return (
-    <footer className="shrink-0 border-t bg-card/50 backdrop-blur px-4 py-1.5 flex items-center gap-4 text-xs text-muted-foreground">
+    <footer className="shrink-0 border-t bg-card/50 backdrop-blur-sm px-4 py-1.5 flex items-center gap-4 text-xs text-muted-foreground">
       <span data-testid="status-zoom">
         {zoomPercent === null ? '—' : `${zoomPercent}%`}
       </span>

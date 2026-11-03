@@ -135,9 +135,9 @@ export function LocationStep({ data, updateData }: LocationStepProps) {
       </div>
 
       {/* Quick Location Detection */}
-      <Card className="p-3 sm:p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+      <Card className="p-3 sm:p-4 bg-linear-to-r from-green-50 to-emerald-50 border-green-200">
         <div className="flex flex-col sm:flex-row sm:items-start gap-3 sm:gap-4">
-          <MapPin className="h-5 w-5 text-green-600 mt-1 flex-shrink-0" />
+          <MapPin className="h-5 w-5 text-green-600 mt-1 shrink-0" />
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 mb-1 text-sm sm:text-base">Auto-Detect Location</h3>
             <p className="text-xs sm:text-sm text-gray-600 mb-3">
@@ -163,13 +163,13 @@ export function LocationStep({ data, updateData }: LocationStepProps) {
             </Button>
             {locationError && (
               <p className="text-xs sm:text-sm text-red-600 mt-2 flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 flex-shrink-0" />
-                <span className="break-words">{locationError}</span>
+                <AlertCircle className="h-3 w-3 shrink-0" />
+                <span className="wrap-break-word">{locationError}</span>
               </p>
             )}
             {data.location.lat && data.location.lng && (
               <p className="text-xs sm:text-sm text-green-600 mt-2 flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 flex-shrink-0" />
+                <CheckCircle className="h-3 w-3 shrink-0" />
                 <span className="break-all">Location detected: {data.location.lat.toFixed(4)}, {data.location.lng.toFixed(4)}</span>
               </p>
             )}

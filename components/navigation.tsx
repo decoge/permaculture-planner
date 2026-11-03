@@ -65,7 +65,7 @@ export function Navigation() {
       <nav className={cn(
         "z-50 transition-all duration-300",
         scrollsWithPage ? "relative" : "fixed top-0 left-0 right-0",
-        isScrolled ? "bg-white/95 backdrop-blur shadow-lg" : "bg-white/90 backdrop-blur-sm",
+        isScrolled ? "bg-white/95 backdrop-blur-sm shadow-lg" : "bg-white/90 backdrop-blur-xs",
         "border-b border-gray-200"
       )}>
         <div className="container mx-auto px-4">
@@ -96,12 +96,12 @@ export function Navigation() {
                     className={cn(
                       "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 relative overflow-hidden group",
                       "hover:bg-green-50 hover:text-green-700 hover:shadow-md",
-                      active && "bg-green-100 text-green-700 font-medium shadow-sm"
+                      active && "bg-green-100 text-green-700 font-medium shadow-xs"
                     )}
                   >
                     <Icon className="h-4 w-4 transition-transform duration-300 group-hover:scale-110" />
                     <span className="relative z-10">{item.label}</span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-linear-to-r from-green-50 to-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </Link>
                 )
               })}
@@ -135,7 +135,7 @@ export function Navigation() {
                     <Link href="/auth/signup">
                       <UserPlus className="h-4 w-4 relative z-10" />
                       <span className="relative z-10">Get Started</span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <div className="absolute inset-0 bg-linear-to-r from-green-500 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     </Link>
                   </Button>
                 </>
@@ -145,7 +145,7 @@ export function Navigation() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="md:hidden p-3 rounded-lg hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 transition-all duration-300 hover-nature min-w-[44px] min-h-[44px] flex items-center justify-center"
+              className="md:hidden p-3 rounded-lg hover:bg-linear-to-r hover:from-green-50 hover:to-emerald-50 transition-all duration-300 hover-nature min-w-[44px] min-h-[44px] flex items-center justify-center"
               aria-label="Toggle menu"
               aria-expanded={isMobileMenuOpen}
             >
@@ -174,11 +174,11 @@ export function Navigation() {
                   href={item.href}
                   className={cn(
                     "flex items-center gap-3 px-4 py-4 rounded-lg transition-all duration-300 hover-nature min-h-[44px]",
-                    "hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 touch-target-44",
+                    "hover:bg-linear-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 touch-target-44",
                     active && "gradient-understory text-white font-medium shadow-lg"
                   )}
                 >
-                  <Icon className="h-5 w-5 flex-shrink-0" />
+                  <Icon className="h-5 w-5 shrink-0" />
                   <span className="text-base">{item.label}</span>
                 </Link>
               )
@@ -199,7 +199,7 @@ export function Navigation() {
                 </>
               ) : (
                 <>
-                  <Button variant="outline" className="w-full justify-center gap-2 rounded-lg hover-nature hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 h-12 text-base" asChild>
+                  <Button variant="outline" className="w-full justify-center gap-2 rounded-lg hover-nature hover:bg-linear-to-r hover:from-green-50 hover:to-emerald-50 h-12 text-base" asChild>
                     <Link href="/auth/login">
                       <LogIn className="h-4 w-4" />
                       Sign In

@@ -324,7 +324,7 @@ export function PermacultureEditorIntegrated({
     <div className="flex h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-background">
       {/* Header */}
       {showHeader && (
-        <header className="shrink-0 border-b bg-card/50 backdrop-blur">
+        <header className="shrink-0 border-b bg-card/50 backdrop-blur-sm">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-4">
               <div>
@@ -378,7 +378,7 @@ export function PermacultureEditorIntegrated({
         {/* Left Panel - Plant/Element Libraries */}
         <div
           className={cn(
-            'border-r bg-card/30 backdrop-blur transition-all duration-300',
+            'border-r bg-card/30 backdrop-blur-sm transition-all duration-300',
             leftPanelOpen ? 'w-80' : 'w-0'
           )}
         >
@@ -636,7 +636,7 @@ export function PermacultureEditorIntegrated({
       </div>
 
       {/* Bottom Status Bar */}
-      <div className="shrink-0 border-t bg-card/50 backdrop-blur px-4 py-2">
+      <div className="shrink-0 border-t bg-card/50 backdrop-blur-sm px-4 py-2">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <div className="flex items-center gap-4">
             <span>Holistic Permaculture System • 32 Integrated Panels • AI-Powered Recommendations</span>
