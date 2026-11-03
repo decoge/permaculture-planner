@@ -82,5 +82,8 @@
     "identity-obj-proxy": "^3.0.0",
     "jest": "^30.5.2",
     "jest-environment-jsdom": "^30.5.2"
+  },
+  "overrides": {
+    "dompurify": "^3.4.17"
   }
 }
