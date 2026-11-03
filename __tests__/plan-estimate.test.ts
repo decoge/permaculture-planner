@@ -325,6 +325,17 @@ describe('estimateSunFit', () => {
     expect(fit.note).toMatch(/will not get enough light/)
   })
 
+  test('reports the real hour gap, not the gap between band floors', () => {
+    // 5 hours is in the partial band, whose floor is 3, so the old note claimed
+    // a 6-hour plant was "3 short" of a site that was one hour short.
+    expect(estimateSunFit([{ variety: 'tomato' }], { sunHours: 5 }).mismatched[0].note).toContain(
+      'about 5 hours, 1 short'
+    )
+    expect(estimateSunFit([{ variety: 'tomato' }], { sunHours: 2 }).mismatched[0].note).toContain(
+      'about 2 hours, 4 short'
+    )
+  })
+
   test('does not flag a shade-tolerant plant in partial sun', () => {
   // Lettuce wants partial sun (3+ hours), so 2 hours is genuinely short of
   // it. Spinach also wants partial, and is the better choice at 4 hours.

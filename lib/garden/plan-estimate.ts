@@ -344,11 +344,15 @@ export function estimateSunFit(
       const available = SUN_HOURS[exposure]
       const needed = SUN_HOURS[wants]
       if (needed > available) {
-        const shortfall = needed - available
+        // The band comparison decides *whether* the plant is short of light;
+        // the message reports the real gap. Measuring it against the band floor
+        // (`needed - available`) told a 5-hour site it was 3 hours short of a
+        // 6-hour plant, and a 2-hour site 6 hours short.
+        const shortfall = Math.max(0, needed - hours)
         mismatched.push({
           label: plant.name,
           wants,
-          note: `${plant.name} needs ${wants} sun (${needed}+ hours) but the site records about ${hours} hours, ${formatCount(shortfall)} short.`,
+          note: `${plant.name} needs ${wants} sun (${needed}+ hours) but the site records about ${formatCount(hours)} hours, ${formatCount(shortfall)} short.`,
         })
       }
     }
