@@ -218,9 +218,28 @@ export const useGardenStore = create<GardenState & GardenActions>((set, get) => 
   autoSave: () => {
     const { persistence, beds, metadata, planName } = get()
 
-    if (persistence) {
-      persistence.autoSave(beds, metadata, planName)
-    }
+    if (!persistence) return
+
+    // A debounced adapter resolves when the write lands, which is the only
+    // moment the store can honestly say there is nothing unsaved. Without this
+    // `isDirty` was set on every edit and never cleared by an autosave, so the
+    // demo's "Auto-saving changes…" banner stayed up for the whole session.
+    const pending = persistence.autoSave(beds, metadata, planName)
+    if (!pending || typeof pending.then !== 'function') return
+
+    pending
+      .then((result) => {
+        if (!result.success) {
+          set({ error: result.error || 'Save failed' })
+          return
+        }
+        // Only clear when no further edit arrived while this write was in flight.
+        if (get().beds !== beds) return
+        set({ isDirty: false, lastSaved: new Date(), planId: result.planId || get().planId })
+      })
+      .catch(() => {
+        /* the adapter reports its own failure through the result */
+      })
   },
 
   clear: async () => {

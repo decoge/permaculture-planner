@@ -198,3 +198,33 @@ describe('LocalStoragePersistence.flushPending', () => {
     jest.useRealTimers()
   })
 })
+
+describe('LocalStoragePersistence.autoSave completion', () => {
+  test('resolves with the write result once the debounce fires', async () => {
+    jest.useFakeTimers()
+    const adapter = new LocalStoragePersistence()
+
+    let settled: unknown = null
+    const pending = adapter.autoSave([bed('auto')])
+    pending.then((result) => { settled = result })
+
+    expect(settled).toBeNull()
+    await jest.advanceTimersByTimeAsync(3000)
+    await pending
+
+    expect(settled).toEqual({ success: true })
+    expect(JSON.parse(localStorage.getItem(BEDS_KEY) as string)).toHaveLength(1)
+    jest.useRealTimers()
+  })
+
+  test('flushPending resolves the same promise', async () => {
+    jest.useFakeTimers()
+    const adapter = new LocalStoragePersistence()
+
+    const pending = adapter.autoSave([bed('flushed')])
+    adapter.flushPending()
+
+    await expect(pending).resolves.toEqual({ success: true })
+    jest.useRealTimers()
+  })
+})

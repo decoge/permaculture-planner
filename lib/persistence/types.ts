@@ -74,10 +74,13 @@ export interface IPersistenceAdapter {
   delete(id?: string): Promise<DeleteResult>
 
   /**
-   * Auto-save with debouncing
-   * Implementation should debounce this call to avoid excessive saves
+   * Auto-save with debouncing.
+   *
+   * An implementation that debounces should return a promise that settles when
+   * the pending write actually lands, so the caller can clear its dirty flag.
+   * Returning nothing is allowed for a backend with no debounce.
    */
-  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void
+  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): Promise<SaveResult> | void
 
   /**
    * Send any payload still sitting in the debounce window.

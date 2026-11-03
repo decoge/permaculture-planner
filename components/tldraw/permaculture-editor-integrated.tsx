@@ -103,6 +103,13 @@ interface PermacultureEditorIntegratedProps {
   planId?: string
   showHeader?: boolean
   siteData?: SiteData | null
+  /**
+   * Parent-owned dirty state. The editor cannot know when a debounced save
+   * actually lands, so when the parent does (the demo's store clears isDirty
+   * once the adapter writes) it should pass it here; without this the "Unsaved"
+   * badge stayed on screen for the rest of the session.
+   */
+  unsavedChanges?: boolean
 }
 
 /**
@@ -122,6 +129,7 @@ export function PermacultureEditorIntegrated({
   planId,
   showHeader = true,
   siteData = null,
+  unsavedChanges,
 }: PermacultureEditorIntegratedProps) {
   const canvasRef = useRef<PermacultureCanvasHandle>(null)
   const [editor, setEditor] = useState<Editor | null>(null)
@@ -303,6 +311,7 @@ export function PermacultureEditorIntegrated({
   }, [handleSave])
 
   const stats = countGardenItems(gardenData)
+  const dirty = unsavedChanges ?? hasUnsavedChanges
 
   return (
     <div className="flex h-[calc(100vh-4rem)] max-h-[calc(100vh-4rem)] min-h-0 flex-col overflow-hidden bg-background">
@@ -314,7 +323,7 @@ export function PermacultureEditorIntegrated({
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-lg font-semibold">Permaculture Planner</h1>
-                  {hasUnsavedChanges && (
+                  {dirty && (
                     <Badge variant="outline" className="text-xs">
                       Unsaved
                     </Badge>
@@ -365,7 +374,7 @@ export function PermacultureEditorIntegrated({
               <Button
                 size="sm"
                 onClick={handleSave}
-                disabled={!hasUnsavedChanges}
+                disabled={!dirty}
               >
                 <Save className="h-4 w-4 mr-2" />
                 Save
@@ -667,7 +676,7 @@ export function PermacultureEditorIntegrated({
         beds={stats.beds}
         plants={stats.plants}
         elements={stats.elements}
-        hasUnsavedChanges={hasUnsavedChanges}
+        hasUnsavedChanges={dirty}
       />
 
       {/* ⌘K command palette over everything the editor can do */}

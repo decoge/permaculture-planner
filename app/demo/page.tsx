@@ -177,6 +177,7 @@ function DemoPageContent() {
           onSave={updateBeds}
           planId={planId ?? undefined}
           showHeader={true}
+          unsavedChanges={isDirty}
         />
       </div>
     </div>

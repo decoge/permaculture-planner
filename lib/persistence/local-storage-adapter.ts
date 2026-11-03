@@ -25,6 +25,8 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
   private lastSaved: Date | null = null
   /** Payload waiting out the autosave debounce. */
   private pending: { data: GardenBed[]; metadata?: CanvasMetadata; planName?: string } | null = null
+  /** Callers waiting for the debounced write, so they can clear their own dirty flag. */
+  private pendingResolvers: Array<(result: SaveResult) => void> = []
 
   /**
    * Save garden plan to localStorage
@@ -172,7 +174,7 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
   /**
    * Auto-save with 3 second debouncing
    */
-  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void {
+  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): Promise<SaveResult> {
     this.isDirty = true
     this.pending = { data, metadata, planName }
 
@@ -185,6 +187,10 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
     this.debounceTimer = setTimeout(() => {
       this.flushPending()
     }, 3000)
+
+    return new Promise<SaveResult>((resolve) => {
+      this.pendingResolvers.push(resolve)
+    })
   }
 
   /**
@@ -200,10 +206,26 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
     }
     const payload = this.pending
     this.pending = null
-    if (!payload) return
-    this.save(payload.data, payload.metadata, payload.planName).catch((error) => {
-      console.error('Auto-save failed:', error)
-    })
+    if (!payload) {
+      this.settlePending({ success: false, error: 'Nothing to save' })
+      return
+    }
+    this.save(payload.data, payload.metadata, payload.planName)
+      .then((result) => this.settlePending(result))
+      .catch((error) => {
+        console.error('Auto-save failed:', error)
+        this.settlePending({
+          success: false,
+          error: error instanceof Error ? error.message : 'Auto-save failed',
+        })
+      })
+  }
+
+  /** Resolve every caller waiting on the debounced write. */
+  private settlePending(result: SaveResult) {
+    const resolvers = this.pendingResolvers
+    this.pendingResolvers = []
+    for (const resolve of resolvers) resolve(result)
   }
 
   /**

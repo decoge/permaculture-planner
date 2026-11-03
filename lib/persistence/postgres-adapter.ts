@@ -36,6 +36,8 @@ export class PostgresPersistence implements IPersistenceAdapter {
   private queued = 0
   /** Payload waiting out the autosave debounce. */
   private pending: { data: GardenBed[]; metadata?: CanvasMetadata; planName?: string } | null = null
+  /** Callers waiting for the debounced write, so they can clear their own dirty flag. */
+  private pendingResolvers: Array<(result: SaveResult) => void> = []
 
   constructor(private planId: string) {}
 
@@ -117,13 +119,17 @@ export class PostgresPersistence implements IPersistenceAdapter {
     }
   }
 
-  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void {
+  autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): Promise<SaveResult> {
     this.isDirty = true
     this.pending = { data, metadata, planName }
     if (this.debounceTimer) clearTimeout(this.debounceTimer)
     this.debounceTimer = setTimeout(() => {
       this.flushPending()
     }, 2000)
+
+    return new Promise<SaveResult>((resolve) => {
+      this.pendingResolvers.push(resolve)
+    })
   }
 
   /**
@@ -139,10 +145,26 @@ export class PostgresPersistence implements IPersistenceAdapter {
     }
     const payload = this.pending
     this.pending = null
-    if (!payload) return
-    this.save(payload.data, payload.metadata, payload.planName).catch((error) => {
-      console.error('Auto-save failed:', error)
-    })
+    if (!payload) {
+      this.settlePending({ success: false, error: 'Nothing to save' })
+      return
+    }
+    this.save(payload.data, payload.metadata, payload.planName)
+      .then((result) => this.settlePending(result))
+      .catch((error) => {
+        console.error('Auto-save failed:', error)
+        this.settlePending({
+          success: false,
+          error: error instanceof Error ? error.message : 'Auto-save failed',
+        })
+      })
+  }
+
+  /** Resolve every caller waiting on the debounced write. */
+  private settlePending(result: SaveResult) {
+    const resolvers = this.pendingResolvers
+    this.pendingResolvers = []
+    for (const resolve of resolvers) resolve(result)
   }
 
   hasUnsavedChanges(): boolean {

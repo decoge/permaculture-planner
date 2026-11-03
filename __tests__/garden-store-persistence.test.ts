@@ -23,11 +23,13 @@ function makeAdapter(overrides: Overrides = {}) {
     jest.fn(async () => ({ success: true, planId: 'plan-1' }))
   const load = jest.fn(async () => ({ success: true, data: [] as GardenBed[] }))
   const remove = jest.fn(async () => ({ success: true }))
+  const autoSave: jest.Mock<(data: GardenBed[], metadata?: CanvasMetadata, planName?: string) => void> =
+    jest.fn(() => undefined)
   const adapter: IPersistenceAdapter = {
     save,
     load,
     delete: remove,
-    autoSave: jest.fn(),
+    autoSave,
     hasUnsavedChanges: () => false,
     markAsSaved: jest.fn(),
     getLastSaved: () => null,
@@ -81,6 +83,58 @@ describe('garden store persistence', () => {
 
     expect(useGardenStore.getState().error).toBe('network down')
     expect(useGardenStore.getState().isLoading).toBe(false)
+  })
+
+  test('an autosave that lands clears the dirty flag', async () => {
+    // The demo shows a "Auto-saving changes…" banner while isDirty, and it used
+    // to stay up for the whole session: updateBeds set isDirty and only the
+    // manual save() ever cleared it.
+    const autoSave = jest.fn(() => Promise.resolve({ success: true }))
+    const { adapter } = makeAdapter({ autoSave })
+    useGardenStore.getState().setPersistence(adapter)
+
+    useGardenStore.getState().updateBeds([BED])
+    expect(useGardenStore.getState().isDirty).toBe(true)
+
+    await autoSave.mock.results[0].value
+    await Promise.resolve()
+
+    expect(useGardenStore.getState().isDirty).toBe(false)
+    expect(useGardenStore.getState().error).toBeNull()
+  })
+
+  test('an autosave that fails keeps the dirty flag and reports why', async () => {
+    const autoSave = jest.fn(() => Promise.resolve({ success: false, error: 'quota exceeded' }))
+    const { adapter } = makeAdapter({ autoSave })
+    useGardenStore.getState().setPersistence(adapter)
+
+    useGardenStore.getState().updateBeds([BED])
+    await autoSave.mock.results[0].value
+    await Promise.resolve()
+
+    expect(useGardenStore.getState().isDirty).toBe(true)
+    expect(useGardenStore.getState().error).toBe('quota exceeded')
+  })
+
+  test('a write that lands after a newer edit leaves the flag set', async () => {
+    let resolveFirst: (value: SaveResult) => void = () => {}
+    const autoSave = jest
+      .fn<(data: GardenBed[], metadata?: CanvasMetadata, planName?: string) => Promise<SaveResult>>()
+      // First write is slow; the newer edit's write is still in flight, so only
+      // the stale one can settle here.
+      .mockImplementationOnce(() => new Promise<SaveResult>((resolve) => { resolveFirst = resolve }))
+      .mockImplementation(() => new Promise<SaveResult>(() => {}))
+    const { adapter } = makeAdapter({ autoSave })
+    useGardenStore.getState().setPersistence(adapter)
+
+    useGardenStore.getState().updateBeds([BED])
+    useGardenStore.getState().updateBeds([BED, { ...BED, id: 'bed-2' }])
+
+    resolveFirst({ success: true })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(useGardenStore.getState().isDirty).toBe(true)
   })
 
   test('load replaces beds and merges metadata', async () => {
