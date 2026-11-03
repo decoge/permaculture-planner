@@ -158,8 +158,7 @@ to list them here is empty. The live modules they were easy to confuse with:
 `lib/data/plant-library.ts` (15+ importers), `lib/garden/garden-tools.ts` (12),
 `lib/garden/design-facts.ts` (13), `lib/canvas-elements.ts` (8),
 `lib/algorithms/layout-generator.ts`, `materials-calculator.ts` and
-`crop-rotation.ts` (all via `app/api/plans`), `lib/simulation/growth-engine.ts`
-(1).
+`crop-rotation.ts` (all via `app/api/plans`).
 
 Removed and do not resurrect: `lib/analysis/` (design-critique,
 sun-shade-calculator), `lib/calculations/` (garden-calculations),
@@ -173,19 +172,52 @@ The NOAA solar-position calculator was deliberately *not* rebuilt: it needed a
 geolocated observer to mean anything; the live sun-fit check compares recorded
 site hours against each plant's requirement band instead.
 
+A second sweep (2026-11) removed the Tailwind-3-era design tokens (`lib/theme.ts`,
+`lib/design-system/`, whose values now live in `app/globals.css` under `@theme`),
+the tldraw `components/tldraw/index.ts` barrel, and the original growth-simulation
+panel with its engine (`components/tldraw/panels/growth-simulation-panel.tsx`,
+`components/simulation/timeline-controls.tsx`, `lib/simulation/growth-engine.ts`)
+— the live panel is `growth-simulation-enhanced-panel.tsx`, a thin wrapper over
+`lib/garden/garden-tools.ts`.
+
+**Count importers transitively, not one hop.** The previous edit of this file
+listed `lib/simulation/growth-engine.ts` as live because it had "1 importer" —
+that importer was the panel above, which nothing imported. An importer that is
+itself dead does not make a module live.
+
 **Before deleting or fixing, run the one command:**
 `grep -rn "@/lib/<module>" --include=*.ts --include=*.tsx app lib components hooks e2e`
 A grep hit on a module *name* is not a caller — `ZoneManagementPanel` did not
-use `lib/zone-management.ts`.
+use `lib/zone-management.ts`. Two modules look dead to that grep but are not:
+`lib/storage/__mocks__/indexed-db.ts` is reached through `jest.mock`, and
+`components/tldraw/shapes/custom-shape-props.ts` is an ambient
+`declare module '@tldraw/tlschema'` with no runtime import at all.
+
+### Known unreachable modules (reported, not deleted)
+
+These have no importer and no live replacement. They are kept because each holds
+authored content a future feature could wire up rather than a superseded
+implementation, so deleting them is a product decision:
+
+- `lib/data/permaculture-structures.ts` (26 structures) and
+  `lib/data/permaculture-elements.ts` (12 elements) — a richer catalogue than
+  `lib/canvas-elements.ts`, which only holds presentation defaults for the
+  editor's element library (32 subtypes).
+- `lib/data/garden-templates.ts` — 13 bed-level garden layouts. The live wizard
+  template picker reads `lib/templates/garden-templates.ts`, which is a
+  different, smaller set of 7 scene templates.
+- `lib/reports/report-generator.ts`, `lib/constants/ui-constants.ts`,
+  `components/loading-states.tsx`, `components/mobile-menu.tsx`.
 
 ## Conventions
 
 - TypeScript strict, `@/*` → repo root. No default exports in lib/ modules.
 - Server components by default; `'use client'` only where interactivity demands it.
 - shadcn/ui primitives in `components/ui/` — use them, don't hand-roll new ones.
-  Compose with `cn()` from `lib/utils/cn.ts`.
-- Tailwind 4 for styling; theme tokens live in `app/globals.css` (`@theme`) and
-  `lib/design-system/`.
+  Compose with `cn()` from `lib/utils/cn.ts`. Some primitives are currently
+  unused (`table`, `popover`, `accordion`, `nature-*`, …); they are library
+  surface, not dead features, so keep them.
+- Tailwind 4 for styling; theme tokens live in `app/globals.css` (`@theme`).
 - Icons: `lucide-react`.
 - Comments explain *why*, not *what*. Existing JSDoc blocks on exported functions
   are the norm — match that density.
