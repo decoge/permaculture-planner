@@ -30,27 +30,49 @@ export class PostgresPersistence implements IPersistenceAdapter {
   private debounceTimer: ReturnType<typeof setTimeout> | null = null
   private isDirty = false
   private lastSaved: Date | null = null
-  private saveInProgress = false
+  /** Tail of the save queue; every save runs after the one before it. */
+  private queue: Promise<unknown> = Promise.resolve()
+  /** Saves queued or running, including this one. */
+  private queued = 0
 
   constructor(private planId: string) {}
 
+  /**
+   * Save serially rather than refusing while another request is in flight.
+   *
+   * The debounced autosave can fire while a slow request is still running. The
+   * old early return answered `Save already in progress` and dropped that
+   * snapshot on the floor, and nothing rescheduled it, so the canvas reported
+   * "All changes saved" with the newest edits only in memory.
+   */
   async save(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): Promise<SaveResult> {
-    if (this.saveInProgress) return { success: false, error: 'Save already in progress' }
     if (!Array.isArray(data)) return { success: false, error: 'Invalid data: beds must be an array' }
 
+    this.queued += 1
+    const run = this.queue
+      .then(() => this.send(data, metadata, planName))
+      .finally(() => {
+        this.queued -= 1
+      })
+    // One failed save must not wedge every later one, so the chain continues on
+    // the settled value while the caller still sees the rejection.
+    this.queue = run.catch(() => undefined)
+    return run
+  }
+
+  private async send(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): Promise<SaveResult> {
     try {
-      this.saveInProgress = true
       await api(`/api/plans/${this.planId}/beds`, {
         method: 'PUT',
         body: JSON.stringify({ beds: data, metadata, planName }),
       })
       this.lastSaved = new Date()
-      this.isDirty = false
+      // Only claim the canvas clean when nothing else is waiting behind this
+      // save; a newer edit still has to go out.
+      if (this.queued <= 1) this.isDirty = false
       return { success: true, planId: this.planId }
     } catch (error) {
       return { success: false, error: error instanceof ApiError ? error.message : 'Failed to save plan' }
-    } finally {
-      this.saveInProgress = false
     }
   }
 
