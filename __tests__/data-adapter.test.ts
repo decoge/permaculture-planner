@@ -86,3 +86,81 @@ describe('DataAdapter corrupt persisted data', () => {
     expect(beds[0].points.length).toBeGreaterThanOrEqual(4)
   })
 })
+
+describe('DataAdapter elements', () => {
+  const pond = bed({
+    id: 'pond-1',
+    name: 'Pond',
+    elementType: 'pond',
+    elementCategory: 'water_management',
+    fill: '#bfdbfe',
+    stroke: '#1d4ed8',
+  })
+
+  test('a saved element comes back as a GardenBed entry, not as a bed', () => {
+    const shapes = adapter.gardenBedsToShapes([pond])
+    expect(shapes).toHaveLength(1)
+    expect(shapes[0].type).toBe('element')
+
+    const [restored] = adapter.shapesToGardenBeds(shapes)
+    expect(restored).toMatchObject({
+      id: 'pond-1',
+      name: 'Pond',
+      elementCategory: 'water_management',
+      elementType: 'pond',
+      width: 96,
+      height: 48,
+    })
+  })
+
+  test('an element shape placed on the canvas is kept in the plan', () => {
+    // The element tool creates a `element` shape, and this conversion is what
+    // puts it into GardenBed[] — without it a pond the user placed vanished at
+    // the next autosave and never reached the saved plan.
+    const elementShape = {
+      id: 'shape:pond-2',
+      type: 'element',
+      x: 40,
+      y: 60,
+      rotation: 0,
+      props: {
+        w: 100,
+        h: 80,
+        name: 'pond',
+        subtype: 'pond',
+        category: 'water_management',
+        color: '#1d4ed8',
+        fill: '#bfdbfe',
+        pointsJson: '[]',
+        zone: -1,
+        capacity: 250,
+        material: '',
+        flowDirection: '',
+        connectedIds: '[]',
+        metadataJson: '{"capacity":250}',
+      },
+      meta: {},
+    }
+
+    const beds = adapter.shapesToGardenBeds([elementShape as never])
+
+    expect(beds).toHaveLength(1)
+    expect(beds[0]).toMatchObject({
+      id: 'pond-2',
+      name: 'pond',
+      elementCategory: 'water_management',
+      elementType: 'pond',
+      width: 100,
+      height: 80,
+      plants: [],
+    })
+    expect(beds[0].metadata).toEqual({ capacity: 250 })
+  })
+
+  test('a plain bed still becomes a bed shape', () => {
+    const shapes = adapter.gardenBedsToShapes([bed()])
+
+    expect(shapes[0].type).toBe('bed')
+  })
+})
+

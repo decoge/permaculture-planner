@@ -5,6 +5,8 @@ import { bedLabelWidth, placePlantsInBed } from '@/lib/garden/plant-label-layout
 import { PLANT_LIBRARY, getPlantById } from '@/lib/data/plant-library'
 import { BedShape } from './shapes/bed-shape'
 import { PlantShape } from './shapes/plant-shape'
+import { ElementShape } from './shapes/element-shape'
+import { ELEMENT_STYLES, type ElementSubtype } from '@/lib/canvas-elements'
 
 /** Stable garden id stored on a tldraw shape, without the `shape:` prefix. */
 export function gardenIdFromShape(shape: { id: string; meta?: unknown }): string {
@@ -30,6 +32,14 @@ export class DataAdapter {
     const shapes: TLShape[] = []
 
     for (const bed of beds) {
+      // A saved element (pond, swale, shed) is not a bed: restoring it as a bed
+      // shape would render it without its icon or geometry, and the element
+      // tools would not recognise it.
+      if (bed.elementCategory && bed.elementCategory !== 'bed') {
+        shapes.push(this.elementToShape(bed))
+        continue
+      }
+
       // Create bed shape
       const bedShape: BedShape = {
         id: createShapeId(bed.id),
@@ -153,6 +163,36 @@ export class DataAdapter {
       beds.push(bed)
     }
 
+    // Placed elements are canvas shapes of their own type. Without this they
+    // were dropped on the way back to GardenBed[], so a pond the user placed
+    // disappeared at the next autosave and never reached the plan.
+    const elementShapes = shapes.filter(s => s.type === 'element') as ElementShape[]
+    for (const elementShape of elementShapes) {
+      const points = placeBedPoints(
+        this.parsePoints(elementShape.props.pointsJson),
+        elementShape.x,
+        elementShape.y,
+        elementShape.props.w,
+        elementShape.props.h,
+      )
+
+      beds.push({
+        id: gardenIdFromShape(elementShape),
+        name: elementShape.props.name,
+        points,
+        fill: elementShape.props.fill,
+        stroke: elementShape.props.color,
+        plants: [],
+        width: elementShape.props.w,
+        height: elementShape.props.h,
+        rotation: elementShape.rotation,
+        elementType: elementShape.props.subtype,
+        elementCategory: elementShape.props.category as GardenBed['elementCategory'],
+        zone: elementShape.props.zone >= 0 ? (elementShape.props.zone as GardenBed['zone']) : undefined,
+        metadata: this.parseJson<Record<string, unknown>>(elementShape.props.metadataJson) ?? undefined,
+      })
+    }
+
     return beds
   }
 
@@ -231,6 +271,45 @@ export class DataAdapter {
   /**
    * Get the minimum X coordinate from points
    */
+  /** Rebuild an element shape from a saved element bed. */
+  private elementToShape(bed: GardenBed): ElementShape {
+    const subtype = (bed.elementType || 'raised_bed') as ElementSubtype
+    const style = ELEMENT_STYLES[subtype] ?? ELEMENT_STYLES.raised_bed
+
+    return {
+      id: createShapeId(bed.id),
+      type: 'element',
+      x: this.getBedX(bed.points),
+      y: this.getBedY(bed.points),
+      rotation: bed.rotation || 0,
+      isLocked: false,
+      opacity: 1,
+      props: {
+        w: bed.width || this.calculateWidth(bed.points),
+        h: bed.height || this.calculateHeight(bed.points),
+        name: bed.name,
+        subtype,
+        category: bed.elementCategory || 'bed',
+        color: bed.stroke || style.defaultStroke,
+        fill: bed.fill || style.defaultFill,
+        pointsJson:
+          bed.points && bed.points.length > 2
+            ? JSON.stringify(this.normalizePoints(bed.points))
+            : '[]',
+        zone: bed.zone ?? -1,
+        capacity: Number(bed.metadata?.capacity ?? 0) || 0,
+        material: typeof bed.metadata?.material === 'string' ? bed.metadata.material : '',
+        flowDirection: '',
+        connectedIds: '[]',
+        metadataJson: bed.metadata ? JSON.stringify(bed.metadata) : '{}',
+      },
+      meta: { gardenId: bed.id },
+      parentId: 'page:page' as any,
+      index: 'a1' as any,
+      typeName: 'shape',
+    } as ElementShape
+  }
+
   private getBedX(points: { x: number; y: number }[]): number {
     if (!points || points.length === 0) return 0
     return Math.min(...points.map(p => p.x))
