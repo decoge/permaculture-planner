@@ -123,6 +123,9 @@ function DemoPageContent() {
     initializePersistence()
     return () => {
       cancelled = true
+      // A debounced autosave still inside its window would be discarded with
+      // the adapter when this page unmounts on navigation.
+      useGardenStore.getState().persistence?.flushPending?.()
     }
   }, [planId, setPersistence, setPlanId, load, updateBeds])
 

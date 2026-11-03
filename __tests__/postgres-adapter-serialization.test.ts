@@ -90,3 +90,33 @@ describe('postgres adapter save queue', () => {
     expect(api).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('postgres adapter flushPending', () => {
+  beforeEach(() => {
+    api.mockReset()
+  })
+
+  test('sends the payload waiting in the autosave window, once', async () => {
+    jest.useFakeTimers()
+    api.mockResolvedValue({})
+    const adapter = new PostgresPersistence('plan-1')
+
+    adapter.autoSave([bed('pending-bed')])
+    // The debounce has not fired yet; unmounting now used to discard the edit.
+    expect(api).not.toHaveBeenCalled()
+
+    adapter.flushPending()
+    await Promise.resolve()
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(api).toHaveBeenCalledTimes(1)
+    const body = JSON.parse((api.mock.calls[0][1] as { body: string }).body)
+    expect(body.beds.map((b: { id: string }) => b.id)).toEqual(['pending-bed'])
+
+    // The cleared timer must not fire a second copy.
+    await jest.runOnlyPendingTimersAsync()
+    expect(api).toHaveBeenCalledTimes(1)
+    jest.useRealTimers()
+  })
+})

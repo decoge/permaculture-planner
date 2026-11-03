@@ -23,6 +23,8 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
   private debounceTimer: NodeJS.Timeout | null = null
   private isDirty = false
   private lastSaved: Date | null = null
+  /** Payload waiting out the autosave debounce. */
+  private pending: { data: GardenBed[]; metadata?: CanvasMetadata; planName?: string } | null = null
 
   /**
    * Save garden plan to localStorage
@@ -172,6 +174,7 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
    */
   autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void {
     this.isDirty = true
+    this.pending = { data, metadata, planName }
 
     // Clear existing timer
     if (this.debounceTimer) {
@@ -180,10 +183,27 @@ export class LocalStoragePersistence implements IPersistenceAdapter {
 
     // Set new timer for 3 seconds
     this.debounceTimer = setTimeout(() => {
-      this.save(data, metadata, planName).catch((error) => {
-        console.error('Auto-save failed:', error)
-      })
+      this.flushPending()
     }, 3000)
+  }
+
+  /**
+   * Write the payload still waiting in the debounce window.
+   *
+   * The demo page unmounts on navigation; without this the timer was discarded
+   * and the edit with it.
+   */
+  flushPending(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = null
+    }
+    const payload = this.pending
+    this.pending = null
+    if (!payload) return
+    this.save(payload.data, payload.metadata, payload.planName).catch((error) => {
+      console.error('Auto-save failed:', error)
+    })
   }
 
   /**

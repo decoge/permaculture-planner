@@ -34,6 +34,8 @@ export class PostgresPersistence implements IPersistenceAdapter {
   private queue: Promise<unknown> = Promise.resolve()
   /** Saves queued or running, including this one. */
   private queued = 0
+  /** Payload waiting out the autosave debounce. */
+  private pending: { data: GardenBed[]; metadata?: CanvasMetadata; planName?: string } | null = null
 
   constructor(private planId: string) {}
 
@@ -117,12 +119,30 @@ export class PostgresPersistence implements IPersistenceAdapter {
 
   autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void {
     this.isDirty = true
+    this.pending = { data, metadata, planName }
     if (this.debounceTimer) clearTimeout(this.debounceTimer)
     this.debounceTimer = setTimeout(() => {
-      this.save(data, metadata, planName).catch((error) => {
-        console.error('Auto-save failed:', error)
-      })
+      this.flushPending()
     }, 2000)
+  }
+
+  /**
+   * Send the payload still waiting in the debounce window.
+   *
+   * The demo page unmounts when the user navigates, which used to discard the
+   * timer and the edit with it.
+   */
+  flushPending(): void {
+    if (this.debounceTimer) {
+      clearTimeout(this.debounceTimer)
+      this.debounceTimer = null
+    }
+    const payload = this.pending
+    this.pending = null
+    if (!payload) return
+    this.save(payload.data, payload.metadata, payload.planName).catch((error) => {
+      console.error('Auto-save failed:', error)
+    })
   }
 
   hasUnsavedChanges(): boolean {

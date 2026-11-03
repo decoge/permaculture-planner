@@ -80,6 +80,15 @@ export interface IPersistenceAdapter {
   autoSave(data: GardenBed[], metadata?: CanvasMetadata, planName?: string): void
 
   /**
+   * Send any payload still sitting in the debounce window.
+   *
+   * OPTIONAL because a backend without a debounce has nothing to flush. Callers
+   * that can be unmounted mid-window (the demo page) call it in cleanup, so an
+   * edit made just before navigating away is not dropped.
+   */
+  flushPending?(): void
+
+  /**
    * Check if there are unsaved changes
    */
   hasUnsavedChanges(): boolean

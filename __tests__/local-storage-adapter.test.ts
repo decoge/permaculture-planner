@@ -171,3 +171,30 @@ describe('LocalStoragePersistence.delete', () => {
     expect(localStorage.getItem(METADATA_KEY)).toBeNull()
   })
 })
+
+describe('LocalStoragePersistence.flushPending', () => {
+  test('writes the payload still inside the debounce window', async () => {
+    jest.useFakeTimers()
+    const adapter = new LocalStoragePersistence()
+
+    // autoSave debounces 3s; navigating before it fires used to lose the edit.
+    adapter.autoSave([bed('flushed')])
+    adapter.flushPending()
+
+    await jest.runOnlyPendingTimersAsync()
+
+    const stored = JSON.parse(localStorage.getItem(BEDS_KEY) as string)
+    expect(stored.map((b: GardenBed) => b.id)).toEqual(['flushed'])
+    jest.useRealTimers()
+  })
+
+  test('is a no-op when nothing is pending', () => {
+    jest.useFakeTimers()
+    const adapter = new LocalStoragePersistence()
+
+    adapter.flushPending()
+
+    expect(localStorage.getItem(BEDS_KEY)).toBeNull()
+    jest.useRealTimers()
+  })
+})
