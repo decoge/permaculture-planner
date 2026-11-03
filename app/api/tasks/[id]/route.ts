@@ -3,13 +3,16 @@ import { requireUser } from '@/lib/auth/guard'
 import { updateTask } from '@/lib/db/tasks'
 import { deleteTask, setTaskPattern } from '@/lib/db/recordings'
 import { routeError } from '@/lib/api/route-error'
+import { readJsonBody } from '@/lib/api/request-body'
 
 export async function PATCH(request: Request, context: { params: { id: string } | Promise<{ id: string }> }) {
   try {
     const user = await requireUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await context.params
-    const body = await request.json()
+    const parsedBody = await readJsonBody(request)
+    if (!parsedBody.ok) return parsedBody.response
+    const body = parsedBody.body as Record<string, unknown>
 
     // Every edit goes through updateTask, including a bare completion toggle:
     // setTaskCompleted used to handle that case and skipped the next-occurrence

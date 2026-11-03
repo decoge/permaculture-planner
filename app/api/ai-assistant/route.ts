@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import OpenAI from 'openai'
 import { requireUser } from '@/lib/auth/guard'
+import { readJsonBody } from '@/lib/api/request-body'
 
 // Initialize OpenAI client (API key will be added via environment variable)
 const openai = new OpenAI({
@@ -67,7 +68,9 @@ export async function POST(request: NextRequest) {
     const user = await requireUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { messages, context } = await request.json()
+    const parsedBody = await readJsonBody(request)
+    if (!parsedBody.ok) return parsedBody.response
+    const { messages, context } = parsedBody.body as { messages?: unknown; context?: unknown }
 
     // Check if API key is configured
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === '***') {
@@ -180,17 +183,26 @@ export async function PUT(request: NextRequest) {
     const user = await requireUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const { type, data } = await request.json()
+    const parsedBody = await readJsonBody(request)
+    if (!parsedBody.ok) return parsedBody.response
+    const { type, data: rawData } = parsedBody.body as { type?: unknown; data?: unknown }
 
     // The prompt templates read data.location, data.zone etc. directly; a body
     // without them is a client error and must not reach the model or the 500.
-    const missing = missingFields(type, data)
+    const missing = missingFields(type, rawData)
     if (missing && missing.length > 0) {
       return NextResponse.json(
         { error: `Analysis type "${String(type)}" is missing required fields`, missing },
         { status: 400 }
       )
     }
+
+    // `missingFields` proves an object only for the known analysis types, so
+    // check it here rather than casting a string into the templates below.
+    if (!rawData || typeof rawData !== 'object' || Array.isArray(rawData)) {
+      return NextResponse.json({ error: 'Analysis data must be an object' }, { status: 400 })
+    }
+    const data = rawData as Record<string, any>
 
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-placeholder') {
       return NextResponse.json(

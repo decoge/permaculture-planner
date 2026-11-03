@@ -2,13 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth/guard'
 import { createJournalEntry } from '@/lib/db/recordings'
 import { routeError } from '@/lib/api/route-error'
+import { readJsonBody } from '@/lib/api/request-body'
 
 export async function POST(request: NextRequest) {
   try {
     const user = await requireUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await request.json()
+    const parsedBody = await readJsonBody(request)
+    if (!parsedBody.ok) return parsedBody.response
+    const body = parsedBody.body as Record<string, unknown>
     const planId = typeof body.planId === 'string' ? body.planId : ''
     if (!planId) {
       return NextResponse.json({ error: 'planId is required' }, { status: 400 })

@@ -2,6 +2,7 @@ import { query } from '@/lib/db/pool'
 import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth/guard'
 import { routeError } from '@/lib/api/route-error'
+import { readJsonBody } from '@/lib/api/request-body'
 
 const MAX_NAME_LENGTH = 200
 
@@ -12,7 +13,9 @@ export async function PATCH(request: NextRequest, context: { params: { id: strin
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const { id } = await context.params
 
-    const body = await request.json()
+    const parsedBody = await readJsonBody(request)
+    if (!parsedBody.ok) return parsedBody.response
+    const body = parsedBody.body as Record<string, unknown>
     const name = typeof body.name === 'string' ? body.name.trim().slice(0, MAX_NAME_LENGTH) : ''
     if (!name) {
       return NextResponse.json({ error: 'A non-empty name is required' }, { status: 400 })

@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createPasswordReset } from '@/lib/db/users'
 import { routeError } from '@/lib/api/route-error'
+import { readJsonBody } from '@/lib/api/request-body'
 import { validateEmail } from '@/lib/validation'
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const parsedBody = await readJsonBody(request)
+    if (!parsedBody.ok) return parsedBody.response
+    const body = parsedBody.body as Record<string, unknown>
     const email = typeof body.email === 'string' ? body.email.trim() : ''
     const emailCheck = validateEmail(email)
     if (!emailCheck.success) {

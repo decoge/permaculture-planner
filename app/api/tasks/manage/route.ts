@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth/guard'
 import { createTask, deleteTask } from '@/lib/db/recordings'
 import { routeError } from '@/lib/api/route-error'
+import { readJsonBody } from '@/lib/api/request-body'
 
 /** Create one task on an owned plan. The plan page checklist consumes this. */
 export async function POST(request: NextRequest) {
@@ -9,7 +10,9 @@ export async function POST(request: NextRequest) {
     const user = await requireUser()
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-    const body = await request.json()
+    const parsedBody = await readJsonBody(request)
+    if (!parsedBody.ok) return parsedBody.response
+    const body = parsedBody.body as Record<string, unknown>
     const planId = typeof body.planId === 'string' ? body.planId : ''
     if (!planId) {
       return NextResponse.json({ error: 'planId is required' }, { status: 400 })

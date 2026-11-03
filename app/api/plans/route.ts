@@ -18,6 +18,7 @@ function sunBand(hours: number): 'full' | 'partial' | 'shade' {
   return 'shade'
 }
 import { routeError } from '@/lib/api/route-error'
+import { readJsonBody } from '@/lib/api/request-body'
 import { validateData, wizardDataSchema } from '@/lib/validation'
 
 export async function POST(request: NextRequest) {
@@ -29,7 +30,9 @@ export async function POST(request: NextRequest) {
     // the rotation engine. Validated here rather than at each call site because
     // every one of them indexes into nested fields: a missing or mistyped
     // `area` threw a TypeError and surfaced as a 500 instead of a 400.
-    const parsed = validateData(wizardDataSchema, await request.json())
+    const parsedBody = await readJsonBody(request)
+    if (!parsedBody.ok) return parsedBody.response
+    const parsed = validateData(wizardDataSchema, parsedBody.body)
     if (!parsed.success) {
       return NextResponse.json(
         { error: 'Invalid wizard data', issues: parsed.errors.issues },
