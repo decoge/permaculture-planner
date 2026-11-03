@@ -132,8 +132,16 @@ saved plans break.
 ### API routes
 
 `app/api/**/route.ts`. Shared helpers in `lib/api/`: `http.ts` (`api()` client +
-`ApiError`), `rate-limiter.ts`, `cache.ts`, `route-error.ts`. Use `route-error.ts`
-rather than ad-hoc try/catch so status codes and messages stay consistent.
+`ApiError`), `rate-limiter.ts`, `cache.ts`, `route-error.ts`, `request-body.ts`.
+Use `route-error.ts` rather than ad-hoc try/catch so status codes and messages
+stay consistent.
+
+**Read bodies with `readJsonBody()` from `lib/api/request-body.ts`, not
+`request.json()`.** Route handlers have no default body limit (the
+`serverActions.bodySizeLimit` in next.config.js does not cover them), and a
+malformed body thrown from `request.json()` reaches `routeError()` as a 500. The
+helper caps the read (413), parses to 400 with a named error, treats an empty
+body as `{}`, and returns `unknown` — narrow object fields with `asRecord()`.
 
 Recording writes (harvests, journal entries, task create/edit/delete/recurrence)
 live in `lib/db/recordings.ts` and `lib/db/tasks.ts` (`updateTask`); every
