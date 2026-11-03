@@ -103,6 +103,14 @@ null for impossible dates instead of letting `Date` roll 2026-02-30 into March.
 The estimate is a heuristic, not a measurement — the wizard labels it as one, and
 whether it should be written into the plan at all is still a product question.
 
+**A DATE column read as a raw row is a `Date`, not a string.** `getPlanDetail`
+returns pg's own row, so `site.last_frost` reaches a client-component prop as a
+`Date` even where the prop type says `string`. Anything that parses it
+(`seasonClock`, `toIsoDate`) must accept both, and must read a `Date` by its
+local calendar parts — `toISOString()` moves the day for every timezone east of
+UTC. Route handlers that go through `NextResponse.json` serialise it to an ISO
+string, which is why the two paths disagreed.
+
 ### Auth
 
 Email + password, hand-rolled (`lib/auth/`). Passwords hashed in `lib/auth/password.ts`;

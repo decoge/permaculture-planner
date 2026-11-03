@@ -121,10 +121,10 @@ export class WizardService {
       )
 
       if (result.success) {
-        // The plan is created with plantings from the generated beds, but no
-        // tasks or materials estimate: that logic lives in the uncalled
-        // POST /api/plans route. Seed the build checklist here so a fresh
-        // wizard plan has one; a task-sync failure must not fail the save.
+        // saveGarden writes the beds, the plantings and (on a first save) the
+        // materials estimate. The build checklist is the one piece of a new
+        // plan it does not produce, so seed it here; a task-sync failure must
+        // not fail the save.
         if (result.planId) {
           await this.seedInitialTasks(result.planId).catch((error) => {
             console.warn('Could not create initial tasks:', error)
