@@ -80,7 +80,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
-import { downloadSvg, downloadPdf } from '@/lib/export/plan-exporter'
+import { downloadSvg, downloadPdf, downloadPng } from '@/lib/export/plan-exporter'
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
 import { CommandPalette, type EditorCommand } from '@/components/command-palette'
 import { StatusBar } from '@/components/tldraw/status-bar'
@@ -223,36 +223,11 @@ export function PermacultureEditorIntegrated({
       link.click()
       toast.success('Exported as JSON')
     } else if (format === 'png') {
-      // Use tldraw's export functionality
-      editor.getSvgString(Array.from(editor.getCurrentPageShapeIds())).then((result) => {
-        if (!result) {
-          toast.error('Failed to export PNG')
-          return
-        }
-        const { svg } = result
-        const canvas = document.createElement('canvas')
-        const ctx = canvas.getContext('2d')
-        const img = new Image()
-
-        img.onload = () => {
-          canvas.width = img.width
-          canvas.height = img.height
-          ctx?.drawImage(img, 0, 0)
-          canvas.toBlob((blob) => {
-            if (blob) {
-              const url = URL.createObjectURL(blob)
-              const link = document.createElement('a')
-              link.href = url
-              link.download = `permaculture-plan-${Date.now()}.png`
-              link.click()
-              URL.revokeObjectURL(url)
-              toast.success('Exported as PNG')
-            }
-          })
-        }
-
-        img.src = 'data:image/svg+xml;base64,' + btoa(svg)
-      })
+      downloadPng(editor, 'garden-plan')
+        .then(() => toast.success('Exported as PNG'))
+        .catch((error: unknown) => {
+          toast.error(error instanceof Error ? error.message : 'Failed to export PNG')
+        })
     } else if (format === 'svg') {
       downloadSvg(editor, 'garden-plan')
         .then(() => toast.success('Exported as SVG'))
