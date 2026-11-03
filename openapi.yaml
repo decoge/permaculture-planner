@@ -1,8 +1,19 @@
 openapi: 3.1.0
+# NOT IMPLEMENTED. This file describes an API this repository does not serve:
+# none of the paths below exist under app/api, the host names are not deployed,
+# and the BearerAuth scheme is not how the app authenticates (it uses a signed
+# session cookie). The implemented routes are the source of truth - see
+# app/api/**/route.ts and the "API routes" section of AGENTS.md. Kept as a
+# design sketch for a future public API rather than deleted.
+x-status: draft-not-implemented
 info:
-  title: Permaculture Planner API
+  title: Permaculture Planner API (draft, not implemented)
   version: 1.1.0
-  description: API for raised-bed permaculture garden planning
+  description: >-
+    DRAFT. Nothing in this document is served by the current application. The
+    paths here (/crops, /health, /plans/{planId}/generate-layout, ...) do not
+    exist; the live endpoints are the route handlers under app/api and they
+    authenticate with a session cookie, not a Bearer token.
   contact:
     email: api@permaculture-planner.com
   license:
