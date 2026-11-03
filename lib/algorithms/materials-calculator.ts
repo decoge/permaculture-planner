@@ -84,16 +84,11 @@ export class MaterialsCalculator {
         wickingMaterials.geotextile += bedAreaSqFt // Separator fabric
         wickingMaterials.overflowCount += 1 // One overflow per bed
       } else {
-        // Regular raised bed
-        if (surface === 'soil') {
-          // For on-ground beds: 70% soil, 30% compost
-          soilCuFt += bedVolumeCuFt * 0.7
-          compostCuFt += bedVolumeCuFt * 0.3
-        } else {
-          // For hard surface: 50% soil, 30% compost, 20% perlite (counted as soil)
-          soilCuFt += bedVolumeCuFt * 0.7
-          compostCuFt += bedVolumeCuFt * 0.3
-        }
+        // Regular raised bed. Both surfaces get the 70/30 soil/compost mix: the
+        // hard-surface branch used to carry a comment describing 50/30/20 with
+        // perlite, which the code never did.
+        soilCuFt += bedVolumeCuFt * 0.7
+        compostCuFt += bedVolumeCuFt * 0.3
       }
       
       // Sheet mulching for on-ground beds
@@ -102,8 +97,12 @@ export class MaterialsCalculator {
         mulchCuFt += bedAreaSqFt * (3/12) // 3 inches of mulch
       }
       
-      // Path mulching
-      const pathAreaSqFt = bed.length * (bed.pathWidth / 12)
+      // Path mulching. A path runs along the bed's long edge, so use the long
+      // dimension — keying it on `length` made the mulch depend on which way
+      // the same 4x8 bed happened to be drawn.
+      const longSide = Math.max(bed.width, bed.length)
+      const shortSide = Math.min(bed.width, bed.length)
+      const pathAreaSqFt = longSide * (bed.pathWidth / 12)
       if (surface === 'soil') {
         mulchCuFt += pathAreaSqFt * (4/12) // 4 inches for paths
       }
@@ -117,13 +116,16 @@ export class MaterialsCalculator {
       const boardsHigh = Math.ceil(bed.height / 9.25) // 2x10 actual height is 9.25"
       lumberLinearFeet += perimeterFt * boardsHigh
       
-      // Drip irrigation
+      // Drip irrigation. Laterals run along the long side and are spaced across
+      // the short one, so both figures have to be taken from the bed's
+      // dimensions rather than from its orientation: the same 4x8 bed used to
+      // get 8 ft on one orientation and 16 ft on the other.
       if (enableDrip) {
         // Two lines per bed for beds wider than 2 feet
-        const lines = bed.width > 2 ? 2 : 1
-        dripLineFt += bed.length * lines
-        // Emitters every 12 inches
-        emitterCount += Math.ceil(bed.length) * lines
+        const lines = shortSide > 2 ? 2 : 1
+        dripLineFt += longSide * lines
+        // Emitters every 12 inches along each lateral
+        emitterCount += Math.ceil(longSide) * lines
       }
       
       // Row cover for suitable beds
