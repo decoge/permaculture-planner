@@ -109,7 +109,10 @@ function DemoPageContent() {
         if (loadedBeds.length > 0) {
           toast.success('Loaded your saved demo garden')
         } else {
-          // No saved data, use starter garden
+          // No saved data is the normal first visit, not an error: `load()`
+          // reports it as a failed load, which painted a red alert over a demo
+          // that had just loaded fine. Clear it before seeding the example.
+          clearError()
           updateBeds(STARTER_GARDEN)
           toast.info('Starting with example garden', {
             description: 'Try the wizard to create a custom plan!'
