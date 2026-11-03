@@ -9,19 +9,30 @@
  * Nothing in the app calls cache.set today, so the leak cannot fire in
  * production yet — these tests seed the store directly to pin which key the
  * proxy chooses.
+ *
+ * proxy is imported dynamically *after* jest.mock registers the token mock: a
+ * static `import { proxy }` binds the real '@/lib/auth/token' first, so the
+ * mock sits unused and every request looks anonymous — the same trap AGENTS.md
+ * documents for the DB tests.
  */
-import { beforeEach, describe, expect, jest, test } from '@jest/globals'
+import { beforeAll, beforeEach, describe, expect, jest, test } from '@jest/globals'
 
 jest.mock('@/lib/auth/token', () => ({
   SESSION_COOKIE: 'pp_session',
-  verifySessionToken: jest.fn(async (token: string) =>
-    token.startsWith('valid-') ? { sub: token, isAdmin: false } : null
-  ),
+  verifySessionToken: async (token: string) =>
+    token.startsWith('valid-') ? { sub: token, email: 'a@example.com', isAdmin: false } : null,
 }))
 
 import { createCache, cachePresets } from '@/lib/api/cache'
-import { SESSION_COOKIE } from '@/lib/auth/token'
-import { proxy } from '@/proxy'
+
+const SESSION_COOKIE = 'pp_session'
+
+type ProxyModule = typeof import('@/proxy')
+let proxy: ProxyModule['proxy']
+
+beforeAll(async () => {
+  proxy = (await import('@/proxy')).proxy
+})
 
 /** Just enough NextRequest for the proxy's read paths. */
 function fakeRequest(url: string, token?: string) {
@@ -70,8 +81,20 @@ describe('proxy response cache keying', () => {
     expect(response.headers.get('x-cache')).toBe('HIT')
   })
 
-  test('adds the security headers without the deprecated X-XSS-Protection', async () => {
+  test('a valid session reaches a protected page instead of the login redirect', async () => {
+    // Proves the token mock is in effect — the cache cases only need the cookie
+    // value, so without this they would also pass against an unmocked verifier.
     const response = await proxy(fakeRequest('http://localhost:3000/dashboard', 'valid-user-a'))
+
+    expect(response.headers.get('location')).toBeNull()
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff')
+  })
+
+  test('adds the security headers without the deprecated X-XSS-Protection', async () => {
+    // A public path: protected ones redirect before the headers are attached,
+    // and the redirect is what an earlier version of this test was asserting
+    // against by accident.
+    const response = await proxy(fakeRequest('http://localhost:3000/pricing'))
 
     expect(response.headers.get('x-content-type-options')).toBe('nosniff')
     expect(response.headers.get('x-frame-options')).toBe('DENY')
