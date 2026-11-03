@@ -69,4 +69,15 @@ describe('proxy response cache keying', () => {
 
     expect(response.headers.get('x-cache')).toBe('HIT')
   })
+
+  test('adds the security headers without the deprecated X-XSS-Protection', async () => {
+    const response = await proxy(fakeRequest('http://localhost:3000/dashboard', 'valid-user-a'))
+
+    expect(response.headers.get('x-content-type-options')).toBe('nosniff')
+    expect(response.headers.get('x-frame-options')).toBe('DENY')
+    expect(response.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin')
+    // Deprecated, ignored by current browsers, and abused as a script-disabling
+    // vector in the ones that still read it.
+    expect(response.headers.get('x-xss-protection')).toBeNull()
+  })
 })

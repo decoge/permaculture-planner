@@ -100,7 +100,10 @@ export async function proxy(request: NextRequest) {
 
   response.headers.set('X-Content-Type-Options', 'nosniff')
   response.headers.set('X-Frame-Options', 'DENY')
-  response.headers.set('X-XSS-Protection', '1; mode=block')
+  // X-XSS-Protection used to sit here. It is deprecated, ignored by every
+  // current browser, and in the browsers that still honour it the heuristic
+  // filter has itself been used to disable page scripts, so its presence was a
+  // liability rather than a defence.
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
 
   if (pathname.startsWith('/api')) {
