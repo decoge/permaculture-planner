@@ -74,3 +74,49 @@ describe('summarizePlan', () => {
     expect(summary.spacingNotes).toEqual([])
   })
 })
+
+describe('summarizePlan bed sizes', () => {
+  test('derives a size from the polygon when no dimensions were recorded', () => {
+    // The starter demo garden and older saves carry points only. Reporting
+    // "0 ft x 0 ft" for a bed that is visibly 17 ft across made the panel's own
+    // area figure nonsense.
+    const summary = summarizePlan([
+      {
+        name: 'Herb Garden',
+        points: [
+          { x: 100, y: 100 },
+          { x: 300, y: 100 },
+          { x: 300, y: 200 },
+          { x: 100, y: 200 },
+        ],
+      },
+    ])
+
+    expect(summary.beds[0].lengthFt).toBeCloseTo(200 / 12, 5)
+    expect(summary.beds[0].widthFt).toBeCloseTo(100 / 12, 5)
+    expect(summary.areaSqFt).toBeGreaterThan(0)
+  })
+
+  test('recorded dimensions win over the polygon', () => {
+    const summary = summarizePlan([
+      {
+        name: 'Bed',
+        length_ft: '8',
+        width_ft: '4',
+        points: [
+          { x: 0, y: 0 },
+          { x: 600, y: 0 },
+          { x: 600, y: 600 },
+        ],
+      },
+    ])
+
+    expect(summary.areaSqFt).toBe(32)
+  })
+
+  test('a bed with neither dimensions nor a polygon stays zero', () => {
+    const summary = summarizePlan([{ name: 'Bed' }])
+
+    expect(summary.beds[0]).toMatchObject({ lengthFt: 0, widthFt: 0, areaSqFt: 0 })
+  })
+})

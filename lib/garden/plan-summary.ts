@@ -22,6 +22,8 @@ export interface SummaryBedInput {
   width_ft?: number | string | null
   width?: number | null
   height?: number | null
+  /** The canvas polygon, which is a recorded size even when no fields are set. */
+  points?: { x?: number | null; y?: number | null }[] | null
   plants?: SummaryPlantInput[]
   plantings?: SummaryPlantInput[]
 }
@@ -141,10 +143,45 @@ function bedSize(bed: SummaryBedInput): { lengthFt: number; widthFt: number } {
   }
   const pixelWidth = numberOrNull(bed.width)
   const pixelHeight = numberOrNull(bed.height)
-  return {
-    lengthFt: pixelWidth && pixelWidth > 0 ? pixelWidth / PIXELS_PER_FOOT : 0,
-    widthFt: pixelHeight && pixelHeight > 0 ? pixelHeight / PIXELS_PER_FOOT : 0,
+  if (pixelWidth && pixelHeight && pixelWidth > 0 && pixelHeight > 0) {
+    return {
+      lengthFt: pixelWidth / PIXELS_PER_FOOT,
+      widthFt: pixelHeight / PIXELS_PER_FOOT,
+    }
   }
+  // A bed from the starter garden or an older save carries only its polygon.
+  // The extent is still recorded, and reporting "0 ft × 0 ft" for a bed that is
+  // visibly 17 ft wide made the dashboard's own area figure nonsense.
+  const box = pointsBoundingBox(bed.points)
+  if (box) {
+    return {
+      lengthFt: box.width / PIXELS_PER_FOOT,
+      widthFt: box.height / PIXELS_PER_FOOT,
+    }
+  }
+  return { lengthFt: 0, widthFt: 0 }
+}
+
+/** Extent of a saved polygon, in canvas pixels, or null when it has none. */
+function pointsBoundingBox(
+  points: SummaryBedInput['points']
+): { width: number; height: number } | null {
+  if (!Array.isArray(points)) return null
+  const xs: number[] = []
+  const ys: number[] = []
+  for (const point of points) {
+    const x = numberOrNull(point?.x)
+    const y = numberOrNull(point?.y)
+    if (x !== null && y !== null) {
+      xs.push(x)
+      ys.push(y)
+    }
+  }
+  if (xs.length === 0) return null
+  const width = Math.max(...xs) - Math.min(...xs)
+  const height = Math.max(...ys) - Math.min(...ys)
+  if (width <= 0 || height <= 0) return null
+  return { width, height }
 }
 
 function plantsOn(bed: SummaryBedInput): SummaryPlantInput[] {
