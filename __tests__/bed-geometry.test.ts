@@ -1,5 +1,5 @@
 import { describe, expect, test } from '@jest/globals'
-import { placeBedPoints, scalePointsToSize } from '@/lib/garden/bed-geometry'
+import { bedAtPoint, boundsContainPoint, placeBedPoints, scalePointsToSize } from '@/lib/garden/bed-geometry'
 
 describe('placeBedPoints', () => {
   const rectangle = [
@@ -60,5 +60,42 @@ describe('scalePointsToSize', () => {
       { x: 150, y: 75 },
       { x: 0, y: 75 },
     ])
+  })
+})
+
+describe('boundsContainPoint', () => {
+  const bed = { x: 100, y: 100, width: 200, height: 100 }
+
+  test('a point inside the box is inside the bed', () => {
+    expect(boundsContainPoint(bed, { x: 150, y: 150 })).toBe(true)
+  })
+
+  test('the edges count, matching the conversion that claims plants', () => {
+    expect(boundsContainPoint(bed, { x: 100, y: 100 })).toBe(true)
+    expect(boundsContainPoint(bed, { x: 300, y: 200 })).toBe(true)
+  })
+
+  test('a point beyond any edge is outside', () => {
+    expect(boundsContainPoint(bed, { x: 99, y: 150 })).toBe(false)
+    expect(boundsContainPoint(bed, { x: 150, y: 201 })).toBe(false)
+  })
+})
+
+describe('bedAtPoint', () => {
+  const beds = [
+    { x: 0, y: 0, width: 100, height: 100 },
+    { x: 200, y: 0, width: 100, height: 100 },
+  ]
+
+  test('returns the bed under the point', () => {
+    expect(bedAtPoint(beds, { x: 250, y: 50 })).toEqual(beds[1])
+  })
+
+  test('returns null in the gap between beds, which is what the plant tool refuses', () => {
+    expect(bedAtPoint(beds, { x: 150, y: 50 })).toBeNull()
+  })
+
+  test('returns null for a garden with no beds', () => {
+    expect(bedAtPoint([], { x: 10, y: 10 })).toBeNull()
   })
 })

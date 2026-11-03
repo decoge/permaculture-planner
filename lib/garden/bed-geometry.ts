@@ -61,3 +61,36 @@ export function scalePointsToSize(points: BedPoint[], width: number, height: num
     y: ((point.y - minY) / srcH) * h,
   }))
 }
+
+/** A bed's page-space box, which is what the save path uses to claim a plant. */
+export interface BedBounds extends BedPoint {
+  width: number
+  height: number
+}
+
+/**
+ * Whether a point falls inside a bed's box.
+ *
+ * The canvas-to-plan conversion only keeps a plant whose insertion point lies
+ * inside a bed (`isPlantInBed` in `components/tldraw/data-adapter.ts`), and the
+ * editor re-renders from that plan — so a plant dropped outside every bed looks
+ * placed and then disappears on the next save. The plant tool asks this before
+ * creating a shape, so the user is told instead of watching the plant vanish.
+ * Includes the edges, exactly like the conversion it mirrors.
+ */
+export function boundsContainPoint(bounds: BedBounds, point: BedPoint): boolean {
+  return (
+    point.x >= bounds.x &&
+    point.x <= bounds.x + bounds.width &&
+    point.y >= bounds.y &&
+    point.y <= bounds.y + bounds.height
+  )
+}
+
+/** The first bed (in draw order) whose box contains the point, if any. */
+export function bedAtPoint(beds: BedBounds[], point: BedPoint): BedBounds | null {
+  for (const bed of beds) {
+    if (boundsContainPoint(bed, point)) return bed
+  }
+  return null
+}
