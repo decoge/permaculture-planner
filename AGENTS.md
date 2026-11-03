@@ -72,6 +72,14 @@ flip `isDirty` and kick off adapter auto-save.
 **Add a new backend** by implementing `IPersistenceAdapter` and injecting it with
 `setPersistence`. Do not add backend-specific branching to the store.
 
+**A debounced writer has to flush, not just cancel.** Both adapters debounce
+`autoSave` and expose `flushPending()` (optional on the interface) for callers
+that unmount mid-window — the demo page calls it in cleanup. In the editor the
+debounce lives in `lib/editor/pending-save.ts` for the same reason: a cleanup
+that only cleared the timer dropped the edit the user had just made before
+navigating. `onManualSave` returns `false` on failure so the "unsaved changes"
+flag is not cleared for a save that did not happen.
+
 ### Database
 
 Plain Postgres via `pg`. No Supabase, no ORM, no query builder.
@@ -85,6 +93,15 @@ Plain Postgres via `pg`. No Supabase, no ORM, no query builder.
 **Ownership is enforced in application queries, not RLS.** Every query touching
 user data must filter by the session user's id. There is no database-level
 backstop, so a missed `WHERE user_id = $1` is a data leak, not a bug.
+
+**Date columns take `YYYY-MM-DD` only.** `sites.last_frost` / `first_frost` are
+`DATE`, and the wizard's frost inputs are `type="date"`. Three shapes reach the
+app: ISO from those inputs, `MM-DD` from older payloads, and `'April 15'` from
+`SiteIntelligenceService`, which *estimates* climate from latitude. Every write
+path normalises with `toIsoDate()` (`lib/garden/plan-calendar.ts`), which returns
+null for impossible dates instead of letting `Date` roll 2026-02-30 into March.
+The estimate is a heuristic, not a measurement — the wizard labels it as one, and
+whether it should be written into the plan at all is still a product question.
 
 ### Auth
 
