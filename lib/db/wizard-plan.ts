@@ -1,4 +1,5 @@
 import { withTransaction } from '@/lib/db/pool'
+import { toIsoDate } from '@/lib/garden/plan-calendar'
 import { asUuid, clampHeight, familyOrOther, surfaceOrSoil, taskCategory, waterOrSpigot } from '@/lib/db/ids'
 
 export interface WizardSiteInput {
@@ -79,8 +80,8 @@ export async function createWizardPlan(input: {
         input.site.lat ?? null,
         input.site.lng ?? null,
         input.site.usdaZone ?? null,
-        input.site.lastFrost ?? null,
-        input.site.firstFrost ?? null,
+        toIsoDate(input.site.lastFrost),
+        toIsoDate(input.site.firstFrost),
         surfaceOrSoil(input.site.surfaceType),
         input.site.slope ?? null,
         input.site.shadeNotes ?? null,

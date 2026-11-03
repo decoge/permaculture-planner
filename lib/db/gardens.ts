@@ -1,6 +1,7 @@
 import type { PoolClient } from 'pg'
 import { query, queryOne, withTransaction } from '@/lib/db/pool'
 import { MaterialsCalculator } from '@/lib/algorithms/materials-calculator'
+import { toIsoDate } from '@/lib/garden/plan-calendar'
 import { GardenBed } from '@/lib/garden/garden-types'
 import { PLANT_LIBRARY } from '@/lib/data/plant-library'
 import {
@@ -377,8 +378,8 @@ export async function saveGarden(
           numberField(siteData, 'lat'),
           numberField(siteData, 'lng'),
           textField(siteData, 'usda_zone'),
-          textField(siteData, 'last_frost'),
-          textField(siteData, 'first_frost'),
+          toIsoDate(textField(siteData, 'last_frost')),
+          toIsoDate(textField(siteData, 'first_frost')),
           numberField(siteData, 'slope_pct'),
           textField(siteData, 'shade_notes'),
           JSON.stringify(constraints),
@@ -399,8 +400,8 @@ export async function saveGarden(
           numberField(siteData, 'lng'),
           textField(siteData, 'country_code'),
           textField(siteData, 'usda_zone'),
-          textField(siteData, 'last_frost'),
-          textField(siteData, 'first_frost'),
+          toIsoDate(textField(siteData, 'last_frost')),
+          toIsoDate(textField(siteData, 'first_frost')),
           surfaceOrSoil(siteData.surface_type),
           numberField(siteData, 'slope_pct'),
           textField(siteData, 'shade_notes'),

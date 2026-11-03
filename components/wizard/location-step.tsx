@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { SiteIntelligenceService } from '@/lib/services/site-intelligence'
+import { toIsoDate } from '@/lib/garden/plan-calendar'
 import { MapPin, Loader2, Info, CheckCircle, AlertCircle } from 'lucide-react'
 import { toast } from '@/components/ui/use-toast'
 import { HelpIcon, InlineHelp, HelpPanel, permacultureHelpTips } from '@/components/ui/contextual-help'
@@ -81,19 +82,24 @@ export function LocationStep({ data, updateData }: LocationStepProps) {
       const data = await service.getSiteIntelligence(lat, lng)
       setSiteIntelligence(data)
 
-      // Auto-populate fields from site intelligence
+      // Auto-populate fields from site intelligence. The frost dates are
+      // estimates from latitude, delivered as 'April 15', and these inputs are
+      // `type="date"`: written raw they render as empty fields and reach a DATE
+      // column as a month name, so they are normalised to YYYY-MM-DD here.
       updateData('location', {
         lat,
         lng,
         usda_zone: data.climate.hardiness_zone.replace('Zone ', ''),
-        last_frost: data.climate.frost.last_frost,
-        first_frost: data.climate.frost.first_frost,
+        last_frost: toIsoDate(data.climate.frost.last_frost) ?? '',
+        first_frost: toIsoDate(data.climate.frost.first_frost) ?? '',
         siteIntelligence: data
       })
 
+      // "Estimated", not "found": the zone and frost dates come from a
+      // latitude heuristic, not a climate service, and end up in the plan.
       toast({
-        title: 'Location Data Retrieved',
-        description: `Found climate data for ${data.location.region}. Zone ${data.climate.hardiness_zone}`,
+        title: 'Location estimated',
+        description: `Zone ${data.climate.hardiness_zone} and frost dates are estimated from latitude — check them below.`,
       })
     } catch (error) {
       console.error('Failed to fetch site intelligence:', error)

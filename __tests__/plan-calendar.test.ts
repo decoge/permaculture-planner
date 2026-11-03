@@ -1,8 +1,9 @@
 import { describe, expect, it } from '@jest/globals'
-import { harvestReadiness, seasonClock, type ReadinessInput } from '@/lib/garden/plan-calendar'
+import { harvestReadiness, seasonClock, toIsoDate, type ReadinessInput } from '@/lib/garden/plan-calendar'
 import { shoppingListFromEstimate } from '@/lib/garden/shopping-list'
 
 const TODAY = '2026-10-08'
+const REFERENCE = new Date('2026-10-08T00:00:00Z')
 
 function readiness(overrides: Partial<ReadinessInput>): ReadinessInput {
   return { plantingId: 'p1', label: 'Tomato', sowDate: null, daysToMaturity: null, ...overrides }
@@ -151,5 +152,39 @@ describe('shoppingListFromEstimate', () => {
   it('returns nothing for null or all-null estimates', () => {
     expect(shoppingListFromEstimate(null)).toEqual([])
     expect(shoppingListFromEstimate({})).toEqual([])
+  })
+})
+
+describe('toIsoDate', () => {
+  it('passes a full ISO date through', () => {
+    expect(toIsoDate('2026-04-15', REFERENCE)).toBe('2026-04-15')
+    expect(toIsoDate('2026-04-15T00:00:00.000Z', REFERENCE)).toBe('2026-04-15')
+  })
+
+  it('maps an MM-DD month-day onto the reference year', () => {
+    expect(toIsoDate('04-15', REFERENCE)).toBe('2026-04-15')
+  })
+
+  it("maps the site-intelligence estimate's month-name format", () => {
+    // 'April 15' is what SiteIntelligenceService emits; written raw it reached a
+    // type="date" input (blank) and a DATE column (unparseable).
+    expect(toIsoDate('April 15', REFERENCE)).toBe('2026-04-15')
+    expect(toIsoDate('Oct 15', REFERENCE)).toBe('2026-10-15')
+    expect(toIsoDate('December 1, 2027', REFERENCE)).toBe('2027-12-01')
+  })
+
+  it('rejects impossible dates rather than rolling them over', () => {
+    expect(toIsoDate('2026-02-30', REFERENCE)).toBeNull()
+    expect(toIsoDate('2026-13-01', REFERENCE)).toBeNull()
+    expect(toIsoDate('04-31', REFERENCE)).toBeNull()
+    expect(toIsoDate('Smarch 15', REFERENCE)).toBeNull()
+  })
+
+  it('returns null for empty and non-string input', () => {
+    expect(toIsoDate('', REFERENCE)).toBeNull()
+    expect(toIsoDate('   ', REFERENCE)).toBeNull()
+    expect(toIsoDate(null, REFERENCE)).toBeNull()
+    expect(toIsoDate(undefined, REFERENCE)).toBeNull()
+    expect(toIsoDate(415, REFERENCE)).toBeNull()
   })
 })

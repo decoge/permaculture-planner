@@ -89,6 +89,20 @@ describe('saveGarden materials estimate', () => {
     expect(sql).not.toContain('INSERT INTO materials_estimates')
   })
 
+  test('frost dates from the client are normalised before the DATE columns', async () => {
+    await saveGarden('user-1', {
+      beds: [],
+      siteData: { name: 'Site', last_frost: 'April 15', first_frost: '2026-10-15' },
+    })
+
+    const params = clientQuery.mock.calls.find((call) =>
+      (call[0] as string).includes('INSERT INTO sites')
+    )![1] as unknown[]
+    // A month name would reach a DATE column unparsed; the ISO one passes through.
+    expect(params[6]).toBe(`${new Date().getUTCFullYear()}-04-15`)
+    expect(params[7]).toBe('2026-10-15')
+  })
+
   test('a calculator failure does not fail the save', async () => {
     // Force the calculator to throw by feeding it an unconstructible bed: the
     // estimate wrapper must swallow it and still return success.

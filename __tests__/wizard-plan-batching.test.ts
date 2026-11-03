@@ -243,4 +243,40 @@ describe('createWizardPlan', () => {
 
     expect(paramsFor('INSERT INTO tasks')[1]).toEqual(['Buy lumber'])
   })
+
+  test('frost dates are normalised to YYYY-MM-DD before the DATE column', async () => {
+    // The wizard's "use my location" fills these from a latitude estimate,
+    // which emits 'April 15' / 'October 15'. Written raw, a DATE column has to
+    // parse a month name and the type="date" inputs render blank.
+    await createWizardPlan({
+      userId: 'user-1',
+      site: { name: 'Site', lastFrost: 'April 15', firstFrost: 'October 15' },
+      planName: 'Plan',
+      beds: [],
+      plantings: [],
+      tasks: [],
+      materials: MATERIALS,
+    })
+
+    const params = paramsFor('INSERT INTO sites')
+    const year = new Date().getUTCFullYear()
+    expect(params[5]).toBe(`${year}-04-15`)
+    expect(params[6]).toBe(`${year}-10-15`)
+  })
+
+  test('an unparseable frost date is stored as null, not passed through', async () => {
+    await createWizardPlan({
+      userId: 'user-1',
+      site: { name: 'Site', lastFrost: 'whenever', firstFrost: '2026-04-15' },
+      planName: 'Plan',
+      beds: [],
+      plantings: [],
+      tasks: [],
+      materials: MATERIALS,
+    })
+
+    const params = paramsFor('INSERT INTO sites')
+    expect(params[5]).toBeNull()
+    expect(params[6]).toBe('2026-04-15')
+  })
 })

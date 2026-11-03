@@ -46,6 +46,69 @@ function formatUtc(millis: number): string {
   return new Date(millis).toISOString().slice(0, 10)
 }
 
+const MONTH_NAMES = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december',
+]
+
+/** Build a date only when the parts are real, so 2026-02-30 is rejected. */
+function isoFromParts(year: number, month: number, day: number): string | null {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null
+  const millis = Date.UTC(year, month - 1, day)
+  const date = new Date(millis)
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null
+  }
+  return formatUtc(millis)
+}
+
+/**
+ * Normalise every frost-date shape this app has stored into YYYY-MM-DD.
+ *
+ * Three shapes exist: a full ISO date (what a `type="date"` input sends), an
+ * `MM-DD` month-day (the wizard's averages), and `'April 15'` (what
+ * SiteIntelligenceService estimates from latitude). The estimate used to be
+ * written straight into a `type="date"` input, where the browser silently
+ * renders it as an empty field, and into a DATE column that has to parse it.
+ *
+ * Returns null for anything unparseable, so callers leave the column empty
+ * rather than storing a string the database cannot read.
+ */
+export function toIsoDate(value: unknown, reference: Date = new Date()): string | null {
+  if (typeof value !== 'string') return null
+  const text = value.trim()
+  if (!text) return null
+
+  const iso = /^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/.exec(text)
+  if (iso) return isoFromParts(Number(iso[1]), Number(iso[2]), Number(iso[3]))
+
+  const monthDay = /^(\d{1,2})[-/](\d{1,2})$/.exec(text)
+  if (monthDay) {
+    const year = reference.getUTCFullYear()
+    return isoFromParts(year, Number(monthDay[1]), Number(monthDay[2]))
+  }
+
+  const named = /^([A-Za-z]{3,9})\.?\s+(\d{1,2})(?:,?\s*(\d{4}))?$/.exec(text)
+  if (named) {
+    const lowered = named[1].toLowerCase()
+    // 'Oct' and 'October' both resolve; anything shorter than three letters is
+    // ambiguous (Jun/Jul), so the regex already refuses it.
+    const month = MONTH_NAMES.findIndex(
+      (name) => name === lowered || (lowered.length >= 3 && name.startsWith(lowered))
+    )
+    if (month < 0) return null
+    const year = named[3] ? Number(named[3]) : reference.getUTCFullYear()
+    return isoFromParts(year, month + 1, Number(named[2]))
+  }
+
+  return null
+}
+
 function daysBetween(fromMillis: number, toMillis: number): number {
   return Math.round((toMillis - fromMillis) / 86_400_000)
 }
