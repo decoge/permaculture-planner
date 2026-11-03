@@ -133,6 +133,24 @@ describe('listDashboardPlans', () => {
     expect(three.materials_estimates).toBeNull()
   })
 
+  test('looks sites up by each plan\'s site_id, not by the plan id', async () => {
+    respondWith({
+      'FROM plans p': PLANS,
+      'FROM sites WHERE id = ANY': [],
+      'FROM beds WHERE plan_id = ANY': [],
+      'FROM materials_estimates': [],
+      'GROUP BY b.plan_id': [],
+    })
+
+    await listDashboardPlans('user-1')
+
+    // The fixture above answers whatever it is asked, so only the *parameter*
+    // can catch the defect: sites.id and plans.id are different columns, and
+    // passing plan ids here silently returned no rows.
+    const sitesCall = query.mock.calls.find(([sql]) => sql.includes('FROM sites WHERE id = ANY'))
+    expect(sitesCall?.[1]).toEqual([['s1', 's2', 's3']])
+  })
+
   test('issues no follow-up queries when the user owns no plans', async () => {
     respondWith({ 'FROM plans p': [] })
 

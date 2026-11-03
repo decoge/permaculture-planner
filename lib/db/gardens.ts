@@ -545,11 +545,15 @@ export async function listDashboardPlans(userId: string) {
   // dashboard loads every plan a user owns, so the old per-plan loop turned a
   // five-plan dashboard into 21 round trips, and it blocked on each one in turn.
   const planIds = plans.map((plan) => plan.id as string)
+  // Sites are looked up by the plan's site_id, not by the plan id: sites.id and
+  // plans.id are separate uuid columns, so keying this on plan ids returned no
+  // rows and every dashboard plan came back with `site: null`.
+  const siteIds = plans.map((plan) => plan.site_id as string)
 
   const [sites, beds, materials, plantingStats] = await Promise.all([
     // One site row per plan is guaranteed: a plan cannot exist without its
     // site, and the id comes from that same row.
-    query<Record<string, unknown>>('SELECT * FROM sites WHERE id = ANY($1::uuid[])', [planIds]),
+    query<Record<string, unknown>>('SELECT * FROM sites WHERE id = ANY($1::uuid[])', [siteIds]),
     query<Record<string, unknown>>(
       'SELECT * FROM beds WHERE plan_id = ANY($1::uuid[]) ORDER BY plan_id, order_index',
       [planIds]
