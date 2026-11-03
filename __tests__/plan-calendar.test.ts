@@ -188,3 +188,26 @@ describe('toIsoDate', () => {
     expect(toIsoDate(415, REFERENCE)).toBeNull()
   })
 })
+
+describe('seasonClock with pg DATE values', () => {
+  it('accepts Date objects, which is what the plan page actually passes', () => {
+    // getPlanDetail reads sites.last_frost straight from a pg row, so the value
+    // is a Date built from local calendar parts — not the string the prop type
+    // used to claim. This used to throw "value.split is not a function" and take
+    // the calendar panel down with it.
+    // Signature is (firstFrost, lastFrost): in the north the first frost comes
+    // in October and the last in April.
+    const clock = seasonClock(new Date(2026, 9, 15), new Date(2026, 3, 15), TODAY)
+
+    expect(clock.inGrowingSeason).toBe(true)
+    expect(clock.daysUntilFirstFrost).toBe(7)
+    expect(clock.note).toMatch(/Mid-season/)
+  })
+
+  it('reads a Date by its local calendar parts, so the day does not shift', () => {
+    // toISOString() on a local-midnight Date lands on the previous day anywhere
+    // east of UTC.
+    const clock = seasonClock(new Date(2026, 9, 15), new Date(2026, 3, 15), TODAY)
+    expect(clock.daysUntilFirstFrost).toBe(7)
+  })
+})

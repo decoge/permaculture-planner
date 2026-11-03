@@ -38,8 +38,8 @@ interface Plan {
     lat: number | string | null
     lng: number | string | null
     usda_zone: string | null
-    last_frost?: string | null
-    first_frost?: string | null
+    last_frost?: string | Date | null
+    first_frost?: string | Date | null
     surface_type?: string | null
     slope_pct?: number | string | null
     shade_notes?: string | null

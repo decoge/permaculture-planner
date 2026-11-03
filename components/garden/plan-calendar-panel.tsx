@@ -29,8 +29,9 @@ export interface PlanCalendarPlanting {
 
 export interface PlanCalendarPanelProps {
   plantings: PlanCalendarPlanting[]
-  firstFrost: string | null
-  lastFrost: string | null
+  /** `string` from the wizard, or a pg DATE instance read straight from the row. */
+  firstFrost: string | Date | null
+  lastFrost: string | Date | null
   materialsEstimate: StoredEstimate | null
 }
 

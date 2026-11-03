@@ -80,6 +80,13 @@ function isoFromParts(year: number, month: number, day: number): string | null {
  * rather than storing a string the database cannot read.
  */
 export function toIsoDate(value: unknown, reference: Date = new Date()): string | null {
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null
+    // A DATE column comes back from pg as a Date built from the calendar parts
+    // in local time, so read it back the same way: toISOString() would shift the
+    // day for every timezone east of UTC.
+    return isoFromParts(value.getFullYear(), value.getMonth() + 1, value.getDate())
+  }
   if (typeof value !== 'string') return null
   const text = value.trim()
   if (!text) return null
@@ -204,8 +211,8 @@ export interface FrostClock {
  * current and adjacent years so the clock is always meaningful.
  */
 export function seasonClock(
-  firstFrost: string | null,
-  lastFrost: string | null,
+  firstFrost: string | Date | null,
+  lastFrost: string | Date | null,
   today: string = new Date().toISOString().slice(0, 10)
 ): FrostClock {
   const notRecorded: FrostClock = {
@@ -248,8 +255,12 @@ export function seasonClock(
     return 0
   }
 
-  const firstMonthDay = firstFrost ? toMonthDay(firstFrost) : null
-  const lastMonthDay = lastFrost ? toMonthDay(lastFrost) : null
+  // Frost dates arrive as 'MM-DD' (wizard averages), 'YYYY-MM-DD', or a pg DATE
+  // (a Date instance — the plan page reads the column straight from the row).
+  const firstIso = toIsoDate(firstFrost, new Date(today))
+  const lastIso = toIsoDate(lastFrost, new Date(today))
+  const firstMonthDay = firstIso ? toMonthDay(firstIso) : null
+  const lastMonthDay = lastIso ? toMonthDay(lastIso) : null
   if (!firstMonthDay && !lastMonthDay) return notRecorded
 
   const daysUntilFirstFrost = firstMonthDay === null ? null : daysUntilNext(firstMonthDay)

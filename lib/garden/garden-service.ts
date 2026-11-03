@@ -12,6 +12,7 @@ import {
   SiteInsert,
   PlanInsert,
 } from './garden-types'
+import { toIsoDate } from '@/lib/garden/plan-calendar'
 
 function message(error: unknown, fallback: string) {
   if (error instanceof ApiError) {
@@ -60,8 +61,10 @@ export class GardenService {
           lng: site.lng as number | undefined,
           country_code: (site.country_code as string | undefined) || undefined,
           usda_zone: (site.usda_zone as string | undefined) || undefined,
-          last_frost: (site.last_frost as string | undefined) || undefined,
-          first_frost: (site.first_frost as string | undefined) || undefined,
+          // /api/gardens serialises DATE columns as ISO strings, but a direct
+          // row read hands back a Date; normalise so both reach the canvas alike.
+          last_frost: toIsoDate(site.last_frost) ?? undefined,
+          first_frost: toIsoDate(site.first_frost) ?? undefined,
           surface_type: (site.surface_type as 'soil' | 'hard') || 'soil',
           slope_pct: site.slope_pct as number | undefined,
           shade_notes: (site.shade_notes as string | undefined) || undefined,
