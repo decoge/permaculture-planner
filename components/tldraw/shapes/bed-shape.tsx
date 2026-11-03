@@ -203,6 +203,57 @@ export class BedShapeUtil extends BaseBoxShapeUtil<BedShape> {
   }
 
   /**
+   * Render the bed for SVG export.
+   *
+   * The on-screen component wraps its title in an HTMLContainer, which tldraw
+   * serialises as <foreignObject>. Chromium taints a canvas that draws an SVG
+   * image containing foreignObject, so PNG and PDF export failed with
+   * "Tainted canvases may not be exported" for any plan. Export gets its own
+   * pure-SVG rendering, and the screen keeps the fitted HTML label.
+   */
+  override toSvg(shape: BedShape) {
+    const { w, h, name, color, pointsJson, elementCategory } = shape.props
+    const points = this.parsePoints(pointsJson)
+    const fillColor = this.getCategoryColor(elementCategory, color)
+    const label = name.length > 28 ? `${name.slice(0, 27)}…` : name
+
+    return (
+      <g>
+        {points.length > 2 ? (
+          <path
+            d={this.pointsToPath(points)}
+            fill={fillColor}
+            fillOpacity={0.3}
+            stroke={color}
+            strokeWidth={2}
+          />
+        ) : (
+          <rect
+            width={w}
+            height={h}
+            rx={4}
+            ry={4}
+            fill={fillColor}
+            fillOpacity={0.3}
+            stroke={color}
+            strokeWidth={2}
+          />
+        )}
+        <text
+          x={w / 2}
+          y={14}
+          textAnchor="middle"
+          fontSize={12}
+          fontWeight={600}
+          fill="#1f2937"
+        >
+          {label}
+        </text>
+      </g>
+    )
+  }
+
+  /**
    * Convert points array to SVG path string
    */
   private pointsToPath(points: Point[]): string {

@@ -148,6 +148,39 @@ export class PlantShapeUtil extends ShapeUtil<PlantShape> {
   }
 
   /**
+   * Render the plant for SVG export.
+   *
+   * The on-screen component puts the name in an HTMLContainer, which tldraw
+   * serialises as <foreignObject> — and Chromium taints a canvas that draws an
+   * SVG image containing foreignObject, which broke PNG and PDF export with
+   * "Tainted canvases may not be exported". Export draws a plain <text> instead.
+   */
+  override toSvg(shape: PlantShape) {
+    const { radius, plantName, emoji, color } = shape.props
+    const label = plantName.length > 18 ? `${plantName.slice(0, 17)}…` : plantName
+
+    return (
+      <g>
+        <circle cx={0} cy={0} r={radius} fill={color} fillOpacity={0.9} stroke="#fff" strokeWidth={1} />
+        {emoji && (
+          <text
+            x={0}
+            y={0}
+            textAnchor="middle"
+            dominantBaseline="central"
+            fontSize={Math.max(radius * 0.9, 3)}
+          >
+            {emoji}
+          </text>
+        )}
+        <text x={0} y={radius + 8} textAnchor="middle" fontSize={10} fontWeight={500} fill="#1f2937">
+          {label}
+        </text>
+      </g>
+    )
+  }
+
+  /**
    * Prevent resizing plants (they have fixed spacing requirements)
    */
   override canResize = () => false
