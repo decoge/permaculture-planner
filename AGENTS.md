@@ -41,6 +41,11 @@ npm run build  # completes
 Do not report success on `lint` + `test` alone — `build` runs type generation
 against `.next/types` and has caught errors the other two miss.
 
+Read each gate's own summary line. Chaining `npm run test | grep -E "Tests:|FAIL"`
+is not a gate: grep succeeds whenever it matches anything, so a red suite scrolls
+past and the next `&& git commit` lands on it. Run the gate, read the result,
+then commit in a separate call.
+
 **`lint` and `test` both pass while `build` still fails** when an API route
 imports a module that pulls in React hooks. A single `import { useState } from
 'react'` anywhere in a route's module graph makes it a client component and
@@ -270,6 +275,9 @@ New domain logic needs a unit test. Bug fixes need a test that fails without the
   reads `.rowCount` and `.rows` off the client result, so a mocked `PoolClient`
   must return `{ rowCount, rows }`, not a bare array. See
   `__tests__/canvas-save-batching.test.ts` for the working shape.
+  `__mocks__/uuid.js` is a manual mock for the package itself, so a test that
+  wants the *real* helpers can import `lib/db/ids` directly — that is how
+  `__tests__/db-ids.test.ts` checks the helpers against the migration's enums.
 - **Index mocked statements by SQL content, not call position.** These helpers
   run several statements per call (plan lookup, UPDATEs, delete, inserts), so
   `mock.calls[1]` is brittle; find the call whose SQL contains a fragment.
