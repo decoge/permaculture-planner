@@ -91,7 +91,7 @@ import {
 interface PermacultureEditorIntegratedProps {
   initialData?: GardenBed[]
   onSave?: (data: GardenBed[]) => void
-  onManualSave?: () => void | Promise<void>
+  onManualSave?: () => boolean | void | Promise<boolean | void>
   planId?: string
   showHeader?: boolean
   siteData?: SiteData | null
@@ -191,13 +191,18 @@ export function PermacultureEditorIntegrated({
   // Handle manual save (button click or Cmd+S)
   const handleSave = useCallback(async () => {
     if (onManualSave) {
-      await onManualSave()
-      setHasUnsavedChanges(false)
-    } else if (onSave) {
-      // Fallback to auto-save if no manual save handler
+      const result = await onManualSave()
+      // A handler that reports failure must not clear the indicator: the old
+      // code cleared it unconditionally, so a rejected save looked saved.
+      if (result !== false) setHasUnsavedChanges(false)
+      return
+    }
+    if (onSave) {
+      // No manual path: hand the data to the autosave callback and say what
+      // actually happened rather than claiming the plan is saved.
       onSave(gardenData)
       setHasUnsavedChanges(false)
-      toast.success('Plan saved successfully')
+      toast.success('Changes queued for saving')
     }
   }, [gardenData, onSave, onManualSave])
 

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { PermacultureEditorIntegrated } from '@/components/tldraw/permaculture-editor-integrated'
 import { GardenBed } from '@/lib/garden/garden-types'
-import { api, ApiError } from '@/lib/api/http'
+import { api } from '@/lib/api/http'
+import { createPendingSave } from '@/lib/editor/pending-save'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
 
@@ -22,7 +23,6 @@ interface EditorClientProps {
 export function EditorClient({ plan }: EditorClientProps) {
   const [gardenBeds, setGardenBeds] = useState<GardenBed[]>([])
   const [loading, setLoading] = useState(true)
-  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Load initial data from Supabase beds
   useEffect(() => {
@@ -111,74 +111,80 @@ export function EditorClient({ plan }: EditorClientProps) {
     }
   }, [plan])
 
-  // Auto-save to Supabase (debounced 2 seconds)
-  const handleSave = useCallback(async (updatedBeds: GardenBed[]) => {
-    try {
-      // Update local state immediately for responsiveness
-      setGardenBeds(updatedBeds)
-
-      // Clear any pending save
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-      }
-
-      // Debounce the save operation (2 seconds)
-      saveTimeoutRef.current = setTimeout(async () => {
-        try {
-          await api(`/api/plans/${plan.id}/beds`, {
+  // Auto-save to the plan API (debounced 2 seconds, flushed on unmount so a
+  // navigation inside the window does not drop the edit).
+  const pendingSave = useMemo(
+    () =>
+      createPendingSave<GardenBed[]>({
+        delayMs: 2000,
+        send: async (beds) => {
+          const response = await fetch(`/api/plans/${plan.id}/beds`, {
             method: 'PUT',
-            body: JSON.stringify({ beds: updatedBeds }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ beds }),
+            // keepalive lets the request outlive the navigation that flushes it.
+            keepalive: true,
           })
-          console.log('Auto-saved successfully')
-        } catch (error) {
-          const result = { success: false, error: error instanceof ApiError ? error.message : 'Save failed' }
-          console.error('Auto-save failed:', result.error)
+          if (!response.ok) {
+            throw new Error(`Autosave failed (${response.status})`)
+          }
+        },
+        onError: () => {
           toast.error('Auto-save failed', {
             description: 'Your changes may not be saved. Try manual save.',
             duration: 3000,
           })
-        }
-      }, 2000)
-    } catch (error) {
-      console.error('Error auto-saving plan:', error)
-      toast.error('Auto-save error', {
-        description: 'Please use manual save (Cmd+S)',
-      })
-    }
-  }, [plan.id])
+        },
+      }),
+    [plan.id]
+  )
 
-  // Cleanup timeout on unmount
+  const handleSave = useCallback(
+    (updatedBeds: GardenBed[]) => {
+      // Update local state immediately for responsiveness; the PUT follows the
+      // debounce (or the unmount flush).
+      setGardenBeds(updatedBeds)
+      pendingSave.schedule(updatedBeds)
+    },
+    [pendingSave]
+  )
+
+  // Flush, don't cancel: the debounce window is exactly when the user is
+  // navigating away right after an edit.
   useEffect(() => {
     return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-      }
+      pendingSave.flush()
     }
-  }, [])
+  }, [pendingSave])
 
-  // Manual save to Supabase (triggered by user action)
-  const handleManualSave = useCallback(async () => {
+  // Manual save to the plan API (triggered by user action). Returns false on
+  // failure so the editor does not report a save that did not happen.
+  const handleManualSave = useCallback(async (): Promise<boolean> => {
     try {
       const toastId = toast.loading('Saving to database...')
 
-      // Sync all beds to Supabase
       await api(`/api/plans/${plan.id}/beds`, {
         method: 'PUT',
         body: JSON.stringify({ beds: gardenBeds }),
       })
 
+      // The manual save wrote everything the debounce was holding.
+      pendingSave.cancel()
+
       toast.dismiss(toastId)
       toast.success('✅ Saved to database!', {
         description: `${gardenBeds.length} bed(s) synchronized`,
       })
+      return true
     } catch (error) {
       toast.dismiss()
       console.error('Error saving to database:', error)
       toast.error('Failed to save to database', {
         description: error instanceof Error ? error.message : 'Unknown error',
       })
+      return false
     }
-  }, [plan.id, gardenBeds])
+  }, [plan.id, gardenBeds, pendingSave])
 
   if (loading) {
     return (
