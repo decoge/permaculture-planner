@@ -35,7 +35,7 @@ export default function DocsPage() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 opacity-0 animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'forwards' }}>
-            <span className="bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
               Developer Documentation
             </span>
           </h1>
@@ -255,7 +255,7 @@ export default function DocsPage() {
           <CardContent className="space-y-4">
             <ol className="space-y-4">
               <li className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold">
+                <div className="shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold">
                   1
                 </div>
                 <div className="flex-1">
@@ -267,7 +267,7 @@ export default function DocsPage() {
                 </div>
               </li>
               <li className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold">
+                <div className="shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold">
                   2
                 </div>
                 <div className="flex-1">
@@ -279,7 +279,7 @@ export default function DocsPage() {
                 </div>
               </li>
               <li className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold">
+                <div className="shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold">
                   3
                 </div>
                 <div className="flex-1">
@@ -288,7 +288,7 @@ export default function DocsPage() {
                 </div>
               </li>
               <li className="flex gap-4">
-                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold">
+                <div className="shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center text-green-700 font-semibold">
                   4
                 </div>
                 <div className="flex-1">

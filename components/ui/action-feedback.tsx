@@ -124,14 +124,14 @@ function FeedbackItem({ message, onDismiss }: FeedbackItemProps) {
   return (
     <div
       className={cn(
-        'flex items-start gap-3 p-4 rounded-lg border shadow-sm',
+        'flex items-start gap-3 p-4 rounded-lg border shadow-xs',
         'animate-in slide-in-from-right fade-in duration-300',
         styles[message.type]
       )}
     >
       <Icon
         className={cn(
-          'h-5 w-5 flex-shrink-0 mt-0.5',
+          'h-5 w-5 shrink-0 mt-0.5',
           message.type === 'loading' && 'animate-spin'
         )}
       />

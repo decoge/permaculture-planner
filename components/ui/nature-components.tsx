@@ -17,9 +17,9 @@ export const NatureCard = React.forwardRef<HTMLDivElement, NatureCardProps>(
     const variants = {
       default: 'card-nature',
       elevated: 'bg-white shadow-xl hover:shadow-2xl border-green-200',
-      organic: 'bg-gradient-to-br from-green-50 via-emerald-50 to-white border-green-300 border-organic',
-      soil: 'bg-gradient-to-b from-amber-50 to-orange-50 border-amber-300 soil-texture',
-      water: 'bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-300 water-flow',
+      organic: 'bg-linear-to-br from-green-50 via-emerald-50 to-white border-green-300 border-organic',
+      soil: 'bg-linear-to-b from-amber-50 to-orange-50 border-amber-300 soil-texture',
+      water: 'bg-linear-to-br from-blue-50 to-cyan-50 border-blue-300 water-flow',
     }
 
     const patterns = {
@@ -71,7 +71,7 @@ export const SeasonBadge: React.FC<SeasonBadgeProps> = ({
         'inline-flex items-center rounded-full font-medium',
         `season-${season}`,
         sizes[size],
-        'text-white shadow-sm',
+        'text-white shadow-xs',
         className
       )}
       {...props}
@@ -148,7 +148,7 @@ export const PlantIcon: React.FC<PlantIconProps> = ({
     <div
       className={cn(
         'inline-flex items-center justify-center rounded-full',
-        'bg-gradient-to-br from-green-100 to-emerald-100',
+        'bg-linear-to-br from-green-100 to-emerald-100',
         'border-2 border-green-300',
         sizes[size],
         className
@@ -213,7 +213,7 @@ interface NatureButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement
 export const NatureButton = React.forwardRef<HTMLButtonElement, NatureButtonProps>(
   ({ className, variant = 'leaf', size = 'md', icon: Icon, children, ...props }, ref) => {
     const variants = {
-      leaf: 'bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-nature',
+      leaf: 'bg-linear-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white shadow-nature',
       earth: 'gradient-earth hover:opacity-90 text-white',
       water: 'gradient-water hover:opacity-90 text-white',
       sun: 'gradient-sun hover:opacity-90 text-gray-900',
@@ -296,14 +296,14 @@ export const PermaculturePrinciple: React.FC<PermaculturePrincipleProps> = ({
     <div
       className={cn(
         'flex gap-4 p-4 rounded-lg',
-        'bg-gradient-to-r from-green-50 to-emerald-50',
+        'bg-linear-to-r from-green-50 to-emerald-50',
         'border border-green-200 hover:border-green-300',
         'transition-all duration-300 hover-lift',
         className
       )}
       {...props}
     >
-      <div className="flex-shrink-0">
+      <div className="shrink-0">
         <div className="h-10 w-10 rounded-full bg-green-600 text-white flex items-center justify-center font-bold">
           {number}
         </div>

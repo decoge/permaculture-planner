@@ -120,7 +120,7 @@ export function ReviewStep({ data }: ReviewStepProps) {
 
       <div className="bg-green-50 border border-green-200 rounded-lg p-4">
         <div className="flex items-start">
-          <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 mr-2 flex-shrink-0" />
+          <CheckCircle2 className="h-5 w-5 text-green-600 mt-0.5 mr-2 shrink-0" />
           <div className="text-sm">
             <p className="font-semibold text-green-900">Ready to save this layout</p>
             <p className="text-green-700 mt-1">

@@ -96,7 +96,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
+    <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50/30 to-white">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Button variant="ghost" className="mb-4" asChild>
           <Link href="/dashboard">

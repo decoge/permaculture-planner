@@ -160,12 +160,12 @@ export const theme = {
       secondary: 'bg-green-100 hover:bg-green-200 text-green-800 font-medium transition-all duration-250',
       outline: 'border-2 border-green-600 text-green-700 hover:bg-green-50 font-medium transition-all duration-250',
       ghost: 'text-green-700 hover:bg-green-50 font-medium transition-all duration-250',
-      earth: 'bg-gradient-to-r from-earth-600 to-earth-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-250',
+      earth: 'bg-linear-to-r from-earth-600 to-earth-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-250',
     },
     card: {
       base: 'bg-white rounded-xl shadow-md hover:shadow-lg transition-shadow duration-250 border border-green-100',
       elevated: 'bg-white rounded-xl shadow-xl hover:shadow-2xl transition-shadow duration-250',
-      nature: 'bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-250 border border-green-200',
+      nature: 'bg-linear-to-br from-green-50 to-emerald-50 rounded-xl shadow-md hover:shadow-lg transition-all duration-250 border border-green-200',
     },
     input: {
       base: 'border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-200 rounded-lg transition-all duration-250',

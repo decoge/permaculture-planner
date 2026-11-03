@@ -167,7 +167,7 @@ export default function PlanViewPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-12 w-12 text-green-600 animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading plan...</p>
@@ -178,7 +178,7 @@ export default function PlanViewPage() {
 
   if (error || !plan) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center p-4">
+      <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50/30 to-white flex items-center justify-center p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -239,7 +239,7 @@ export default function PlanViewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50/30 to-white">
+    <div className="min-h-screen bg-linear-to-br from-green-50 via-emerald-50/30 to-white">
       {/* Header */}
       <div className="bg-white border-b">
         <div className="container mx-auto px-4 py-4">

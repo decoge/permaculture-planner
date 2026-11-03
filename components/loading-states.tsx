@@ -24,7 +24,7 @@ export function LoadingSpinner({
         <div className="relative">
           <Leaf className={`${sizeClasses[size]} text-green-600 animate-sway`} />
           <Sprout className={`${sizeClasses[size]} text-green-500 absolute top-0 left-0 animate-grow opacity-50`} />
-          <div className="absolute -inset-4 bg-gradient-to-r from-green-200/20 to-emerald-200/20 rounded-full animate-pulse" />
+          <div className="absolute -inset-4 bg-linear-to-r from-green-200/20 to-emerald-200/20 rounded-full animate-pulse" />
         </div>
         {message && (
           <p className="text-sm text-gray-600 animate-fade-in">
@@ -45,7 +45,7 @@ export function LoadingSpinner({
 
 export function LoadingPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white nature-pattern">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-green-50 to-white nature-pattern">
       <LoadingSpinner size="large" variant="nature" message="Growing your garden..." />
     </div>
   )
@@ -59,8 +59,8 @@ export function LoadingCard() {
           <Skeleton className="h-6 w-6 rounded-full bg-green-100" />
           <Skeleton className="h-6 w-1/3 bg-green-50" />
         </div>
-        <Skeleton className="h-4 w-full bg-gradient-to-r from-green-50 to-transparent" />
-        <Skeleton className="h-4 w-5/6 bg-gradient-to-r from-green-50 to-transparent" />
+        <Skeleton className="h-4 w-full bg-linear-to-r from-green-50 to-transparent" />
+        <Skeleton className="h-4 w-5/6 bg-linear-to-r from-green-50 to-transparent" />
         <div className="flex gap-2">
           <Skeleton className="h-10 w-24 border-organic bg-green-50" />
           <Skeleton className="h-10 w-24 border-organic bg-green-50" />
@@ -132,7 +132,7 @@ export function LoadingEditor() {
         </div>
 
         {/* Canvas */}
-        <div className="flex-1 bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center nature-pattern">
+        <div className="flex-1 bg-linear-to-br from-green-50 to-emerald-50 flex items-center justify-center nature-pattern">
           <LoadingSpinner size="large" variant="nature" message="Preparing your garden canvas..." />
         </div>
 

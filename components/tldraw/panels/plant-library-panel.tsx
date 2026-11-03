@@ -305,7 +305,7 @@ function PlantCard({ plant, isSelected, onClick, onShowDetails, compact }: Plant
         <div className="flex items-start gap-3">
           {/* Plant Icon */}
           <div
-            className="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl"
+            className="shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-2xl"
             style={{ backgroundColor: `${plant.color}20` }}
           >
             {plant.icon}

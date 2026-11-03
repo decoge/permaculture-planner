@@ -381,7 +381,7 @@ export function GrowthSimulationPanel({ gardenBeds }: GrowthSimulationPanelProps
             <CardDescription>Animated view of your garden growth</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="relative h-64 bg-gradient-to-b from-sky-100 to-green-50 dark:from-sky-950/20 dark:to-green-950/20 rounded-lg overflow-hidden">
+            <div className="relative h-64 bg-linear-to-b from-sky-100 to-green-50 dark:from-sky-950/20 dark:to-green-950/20 rounded-lg overflow-hidden">
               {/* Simple plant visualization */}
               <div className="absolute inset-0 p-4">
                 <div className="grid grid-cols-8 gap-2 h-full">

@@ -45,7 +45,7 @@ export default function HomePage() {
           {/* Title with sequential fade-in */}
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 opacity-0 animate-fade-in"
               style={{ animationDelay: '0.3s', animationFillMode: 'forwards' }}>
-            <span className="bg-gradient-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-green-700 to-green-500 bg-clip-text text-transparent">
               Design Regenerative
             </span>
             <br />
@@ -76,7 +76,7 @@ export default function HomePage() {
                     <Leaf className="mr-2 h-5 w-5 relative z-10" />
                     <span className="relative z-10">Begin Your Design</span>
                     <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1 relative z-10" />
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="absolute inset-0 bg-linear-to-r from-green-500 to-emerald-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   </Link>
                 </Button>
               </QuickTooltip>
@@ -205,9 +205,9 @@ export default function HomePage() {
                 animation="animate-scale-in"
                 delay={feature.delay}
               >
-                <Card className="card-nature hover-lift border-green-100 group rounded-xl h-full shadow-sm hover:shadow-xl transition-all duration-300">
+                <Card className="card-nature hover-lift border-green-100 group rounded-xl h-full shadow-xs hover:shadow-xl transition-all duration-300">
                 <CardHeader>
-                  <div className="p-3 bg-gradient-to-br from-green-50 to-green-100 rounded-xl w-fit group-hover:from-green-100 group-hover:to-green-200 transition-all duration-300 group-hover:scale-110">
+                  <div className="p-3 bg-linear-to-br from-green-50 to-green-100 rounded-xl w-fit group-hover:from-green-100 group-hover:to-green-200 transition-all duration-300 group-hover:scale-110">
                     <feature.icon className="h-8 w-8 text-green-700 group-hover:rotate-12 transition-transform duration-300" />
                   </div>
                   <div className="flex items-center justify-between mt-4">
@@ -234,7 +234,7 @@ export default function HomePage() {
       </section>
 
       {/* Perfect For Section with Icons */}
-      <section className="py-20 px-4 bg-gradient-to-b from-white via-green-50/30 to-white">
+      <section className="py-20 px-4 bg-linear-to-b from-white via-green-50/30 to-white">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
             <AnimateOnScroll animation="animate-fade-in" delay="0.1s">
@@ -296,7 +296,7 @@ export default function HomePage() {
               >
                 <div className="glass rounded-xl p-8 hover-lift h-full shadow-md hover:shadow-xl transition-all duration-300 group border border-green-100/50 hover:border-green-200">
                 <div className="text-center">
-                  <div className="inline-flex p-4 bg-gradient-to-br from-green-100 to-green-200 rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300">
+                  <div className="inline-flex p-4 bg-linear-to-br from-green-100 to-green-200 rounded-xl mb-4 group-hover:scale-110 transition-transform duration-300">
                     <space.icon className="h-12 w-12 text-green-700 group-hover:rotate-6 transition-transform duration-300" />
                   </div>
                   <h3 className="font-bold text-2xl mb-2 text-gray-900">{space.title}</h3>
@@ -304,7 +304,7 @@ export default function HomePage() {
                   <ul className="space-y-3 text-gray-700 text-left">
                     {space.items.map((item, idx) => (
                       <li key={idx} className="flex items-start">
-                        <CheckCircle className="h-5 w-5 text-green-600 mr-2 flex-shrink-0 mt-0.5" />
+                        <CheckCircle className="h-5 w-5 text-green-600 mr-2 shrink-0 mt-0.5" />
                         <span>{item}</span>
                       </li>
                     ))}
@@ -347,7 +347,7 @@ export default function HomePage() {
                   animation="animate-fade-in"
                   delay={climate.delay}
                 >
-                  <div className="p-6 rounded-xl bg-gradient-to-br from-green-50 to-white border border-green-100 hover:border-green-300 transition-all hover-lift card-nature shadow-sm hover:shadow-lg group cursor-pointer">
+                  <div className="p-6 rounded-xl bg-linear-to-br from-green-50 to-white border border-green-100 hover:border-green-300 transition-all hover-lift card-nature shadow-xs hover:shadow-lg group cursor-pointer">
                     <IconComponent className="h-12 w-12 text-green-600 mx-auto mb-3 group-hover:scale-110 group-hover:text-green-700 transition-all duration-300" />
                     <div className="font-semibold text-gray-900 group-hover:text-green-700 transition-colors duration-300">{climate.label}</div>
                     <div className="text-sm text-gray-600 mt-1">{climate.desc}</div>
@@ -360,7 +360,7 @@ export default function HomePage() {
       </section>
 
       {/* Open Source Section */}
-      <section className="py-20 px-4 bg-gradient-to-b from-white to-green-50">
+      <section className="py-20 px-4 bg-linear-to-b from-white to-green-50">
         <div className="max-w-6xl mx-auto text-center">
           <AnimateOnScroll animation="animate-fade-in" delay="0.1s">
             <h2 className="text-3xl md:text-4xl font-bold mb-6 text-gray-900">
@@ -433,7 +433,7 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-2 border-white/80 text-white bg-white/10 hover:bg-white/20 px-8 py-6 text-lg rounded-lg backdrop-blur-sm min-h-[44px] active:scale-95"
+                className="border-2 border-white/80 text-white bg-white/10 hover:bg-white/20 px-8 py-6 text-lg rounded-lg backdrop-blur-xs min-h-[44px] active:scale-95"
                 asChild
               >
                 <Link href="/demo">

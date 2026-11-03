@@ -94,7 +94,7 @@ export const NatureSearch: React.FC<{
           "pl-10",
           "border-green-300 focus:border-green-500",
           "focus:ring-2 focus:ring-green-200",
-          "bg-white/80 backdrop-blur",
+          "bg-white/80 backdrop-blur-sm",
           className
         )}
       />
@@ -129,7 +129,7 @@ export const NatureTextarea = React.forwardRef<
           "min-h-[100px] resize-none",
           "border-green-300 focus:border-green-500",
           "focus:ring-2 focus:ring-green-200",
-          "bg-gradient-to-br from-white to-green-50/20",
+          "bg-linear-to-br from-white to-green-50/20",
           error && "border-red-400 focus:border-red-500 focus:ring-red-200",
           className
         )}
@@ -241,7 +241,7 @@ export const WaterNeedsSlider: React.FC<{
       </div>
       <div className={cn(
         "text-center p-2 rounded-lg",
-        "bg-gradient-to-r from-blue-50 to-cyan-50",
+        "bg-linear-to-r from-blue-50 to-cyan-50",
         "border border-blue-200"
       )}>
         <p className="text-sm text-blue-700">
@@ -282,7 +282,7 @@ export const SunSelector: React.FC<{
               "p-3 rounded-lg border-2 transition-all duration-200",
               "hover:shadow-md hover:scale-105",
               value === option.value
-                ? "bg-gradient-to-br from-yellow-100 to-orange-100 border-yellow-400"
+                ? "bg-linear-to-br from-yellow-100 to-orange-100 border-yellow-400"
                 : "bg-white border-gray-200 hover:border-yellow-300"
             )}
           >
@@ -339,7 +339,7 @@ export const SeasonPicker: React.FC<{
               "p-3 rounded-lg border-2 transition-all duration-200",
               "hover:shadow-md hover:scale-105",
               value.includes(season.value)
-                ? `bg-gradient-to-br ${season.color} border-green-400 ring-2 ring-green-500 ring-offset-1`
+                ? `bg-linear-to-br ${season.color} border-green-400 ring-2 ring-green-500 ring-offset-1`
                 : "bg-white border-gray-200 hover:border-green-300"
             )}
           >

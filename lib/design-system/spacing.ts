@@ -163,7 +163,7 @@ export const ZIndex = {
  * Card Variants
  */
 export const CardVariants = {
-  default: 'bg-card border shadow-sm',
+  default: 'bg-card border shadow-xs',
   elevated: 'bg-card border shadow-md',
   flat: 'bg-card/50 border-dashed',
   ghost: 'border-transparent',

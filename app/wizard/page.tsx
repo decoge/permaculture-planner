@@ -187,13 +187,13 @@ export default function WizardPage() {
   const progressValue = ((currentStep - 1) / (steps.length - 1)) * 100
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white">
+    <div className="min-h-screen bg-linear-to-b from-green-50 to-white">
       {/* Header */}
       <div className="glass border-b border-green-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-3 sm:py-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
             <div className="opacity-0 animate-fade-in mb-2 sm:mb-0" style={{ animationFillMode: 'forwards' }}>
-              <h1 className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">Create Your Permaculture Garden</h1>
+              <h1 className="text-lg sm:text-2xl font-bold bg-linear-to-r from-green-700 to-emerald-600 bg-clip-text text-transparent">Create Your Permaculture Garden</h1>
               <p className="text-xs sm:text-sm text-gray-600 mt-1">
                 Answer a few questions to get your personalized permaculture design
               </p>
@@ -265,7 +265,7 @@ export default function WizardPage() {
 
       {/* Login Banner - Show if not logged in */}
       {!authLoading && !user && !hasSeenLoginBanner && (
-        <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200">
+        <div className="bg-linear-to-r from-amber-50 to-orange-50 border-b border-amber-200">
           <div className="max-w-4xl mx-auto px-4 py-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -319,7 +319,7 @@ export default function WizardPage() {
 
       {/* Logged In Confirmation Banner */}
       {!authLoading && user && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
+        <div className="bg-linear-to-r from-green-50 to-emerald-50 border-b border-green-200">
           <div className="max-w-4xl mx-auto px-4 py-3">
             <div className="flex items-center gap-2 text-green-800">
               <CheckCircle className="h-5 w-5 text-green-600" />

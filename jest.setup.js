@@ -1,6 +1,27 @@
 // Jest setup file
+import React from 'react'
 import '@testing-library/jest-dom'
 import 'fake-indexeddb/auto'
+
+// tldraw 5.6 loads react-intl, which is ESM-only. Jest on this Node cannot
+// require() it. The shape tests never format messages, so a stub is enough
+// for the module to finish loading.
+jest.mock('react-intl', () => {
+  return {
+    IntlContext: React.createContext(null),
+    IntlProvider: ({ children }) => children,
+    FormattedMessage: ({ defaultMessage, id }) => defaultMessage ?? id ?? null,
+    useIntl: () => ({
+      locale: 'en',
+      formatMessage: (descriptor) => descriptor?.defaultMessage ?? descriptor?.id ?? '',
+    }),
+    ReactIntlErrorCode: { MISSING_TRANSLATION: 'MISSING_TRANSLATION' },
+    createIntl: () => ({
+      formatMessage: (descriptor) => descriptor?.defaultMessage ?? descriptor?.id ?? '',
+    }),
+    createIntlCache: () => ({}),
+  }
+})
 
 // Route tests run under @jest-environment node (Next's server runtime needs
 // undici's Request/Response, which jsdom does not provide). Everything below

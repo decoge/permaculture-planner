@@ -211,7 +211,7 @@ export function OnboardingTour({ autoStart = false, forceOpen = false, onComplet
               <Card className="bg-amber-50 border-amber-200">
                 <CardContent className="pt-3 pb-2 px-3">
                   <div className="flex items-start gap-2 text-sm">
-                    <Sparkles className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <Sparkles className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                     <span className="text-amber-900">{step.tip}</span>
                   </div>
                 </CardContent>

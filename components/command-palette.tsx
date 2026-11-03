@@ -69,7 +69,7 @@ export function CommandPalette({ commands, open, onOpenChange }: CommandPaletteP
               value={search}
               onValueChange={setSearch}
               placeholder="Type a command..."
-              className="h-11 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+              className="h-11 w-full bg-transparent text-sm outline-hidden placeholder:text-muted-foreground"
             />
           </div>
           <Command.List className="max-h-[320px] overflow-y-auto p-1">
