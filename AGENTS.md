@@ -248,6 +248,16 @@ implementation, so deleting them is a product decision:
   coverage of an uncalled route is not coverage of a user path. Deciding whether
   to wire the route into the wizard or delete it is a product call.
 
+- **Service-worker background sync.** `syncPlans()` in
+  `public/service-worker.js` reads its queue from stubs that return `[]`, so the
+  `sync-plans` registration in `components/providers.tsx` does nothing. The
+  offline notice says so rather than promising a sync that never happens; a real
+  offline queue would have to be built.
+
+- **`lib/storage/indexed-db.ts`** is opened on every page load
+  (`db.init()` plus an hourly cache sweep in `components/providers.tsx`), but
+  nothing reads or writes it outside its own tests.
+
 ## Conventions
 
 - TypeScript strict, `@/*` → repo root. No default exports in lib/ modules.
@@ -387,7 +397,7 @@ change.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
