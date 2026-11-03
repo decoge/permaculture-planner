@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { requireUser } from '@/lib/auth/guard'
-import { setTaskCompleted, updateTask } from '@/lib/db/tasks'
+import { updateTask } from '@/lib/db/tasks'
 import { deleteTask, setTaskPattern } from '@/lib/db/recordings'
 import { routeError } from '@/lib/api/route-error'
 
@@ -11,20 +11,9 @@ export async function PATCH(request: Request, context: { params: { id: string } 
     const { id } = await context.params
     const body = await request.json()
 
-    // Completing-only keeps the original cheap path; anything else (due-date
-    // edit, pattern change) goes through updateTask, which also generates the
-    // next occurrence for a recurring task being completed.
-    const onlyCompleted =
-      typeof body.completed === 'boolean' &&
-      body.dueOn === undefined &&
-      body.recurringPattern === undefined
-
-    if (onlyCompleted) {
-      const updated = await setTaskCompleted(user.id, id, body.completed)
-      if (!updated) return NextResponse.json({ error: 'Task not found' }, { status: 404 })
-      return NextResponse.json({ success: true })
-    }
-
+    // Every edit goes through updateTask, including a bare completion toggle:
+    // setTaskCompleted used to handle that case and skipped the next-occurrence
+    // generation, so completing a recurring task from the UI ended the series.
     const result = await updateTask(user.id, id, {
       completed: typeof body.completed === 'boolean' ? body.completed : undefined,
       dueOn: typeof body.dueOn === 'string' ? body.dueOn : undefined,

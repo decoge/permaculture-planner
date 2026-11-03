@@ -1,4 +1,4 @@
-import { query, queryOne, withTransaction } from '@/lib/db/pool'
+import { query, withTransaction } from '@/lib/db/pool'
 import { taskCategory } from '@/lib/db/ids'
 import { userOwnsPlan } from '@/lib/db/gardens'
 
@@ -18,20 +18,6 @@ export async function listTasks(userId: string, planId: string) {
      ORDER BY due_on ASC, created_at ASC`,
     [planId]
   )
-}
-
-export async function setTaskCompleted(userId: string, taskId: string, completed: boolean) {
-  const task = await queryOne<{ id: string }>(
-    `UPDATE tasks t
-     SET completed = $3,
-         completed_at = CASE WHEN $3 THEN NOW() ELSE NULL END
-     FROM plans p
-     JOIN sites s ON s.id = p.site_id
-     WHERE t.id = $1 AND t.plan_id = p.id AND s.user_id = $2
-     RETURNING t.id`,
-    [taskId, userId, completed]
-  )
-  return Boolean(task)
 }
 
 /**
@@ -89,7 +75,13 @@ export async function updateTask(
     const updated = await client.query<{ id: string; recurring_pattern: string | null; due_on: string }>(
       `UPDATE tasks t
        SET completed = COALESCE($3, t.completed),
-           completed_at = CASE WHEN COALESCE($3, false) THEN NOW() ELSE NULL END,
+           -- Only touch the timestamp when the patch carries a completion
+           -- value: a due-date edit used to NULL it on a finished task.
+           completed_at = CASE
+             WHEN $3::boolean IS NULL THEN t.completed_at
+             WHEN $3 THEN NOW()
+             ELSE NULL
+           END,
            due_on = COALESCE($4::date, t.due_on)
        FROM plans p
        JOIN sites s ON s.id = p.site_id

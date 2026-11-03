@@ -78,6 +78,16 @@ describe('updateTask due-date editing', () => {
     expect(clientQuery).not.toHaveBeenCalled()
   })
 
+  test('a due-date edit leaves the completion timestamp alone', async () => {
+    await updateTask('user-1', 'task-1', { dueOn: '2026-10-15' })
+
+    const update = clientQuery.mock.calls.find((call) => (call[0] as string).includes('UPDATE tasks'))
+    // When $3 (completed) is NULL the stored timestamp must survive: the old
+    // statement wrote `ELSE NULL` unconditionally, so re-dating a finished task
+    // erased when it was finished.
+    expect(update![0]).toContain('WHEN $3::boolean IS NULL THEN t.completed_at')
+  })
+
   test('an unknown task id returns task: false', async () => {
     clientQuery.mockImplementation((sql: string) => {
       if (sql.includes('UPDATE tasks')) return Promise.resolve({ rowCount: 0, rows: [] })
