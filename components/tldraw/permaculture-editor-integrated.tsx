@@ -82,6 +82,13 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 import { downloadSvg, downloadPdf, downloadPng } from '@/lib/export/plan-exporter'
 import { OnboardingTour } from '@/components/onboarding/onboarding-tour'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { CommandPalette, type EditorCommand } from '@/components/command-palette'
 import { StatusBar } from '@/components/tldraw/status-bar'
 import {
@@ -329,14 +336,32 @@ export function PermacultureEditorIntegrated({
                 <Sparkles className="h-4 w-4 mr-2" />
                 Tour
               </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => handleExport('json')}
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Export
-              </Button>
+              {/* Export offers all four formats: the button used to write JSON
+                  without saying so, and PNG/SVG/PDF were only reachable from
+                  the ⌘K palette. */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onSelect={() => handleExport('png')}>
+                    Export as PNG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleExport('svg')}>
+                    Export as SVG
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => handleExport('pdf')}>
+                    Export as PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => handleExport('json')}>
+                    Export as JSON
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 size="sm"
                 onClick={handleSave}
