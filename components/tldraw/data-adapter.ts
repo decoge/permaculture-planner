@@ -147,9 +147,7 @@ export class DataAdapter {
         elementType: bedShape.props.elementType || undefined,
         elementCategory: (bedShape.props.elementCategory as any) || undefined,
         zone: bedShape.props.zone >= 0 ? (bedShape.props.zone as any) : undefined,
-        metadata: (bedShape.meta as any)?.metadataJson
-          ? JSON.parse((bedShape.meta as any).metadataJson)
-          : undefined,
+        metadata: this.parseJson<Record<string, unknown>>((bedShape.meta as any)?.metadataJson),
       }
 
       beds.push(bed)
@@ -161,15 +159,27 @@ export class DataAdapter {
   // ========== Helper Methods ==========
 
   /**
+   * Parse a JSON string a shape carries, treating corruption as absent.
+   *
+   * Shape meta is persisted in the tldraw document and round-trips through
+   * save/load; one malformed blob used to throw inside shapesToGardenBeds and
+   * leave the canvas empty, while the points blob beside it was already guarded.
+   */
+  private parseJson<T>(value: unknown): T | undefined {
+    if (typeof value !== 'string' || value.length === 0) return undefined
+    try {
+      return JSON.parse(value) as T
+    } catch {
+      return undefined
+    }
+  }
+
+  /**
    * Parse points from JSON string
    */
   private parsePoints(pointsJson: string): { x: number; y: number }[] {
-    try {
-      const points = JSON.parse(pointsJson)
-      return Array.isArray(points) ? points : []
-    } catch {
-      return []
-    }
+    const points = this.parseJson<{ x: number; y: number }[]>(pointsJson)
+    return Array.isArray(points) ? points : []
   }
 
   /**
