@@ -50,19 +50,24 @@ export async function proxy(request: NextRequest) {
     if (aiLimitResponse) return aiLimitResponse
   }
 
+  const token = request.cookies.get(SESSION_COOKIE)?.value
+
   if (pathname.startsWith('/api')) {
     const apiLimitResponse = exempt ? null : await apiRateLimiter.check(request)
     if (apiLimitResponse) return apiLimitResponse
 
     if (request.method === 'GET') {
-      const isUserEndpoint = pathname.includes('/user/') || pathname.includes('/profile/')
-      const cache = isUserEndpoint ? userCache : apiCache
+      // Any response for a signed-in caller is scoped to that session, so the
+      // cache has to be keyed by the session cookie. The path test this
+      // replaces looked for '/user/' and '/profile/', which match no route in
+      // the app: every GET fell through to the URL-keyed cache, so if anything
+      // ever populated it one account's dashboard would be served to the next.
+      const cache = token ? userCache : apiCache
       const cachedResponse = await cache.get(request)
       if (cachedResponse) return cachedResponse
     }
   }
 
-  const token = request.cookies.get(SESSION_COOKIE)?.value
   const session = token ? await verifySessionToken(token) : null
 
   const needsAuth = protectedPages.some((path) => pathname.startsWith(path))
