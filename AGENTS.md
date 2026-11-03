@@ -186,9 +186,8 @@ inventing horticulture; add genuinely shade-tolerant plants instead.
 A 2026-10 sweep removed every module that had no importer — the table that used
 to list them here is empty. The live modules they were easy to confuse with:
 `lib/data/plant-library.ts` (15+ importers), `lib/garden/garden-tools.ts` (12),
-`lib/garden/design-facts.ts` (13), `lib/canvas-elements.ts` (8),
-`lib/algorithms/layout-generator.ts`, `materials-calculator.ts` and
-`crop-rotation.ts` (all via `app/api/plans`).
+`lib/garden/design-facts.ts` (13), `lib/canvas-elements.ts` (8) and
+`lib/algorithms/materials-calculator.ts` (via `lib/db/gardens.ts`).
 
 Removed and do not resurrect: `lib/analysis/` (design-critique,
 sun-shade-calculator), `lib/calculations/` (garden-calculations),
@@ -238,6 +237,16 @@ implementation, so deleting them is a product decision:
   different, smaller set of 7 scene templates.
 - `lib/reports/report-generator.ts`, `lib/constants/ui-constants.ts`,
   `components/loading-states.tsx`, `components/mobile-menu.tsx`.
+
+- **`POST /api/plans` and the algorithms only it uses.** Nothing in the UI calls
+  it: the wizard goes `lib/wizard/wizard-service.ts` → `POST /api/gardens` →
+  `saveGarden`, which builds the beds client-side and writes the materials
+  estimate itself. So `lib/algorithms/layout-generator.ts`,
+  `lib/algorithms/crop-rotation.ts`, `lib/data/crop-focus-map.ts` and
+  `wizardDataSchema` in `lib/validation.ts` are reachable only from that route
+  and from their own tests. They are unit-tested, which makes them look live —
+  coverage of an uncalled route is not coverage of a user path. Deciding whether
+  to wire the route into the wizard or delete it is a product call.
 
 ## Conventions
 
